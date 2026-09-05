@@ -186,6 +186,9 @@ export default async function PurchaseControlsPage({
                   <input type="hidden" name="companyId" value={companyId} />
                   <input type="hidden" name="templateId" value={template.template_id} />
                   <p className="muted">Overwrite eligible users in assigned roles with the current template rules.</p>
+                  <label>
+                    <input type="checkbox" name="confirmApply" value="yes" required /> Confirm overwrite before applying
+                  </label>
                   <div><button type="submit">Apply to users</button></div>
                 </form>
 
@@ -193,18 +196,21 @@ export default async function PurchaseControlsPage({
                   <input type="hidden" name="companyId" value={companyId} />
                   <input type="hidden" name="templateId" value={template.template_id} />
                   <p className="muted">Reset consumed counters for users currently governed by this template.</p>
+                  <label>
+                    <input type="checkbox" name="confirmReset" value="yes" required /> Confirm counter reset
+                  </label>
                   <div><button type="submit">Reset counters</button></div>
                 </form>
               </div>
 
-              <form className="stack" action={deletePurchaseControlTemplateAction}>
+              <form className="stack danger-zone" action={deletePurchaseControlTemplateAction}>
                 <input type="hidden" name="companyId" value={companyId} />
                 <input type="hidden" name="templateId" value={template.template_id} />
                 <label>
                   Type the exact template name to delete an unassigned template
-                  <input name="confirmName" placeholder={template.name} />
+                  <input name="confirmName" placeholder={template.name} autoComplete="off" required />
                 </label>
-                <div><button type="submit">Delete template</button></div>
+                <div><button className="button button-danger" type="submit">Delete template</button></div>
               </form>
             </article>
           ))
