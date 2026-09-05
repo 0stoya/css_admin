@@ -122,8 +122,10 @@ export async function assignPurchaseControlTemplateAction(formData: FormData) {
 export async function applyPurchaseControlTemplateAction(formData: FormData) {
   const companyId = requiredInt(formData, "companyId");
   const templateId = requiredInt(formData, "templateId");
+  const confirmed = formData.get("confirmApply") === "yes";
 
   return runMutation(companyId, "Purchase-control template applied to eligible users.", async () => {
+    if (!confirmed) throw new Error("Confirm that the template should overwrite eligible users before applying it.");
     await applyPurchaseControlTemplate(companyId, templateId);
   });
 }
@@ -131,8 +133,10 @@ export async function applyPurchaseControlTemplateAction(formData: FormData) {
 export async function resetPurchaseControlCountersAction(formData: FormData) {
   const companyId = requiredInt(formData, "companyId");
   const templateId = requiredInt(formData, "templateId");
+  const confirmed = formData.get("confirmReset") === "yes";
 
   return runMutation(companyId, "Purchase-control counters reset.", async () => {
+    if (!confirmed) throw new Error("Confirm that consumed purchase-control counters should be reset before continuing.");
     await resetPurchaseControlCounters(companyId, templateId);
   });
 }
