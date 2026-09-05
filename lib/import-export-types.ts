@@ -57,3 +57,20 @@ export type CompanyControlsCsvImportState = {
   result: CompanyControlsImportSummary | null;
   error: string | null;
 };
+
+export type FlatCompanyImportRow = {
+  row: number;
+  company_ref: string;
+  company_name: string;
+  item: string;
+  status: ImportRowStatus;
+  message: string;
+};
+
+export type FlatCompanyImportState = {
+  phase: "idle" | "preview" | "applied" | "error";
+  sourceCsv: string;
+  rows: FlatCompanyImportRow[];
+  create_missing_roles: boolean;
+  error: string | null;
+};
