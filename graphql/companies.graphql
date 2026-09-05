@@ -1,0 +1,28 @@
+# Frontend contract copied from the server-accepted Phase 14 operations in 0stoya/Fluid.
+# Runtime code currently uses equivalent typed fetch strings in lib/graphql/companies.ts.
+
+query AdminCompanyList($currentPage: Int!, $pageSize: Int!) {
+  css_admin_companies(currentPage: $currentPage, pageSize: $pageSize) {
+    total_count
+    items {
+      company_id
+      reference
+      name
+      sales_representative_id
+    }
+    page_info {
+      page_size
+      current_page
+      total_pages
+    }
+  }
+}
+
+query AdminCompanyDetail($companyId: Int!) {
+  css_admin_company(company_id: $companyId) {
+    company_id
+    reference
+    name
+    sales_representative_id
+  }
+}

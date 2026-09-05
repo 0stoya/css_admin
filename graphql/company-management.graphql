@@ -1,0 +1,20 @@
+# Initial management-surface availability probe from the accepted Phase 14 contract.
+# Detailed management screens will add fields from Css/Commerce/etc/schema.graphqls as each area is implemented.
+
+query AdminCompanyManagementAvailability($companyId: Int!) {
+  management: css_admin_company_management(company_id: $companyId) {
+    __typename
+  }
+  catalog: css_admin_company_catalog_policy(company_id: $companyId) {
+    __typename
+  }
+  purchase_controls: css_admin_purchase_controls(company_id: $companyId) {
+    __typename
+  }
+  commercial: css_admin_company_payment_configuration(company_id: $companyId) {
+    __typename
+  }
+  credit_orders: css_admin_credit_orders(company_id: $companyId, currentPage: 1, pageSize: 1) {
+    __typename
+  }
+}
