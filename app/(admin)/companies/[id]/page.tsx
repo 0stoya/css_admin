@@ -91,6 +91,16 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         </dl>
       </section>
 
+      <section className="card stack">
+        <div>
+          <h2>Company settings & lifecycle</h2>
+          <p className="muted">Review OGL-owned company data, maintain Magento-local settings and use the guarded exact-reference delete flow.</p>
+        </div>
+        <Link className="button button-link" href={`/companies/${company.company_id}/settings`}>
+          Open company settings
+        </Link>
+      </section>
+
       <section className="stack">
         <div>
           <h2>Management areas</h2>

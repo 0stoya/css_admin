@@ -1,0 +1,67 @@
+# Functional Admin company lifecycle contract.
+# OGL-owned fields are queried for read-only presentation; only Magento-local fields are sent to update.
+
+query AdminCompanySettings($companyId: Int!) {
+  css_admin_company(company_id: $companyId) {
+    company_id
+    reference
+    status
+    name
+    email
+    street
+    city
+    country_code
+    region
+    region_id
+    postcode
+    telephone
+    vat_tax_id
+    customer_group_id
+    admin_customer_id
+    sales_representative_id
+    parent_company_id
+    comment
+    description
+    homepage_content
+    show_company_landing_page
+  }
+}
+
+query AdminCompanySettingsOptions {
+  css_admin_company_options {
+    customer_groups {
+      customer_group_id
+      code
+    }
+  }
+}
+
+mutation AdminUpdateCompanySettings($input: CssAdminUpdateCompanyInput!) {
+  cssAdminUpdateCompany(input: $input) {
+    company_id
+    reference
+    status
+    name
+    email
+    street
+    city
+    country_code
+    region
+    region_id
+    postcode
+    telephone
+    vat_tax_id
+    customer_group_id
+    admin_customer_id
+    sales_representative_id
+    parent_company_id
+    comment
+    description
+    homepage_content
+    show_company_landing_page
+  }
+}
+
+mutation AdminDeleteCompany($companyId: Int!, $confirmReference: String!) {
+  cssAdminDeleteCompany(company_id: $companyId, confirm_reference: $confirmReference)
+}
