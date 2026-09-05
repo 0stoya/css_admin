@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CompanyControlsImport, CompanyUsersCsvImport } from "@/components/company-import-export";
+import { CompanyControlsCsvImport, CompanyUsersCsvImport } from "@/components/company-import-export-spreadsheet";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getCompanyControlsBundle } from "@/lib/graphql/company-controls";
@@ -48,7 +48,7 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
         : <section className="card stack"><div><p className="eyebrow">Company users</p><h2>CSV import / export restricted</h2></div><div className="error">{managementError}</div></section>}
 
       {controls
-        ? <CompanyControlsImport companyId={companyId} schemaVersion={controls.schema_version} roleCount={controls.role_controls.length} templateCount={controls.purchase_controls?.templates.length ?? 0} />
+        ? <CompanyControlsCsvImport companyId={companyId} schemaVersion={controls.schema_version} roleCount={controls.role_controls.length} templateCount={controls.purchase_controls?.templates.length ?? 0} />
         : <section className="card stack"><div><p className="eyebrow">Company controls</p><h2>Controls import / export restricted</h2></div><div className="error">{controlsError}</div></section>}
     </div>
   );
