@@ -53,10 +53,12 @@ Read-only pricing/import visibility is allowed. Pricing mutations are not.
 
 ### Dual-principal management model
 
-The application now supports two distinct authenticated principals:
+The application supports two distinct authenticated principals:
 
 - **Staff / Magento administrator** -> Magento admin token -> `css_admin_*` management surfaces.
 - **Company user** -> Magento customer token -> customer/company GraphQL surfaces only.
+
+The shared sign-in form infers the principal from the login identifier: email-shaped logins use Magento customer authentication; non-email usernames use Magento administrator authentication. The resulting tokens and route boundaries remain separate.
 
 Company users must never be treated as fake Magento admins and must never call `css_admin_*` operations with a customer token.
 
@@ -97,16 +99,15 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] ordinary ACL/authorization errors do not log the user out.
 - [x] merged and runtime accepted.
 
-### Company-user authentication — PR #14
+### Company-user authentication — PR #14 + core-completion login polish
 
-- [x] explicit Staff / Magento administrator login.
-- [x] explicit Company user login using Magento customer tokens.
+- [x] Staff and Company user authentication use their respective Magento token endpoints.
 - [x] separate HttpOnly sessions and route boundaries.
 - [x] `/companies` remains staff-only.
 - [x] `/portal` remains company-user-only.
 - [x] company context selection uses `css_company_context` / `cssSelectCompany`.
 - [x] company-user capabilities come from `css_company_admin`.
-- [x] merged and runtime accepted.
+- [x] shared sign-in UI automatically routes email-shaped logins to Company user auth and username logins to Staff auth.
 
 ### Company-user management writes — PR #15
 
@@ -118,47 +119,37 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] lint/typecheck/build and live write journey accepted.
 - [x] merged (`ae4a3fa631c667c75f215c88c49bbfab484c6d62`).
 
-## Import/export block — before broad UI/UX
+### Portal catalogue and purchase controls — PR #16
 
-Complete bulk/data portability after the portal capability model is settled and before the final visual redesign.
+- [x] capability-driven portal catalogue visibility and management.
+- [x] capability-driven purchase-control read/manage surfaces.
+- [x] selected-company customer context remains Fluid-authoritative.
+- [x] customer users cannot call staff `css_admin_*` operations.
 
-### Company users — CSV import/export
+### Import/export and multi-company bulk operations — PRs #17-#19
 
-Planned portable identifiers:
-
-- email;
-- role name;
-- manager email;
-- approval type;
-- approval threshold.
-
-Rules:
-
-- mandatory preview/dry-run before apply;
-- Created / Updated / Skipped / Error reporting;
-- first version links existing Magento customers only rather than silently creating customer accounts;
-- company administrator replacement/removal is not allowed through bulk import;
-- use portable identifiers rather than Magento database IDs where possible.
-
-### Roles / catalogue / purchase controls
-
-Expose the existing Fluid versioned controls bundle:
-
-- `css_admin_company_controls_export`;
-- `cssAdminImportCompanyControls`.
-
-Support downloadable JSON plus mandatory dry-run/preview before apply. Preserve backend options for missing roles/templates where the accepted contract permits them.
+- [x] company-user CSV import/export with mandatory preview before apply.
+- [x] Created / Updated / Skipped / Error reporting.
+- [x] existing Magento customers are linked by email rather than silently created.
+- [x] company administrator protection remains enforced.
+- [x] flat roles & permissions CSV generated from Fluid's live assignable resource tree.
+- [x] role product-restriction CSV.
+- [x] company product-restriction CSV.
+- [x] `company_ref` is a safety lock on single-company imports.
+- [x] Unlimited Admin bulk workflow routes multi-company rows by `company_ref`.
+- [x] controls continue through Fluid dry-run/apply per company.
+- [x] current/example CSV downloads are available for every supported import type.
 
 ### Export-only authoritative/operational data
 
-Useful export surfaces may include:
+Useful additional export surfaces may later include:
 
 - company credit;
 - read-only pricing/import state;
 - credit orders;
 - purchase-control history.
 
-Do **not** introduce matching imports for pricing, credit or operational history. Those remain backend/OGL authoritative.
+These are not blockers for UI/UX refinement. Do **not** introduce matching imports for pricing, credit or operational history. Those remain backend/OGL authoritative.
 
 OGL registry/company creation remains outside generic import flows.
 
@@ -174,7 +165,9 @@ After portal expansion and import/export, before broad UI polish:
 - [ ] remove obsolete availability probes.
 - [ ] run final lint/typecheck/build and live regression walk-through.
 
-## UI/UX refinement — intentionally after functional blocks
+The core-completion pass should stay narrow: fix functional inconsistencies and regressions, but defer broad layout, component styling and interaction redesign to the UI/UX phase.
+
+## UI/UX refinement — next major phase
 
 The UI pass should establish reusable patterns that can later inform the Customer app:
 
@@ -214,10 +207,9 @@ When the Admin/company-management baseline and reusable UI system are stable:
 
 ## Resume point for next chat
 
-Start in **`0stoya/css_admin`** with the import/export block:
+Start in **`0stoya/css_admin`** with the **core-completion pass**:
 
-1. company-user CSV export plus mandatory import preview/apply;
-2. Fluid's versioned company-controls JSON export/import with mandatory dry-run;
-3. export-only operational data where the existing backend contract supports it.
-
-Then complete the final regression pass and UI/UX refinement.
+1. run the navigation/authorization/destructive-action regression checklist;
+2. fix only genuine functional inconsistencies and obsolete probes;
+3. run final lint/typecheck/build plus live regression acceptance;
+4. begin the dedicated UI/UX refinement phase.

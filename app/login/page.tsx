@@ -19,11 +19,8 @@ export default async function LoginPage({
   return (
     <main className="auth-wrap">
       <section className="auth-card">
-        <p className="eyebrow">Fluid / CSS Commerce</p>
-        <h1>Management sign in</h1>
-        <p className="muted">
-          Staff use Magento administrator credentials. Company users use their Magento customer email and password; Fluid permissions decide which company-management features are available.
-        </p>
+        <p className="eyebrow">CSS Commerce</p>
+        <h1>Sign in</h1>
         {reason === "expired" ? (
           <div className="error" role="status">
             Your session expired. Sign in again to continue.
