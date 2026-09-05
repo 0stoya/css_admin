@@ -1,5 +1,4 @@
-# Company Management read contract from Css/Commerce/etc/schema.graphqls.
-# This is the first detailed management surface implemented by the Admin app.
+# Company Management read/write contract from Css/Commerce/etc/schema.graphqls.
 
 query AdminCompanyManagement($companyId: Int!) {
   css_admin_company_management(company_id: $companyId) {
@@ -41,23 +40,74 @@ query AdminCompanyManagement($companyId: Int!) {
   }
 }
 
-# Company detail still probes the remaining management areas independently so one
-# restricted surface does not hide the others. Company management uses a real
-# stable field rather than __typename now that the detailed screen exists.
-query AdminCompanyManagementAvailability($companyId: Int!) {
-  management: css_admin_company_management(company_id: $companyId) {
-    company_id
+query AdminCompanyCustomerCandidates(
+  $companyId: Int!
+  $currentPage: Int!
+  $pageSize: Int!
+  $search: String
+) {
+  css_admin_company_customer_candidates(
+    company_id: $companyId
+    currentPage: $currentPage
+    pageSize: $pageSize
+    search: $search
+  ) {
+    total_count
+    items {
+      customer_id
+      website_id
+      firstname
+      lastname
+      email
+      assigned_to_company
+    }
+    page_info {
+      page_size
+      current_page
+      total_pages
+    }
   }
-  catalog: css_admin_company_catalog_policy(company_id: $companyId) {
-    __typename
+}
+
+mutation AdminSaveCompanyRole($companyId: Int!, $input: CssSaveCompanyRoleInput!) {
+  cssAdminSaveCompanyRole(company_id: $companyId, input: $input) {
+    role_id
+    name
+    sort_order
+    allowed_resources
+    user_count
+    manageable
   }
-  purchase_controls: css_admin_purchase_controls(company_id: $companyId) {
-    __typename
+}
+
+mutation AdminDeleteCompanyRole($companyId: Int!, $roleId: Int!) {
+  cssAdminDeleteCompanyRole(company_id: $companyId, role_id: $roleId)
+}
+
+mutation AdminAddCompanyUser($companyId: Int!, $input: CssAdminAddCompanyUserInput!) {
+  cssAdminAddCompanyUser(company_id: $companyId, input: $input) {
+    user_id
+    customer_id
+    email
   }
-  commercial: css_admin_company_payment_configuration(company_id: $companyId) {
-    __typename
+}
+
+mutation AdminUpdateCompanyUser($companyId: Int!, $input: CssAdminUpdateCompanyUserInput!) {
+  cssAdminUpdateCompanyUser(company_id: $companyId, input: $input) {
+    user_id
+    customer_id
+    email
   }
-  credit_orders: css_admin_credit_orders(company_id: $companyId, currentPage: 1, pageSize: 1) {
-    __typename
-  }
+}
+
+mutation AdminRemoveCompanyUser($companyId: Int!, $userId: Int!) {
+  cssAdminRemoveCompanyUser(company_id: $companyId, user_id: $userId)
+}
+
+# The other Admin areas remain availability probes until their focused slices.
+query AdminCompanyOtherManagementAvailability($companyId: Int!) {
+  catalog: css_admin_company_catalog_policy(company_id: $companyId) { __typename }
+  purchase_controls: css_admin_purchase_controls(company_id: $companyId) { __typename }
+  commercial: css_admin_company_payment_configuration(company_id: $companyId) { __typename }
+  credit_orders: css_admin_credit_orders(company_id: $companyId, currentPage: 1, pageSize: 1) { __typename }
 }
