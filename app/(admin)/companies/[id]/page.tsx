@@ -26,6 +26,11 @@ const managementAreas = {
   },
 } as const;
 
+const managementLinks: Partial<Record<keyof typeof managementAreas, (companyId: number) => string>> = {
+  management: (companyId) => `/companies/${companyId}/management`,
+  catalog: (companyId) => `/companies/${companyId}/catalog`,
+};
+
 async function loadCompany(companyId: number) {
   try {
     const [company, availability] = await Promise.all([
@@ -94,6 +99,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           {(Object.keys(managementAreas) as Array<keyof typeof managementAreas>).map((key) => {
             const area = managementAreas[key];
             const isAvailable = availability[key];
+            const href = managementLinks[key]?.(company.company_id);
 
             return (
               <article className="card stack" key={key}>
@@ -104,9 +110,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                   <h3>{area.label}</h3>
                   <p className="muted">{area.description}</p>
                 </div>
-                {key === "management" && isAvailable ? (
-                  <Link className="button button-link" href={`/companies/${company.company_id}/management`}>
-                    Open company management
+                {href && isAvailable ? (
+                  <Link className="button button-link" href={href}>
+                    Open {area.label.toLowerCase()}
                   </Link>
                 ) : null}
               </article>

@@ -1,0 +1,127 @@
+query AdminCompanyCatalogPolicy($companyId: Int!) {
+  css_admin_company_catalog_policy(company_id: $companyId) {
+    company_id
+    allow_public_catalog
+    category_restriction
+    allowed_category_ids
+    allowed_categories {
+      category_id
+      name
+      path
+    }
+    product_restriction
+    allowed_product_ids
+    allowed_products {
+      product_id
+      sku
+      name
+    }
+  }
+}
+
+query AdminRoleCatalogPolicy($companyId: Int!, $roleId: Int!, $page: Int!, $search: String) {
+  css_admin_role_catalog_policy(company_id: $companyId, role_id: $roleId, page: $page, search: $search) {
+    company_id
+    role_id
+    selected_category_ids
+    expanded_category_ids
+    has_saved_categories
+    show_product_grid
+    products_count
+    preselect_all_products
+    allowed_product_ids
+    category_tree {
+      id
+      label
+      parent_id
+      is_label_duplicated
+      descendant_ids
+      children {
+        id
+        label
+        parent_id
+        is_label_duplicated
+        descendant_ids
+        children {
+          id
+          label
+          parent_id
+          is_label_duplicated
+          descendant_ids
+          children {
+            id
+            label
+            parent_id
+            is_label_duplicated
+            descendant_ids
+            children {
+              id
+              label
+              parent_id
+              is_label_duplicated
+              descendant_ids
+              children {
+                id
+                label
+                parent_id
+                is_label_duplicated
+                descendant_ids
+                children {
+                  id
+                  label
+                  parent_id
+                  is_label_duplicated
+                  descendant_ids
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    products {
+      total_count
+      page
+      page_size
+      preselect_all
+      items {
+        id
+        sku
+        name
+        allowed
+      }
+    }
+  }
+}
+
+mutation AdminSaveCompanyCatalogPolicy($input: CssAdminSaveCompanyCatalogPolicyInput!) {
+  cssAdminSaveCompanyCatalogPolicy(input: $input) {
+    company_id
+  }
+}
+
+mutation AdminSaveRoleCatalogCategories($companyId: Int!, $roleId: Int!, $categoryIds: [Int!]!) {
+  cssAdminSaveRoleCatalogCategories(company_id: $companyId, role_id: $roleId, category_ids: $categoryIds) {
+    company_id
+    role_id
+  }
+}
+
+mutation AdminSaveRoleCatalogProducts(
+  $companyId: Int!
+  $roleId: Int!
+  $allowedProductIds: [Int!]!
+  $preselectAll: Boolean!
+  $deselectedProductIds: [Int!]
+) {
+  cssAdminSaveRoleCatalogProducts(
+    company_id: $companyId
+    role_id: $roleId
+    allowed_product_ids: $allowedProductIds
+    preselect_all: $preselectAll
+    deselected_product_ids: $deselectedProductIds
+  ) {
+    company_id
+    role_id
+  }
+}
