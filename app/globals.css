@@ -8,7 +8,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; background: #f5f7fb; }
 a { color: inherit; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
 .shell { min-height: 100vh; }
 .topbar {
@@ -54,7 +54,8 @@ tr:last-child td { border-bottom: 0; }
 .form { display: grid; gap: 1rem; margin-top: 1.5rem; }
 .field { display: grid; gap: 0.4rem; }
 .field label { font-weight: 700; font-size: 0.9rem; }
-.field input, .field select { width: 100%; border: 1px solid #cfd8e6; border-radius: 9px; padding: 0.75rem 0.85rem; background: #fff; }
+.field input, .field select, .field textarea { width: 100%; border: 1px solid #cfd8e6; border-radius: 9px; padding: 0.75rem 0.85rem; background: #fff; }
+.field textarea { resize: vertical; }
 .button { border: 0; border-radius: 9px; padding: 0.72rem 1rem; background: #243b67; color: #fff; font-weight: 800; cursor: pointer; }
 .button:disabled { cursor: not-allowed; opacity: 0.5; }
 .button-secondary { background: #fff; color: #172033; border: 1px solid #cfd8e6; }
@@ -96,6 +97,16 @@ code { font-size: 0.82rem; overflow-wrap: anywhere; }
 .resource-option { display: flex; align-items: center; gap: 0.5rem; min-height: 1.7rem; }
 .resource-option input[type="checkbox"] { width: auto; }
 
+.check-field { display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.9rem; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; }
+.check-field input { width: auto; margin-top: 0.2rem; }
+.check-field span { display: grid; gap: 0.25rem; }
+.catalog-tree { display: grid; gap: 0.2rem; max-height: 460px; overflow: auto; padding: 0.85rem; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; }
+.catalog-tree-option { display: flex; align-items: center; gap: 0.5rem; min-height: 1.9rem; }
+.catalog-tree-option input { width: auto; }
+.nested-card { box-shadow: none; }
+.pagination-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.pagination-actions { display: flex; gap: 0.5rem; }
+
 @media (max-width: 640px) {
   .topbar { padding: 0.85rem 1rem; }
   .content { width: min(100% - 1.25rem, 1120px); padding-top: 1.25rem; }
@@ -104,5 +115,5 @@ code { font-size: 0.82rem; overflow-wrap: anywhere; }
   .detail-list dd { margin-bottom: 0.65rem; }
   .stat-grid, .form-grid { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
-  .card-heading-row, .inline-form { display: grid; }
+  .card-heading-row, .inline-form, .pagination-row { display: grid; }
 }

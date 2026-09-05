@@ -50,6 +50,7 @@ Current read operations include:
 - `css_admin_company_management`
 - `css_admin_company_customer_candidates`
 - `css_admin_company_catalog_policy`
+- `css_admin_role_catalog_policy`
 - `css_admin_purchase_controls`
 - `css_admin_company_payment_configuration`
 - `css_admin_credit_orders`
@@ -62,9 +63,19 @@ Company Management uses its real schema fields for users, roles and ACL resource
 - `cssAdminSaveCompanyRole`
 - `cssAdminDeleteCompanyRole`
 
-The frontend performs only basic form-shape validation and confirmation prompts. Company scope, ACL authorization, valid role/resource assignment, manager rules, approval rules and mutation validity remain authoritative in Fluid/Magento. Returned `manageable`, `assignable`, `is_company_admin`, role counts and candidate membership state may be reflected in the UI, but are not treated as a substitute for backend enforcement.
+Catalogue Policy uses its real company and role schema fields. Its write path uses:
 
-The remaining catalogue, purchase-control, commercial and credit-order areas are still availability probes and will become detailed screens as separate focused slices.
+- `cssAdminSaveCompanyCatalogPolicy`
+- `cssAdminSaveRoleCatalogCategories`
+- `cssAdminSaveRoleCatalogProducts`
+
+Company-level catalogue edits map directly to Fluid's public-catalogue flag, category restriction plus category IDs, and product restriction plus product SKUs. The backend resolves and validates category IDs and SKUs.
+
+Role product state in Fluid depends on saved role category state. The Admin UI therefore offers `Use all company categories` as the no-additional-category-restriction path: it saves every category returned by the Fluid role tree, then product access may be narrowed separately. When the company has an explicit product restriction, the complete company `allowed_products` response becomes the role add/remove checklist; the UI never offers a product outside that company list. When the company catalogue is not explicitly product restricted, the core screen retains Fluid's all-products mode and explicit product-ID replacement plus the read-only paginated product grid. Backend company scope, category membership and product validity remain authoritative.
+
+The frontend performs only basic form-shape validation and confirmation prompts. Company scope, ACL authorization, valid role/resource assignment, manager rules, approval rules, catalogue validation and mutation validity remain authoritative in Fluid/Magento. Returned backend metadata may be reflected in the UI but is not treated as a substitute for backend enforcement.
+
+The remaining purchase-control, commercial and credit-order areas are still availability probes and will become detailed screens as separate focused slices.
 
 ## Authorization rule
 
@@ -76,7 +87,8 @@ The server contract is authoritative:
 - unassigned company detail/management access is rejected by GraphQL authorization;
 - higher-privilege admins retain unrestricted behavior according to Magento ACLs;
 - filtered counts and pagination come from the backend;
-- all Company Management writes are submitted with an explicit `company_id` and must still pass backend admin ACL and company-scope checks.
+- Company Management writes are submitted with an explicit `company_id` and must still pass backend admin ACL and company-scope checks;
+- company catalogue and role catalogue operations retain their separate Magento ACL checks from Fluid's `AdminCatalogPolicy` resolver.
 
 The UI may reflect access returned by the API, but it must not attempt to calculate or expand that access itself.
 
