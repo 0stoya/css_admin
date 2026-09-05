@@ -3,11 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type AccountType = "staff" | "company";
-
 export function LoginForm() {
   const router = useRouter();
-  const [accountType, setAccountType] = useState<AccountType>("staff");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -23,8 +20,7 @@ export function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          account_type: accountType,
-          username: form.get("username"),
+          login: form.get("login"),
           password: form.get("password"),
         }),
       });
@@ -36,7 +32,7 @@ export function LoginForm() {
         return;
       }
 
-      router.replace(body.destination || (accountType === "company" ? "/portal" : "/companies"));
+      router.replace(body.destination || "/companies");
       router.refresh();
     } catch {
       setError("Could not reach the management application server.");
@@ -47,36 +43,16 @@ export function LoginForm() {
 
   return (
     <form className="form" onSubmit={submit}>
-      <fieldset className="field">
-        <legend>Sign in as</legend>
-        <label>
-          <input
-            type="radio"
-            name="accountType"
-            value="staff"
-            checked={accountType === "staff"}
-            onChange={() => setAccountType("staff")}
-          />{" "}
-          Staff / Magento administrator
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="accountType"
-            value="company"
-            checked={accountType === "company"}
-            onChange={() => setAccountType("company")}
-          />{" "}
-          Company user
-        </label>
-      </fieldset>
       <div className="field">
-        <label htmlFor="username">{accountType === "company" ? "Email" : "Username"}</label>
+        <label htmlFor="login">Login</label>
         <input
-          id="username"
-          name="username"
-          type={accountType === "company" ? "email" : "text"}
+          id="login"
+          name="login"
+          type="text"
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
         />
       </div>
