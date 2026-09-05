@@ -157,13 +157,17 @@ OGL registry/company creation remains outside generic import flows.
 
 After portal expansion and import/export, before broad UI polish:
 
-- [ ] verify all staff and company-user navigation targets implemented surfaces.
-- [ ] normalize loading/error/empty states.
+- [x] verify all staff and company-user navigation targets implemented surfaces.
+- [ ] normalize loading/error/empty states through the live regression spot checks.
 - [ ] verify unrestricted vs scoped Magento-admin behavior across all staff routes.
 - [ ] verify company-user role/capability boundaries across all portal routes.
-- [ ] verify destructive confirmations consistently protect important writes.
-- [ ] remove obsolete availability probes.
+- [x] verify destructive confirmations consistently protect important writes.
+- [x] remove obsolete availability probes.
 - [ ] run final lint/typecheck/build and live regression walk-through.
+
+The static core audit removed the old company-management availability probe, made optional pricing failure independent from the company overview, and added explicit confirmations before purchase-template overwrite/counter-reset operations in both Staff and Company Portal surfaces.
+
+The executable runtime matrix is documented in [`docs/core-regression-checklist.md`](docs/core-regression-checklist.md).
 
 The core-completion pass should stay narrow: fix functional inconsistencies and regressions, but defer broad layout, component styling and interaction redesign to the UI/UX phase.
 
@@ -207,9 +211,9 @@ When the Admin/company-management baseline and reusable UI system are stable:
 
 ## Resume point for next chat
 
-Start in **`0stoya/css_admin`** with the **core-completion pass**:
+Start in **`0stoya/css_admin`** with the live **core regression checklist**:
 
-1. run the navigation/authorization/destructive-action regression checklist;
-2. fix only genuine functional inconsistencies and obsolete probes;
-3. run final lint/typecheck/build plus live regression acceptance;
-4. begin the dedicated UI/UX refinement phase.
+1. run `yarn lint`, `yarn typecheck`, and `yarn build`;
+2. execute `docs/core-regression-checklist.md` against unrestricted Staff, scoped Staff, and representative Company-user roles;
+3. fix only genuine functional inconsistencies; move presentation-only findings to the UI/UX backlog;
+4. once green, begin the dedicated UI/UX refinement phase.
