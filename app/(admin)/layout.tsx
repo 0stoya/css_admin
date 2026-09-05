@@ -14,6 +14,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
         <Link href="/companies" className="brand">CSS Admin</Link>
         <nav className="nav" aria-label="Primary navigation">
           <Link href="/companies">Companies</Link>
+          <Link href="/bulk-import">Bulk import</Link>
           <Link href="/ogl">OGL</Link>
           <form action="/api/auth/logout" method="post">
             <button className="button button-secondary" type="submit">Sign out</button>
