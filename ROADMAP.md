@@ -118,57 +118,6 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] lint/typecheck/build and live write journey accepted.
 - [x] merged (`ae4a3fa631c667c75f215c88c49bbfab484c6d62`).
 
-## Current observed portal gap
-
-A company user with an `Admin` company role and all currently available role privileges can successfully manage company users and roles, but `/portal` currently exposes only those sections.
-
-This is **not an authentication defect**. It is the next functional capability gap:
-
-- customer-token users must not reuse Magento-admin `css_admin_*` APIs;
-- company-owned catalogue policy and purchase controls currently need customer-context GraphQL equivalents before the portal can expose them safely;
-- portal navigation should then become capability-driven rather than a single users/roles page.
-
-## Immediate next block: Company Portal capability expansion
-
-### Backend first — `0stoya/Fluid`
-
-Add customer-context GraphQL contracts for legitimate company-owned management domains, reusing existing Fluid ACL/business services rather than duplicating rules.
-
-Priority:
-
-1. **Catalogue policy**
-   - company catalogue visibility/policy;
-   - role category/product restrictions;
-   - company catalogue remains the hard upper bound;
-   - permissions remain backend-authoritative.
-
-2. **Purchase controls**
-   - templates and SKU rules;
-   - role assignment/application/reset where customer role permits it;
-   - allowances/history visibility where permitted;
-   - backend validates every mutation.
-
-The contract must use the selected customer company context and real Fluid role permissions. Do not weaken or mirror the Magento-admin authorization boundary.
-
-### Frontend after backend acceptance
-
-Expand `/portal` into capability-driven sections/navigation:
-
-- Company overview/context.
-- Company users.
-- Roles & permissions.
-- Catalogue controls, only when Fluid authorizes them.
-- Purchase controls, only when Fluid authorizes them.
-- Company orders / credit-order work where existing customer contracts and role permissions allow it.
-
-A user with no permission for a section must not see actionable UI; direct backend calls must still be rejected by Fluid.
-
-Implementation clarification:
-
-- OGL onboarding supplies the company and designated company administrator identity.
-- Additional company-user provisioning remains a staff Admin workflow; `/portal` does not create company users.
-- the first portal capability slice adds customer-context catalogue and purchase-control routes from Fluid PR #61, gated only by Fluid-returned `can_*` capabilities.
-
 ## Import/export block — before broad UI/UX
 
 Complete bulk/data portability after the portal capability model is settled and before the final visual redesign.
@@ -265,6 +214,10 @@ When the Admin/company-management baseline and reusable UI system are stable:
 
 ## Resume point for next chat
 
-Start in **`0stoya/Fluid`** with the customer-context **catalogue policy + purchase controls** capability expansion. Inspect the existing Admin catalogue/purchase-control services and existing customer ACL resources first; reuse them rather than guessing new business rules.
+Start in **`0stoya/css_admin`** with the import/export block:
 
-After backend runtime acceptance, return to **`0stoya/css_admin`** and expand `/portal` into capability-driven sections. Then implement import/export, followed by final regression and UI/UX refinement.
+1. company-user CSV export plus mandatory import preview/apply;
+2. Fluid's versioned company-controls JSON export/import with mandatory dry-run;
+3. export-only operational data where the existing backend contract supports it.
+
+Then complete the final regression pass and UI/UX refinement.
