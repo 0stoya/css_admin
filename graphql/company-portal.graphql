@@ -52,6 +52,13 @@ query CompanyPortalAdministration {
       user_count
       manageable
     }
+    resources {
+      resource_id
+      title
+      parent_resource_id
+      depth
+      assignable
+    }
   }
 }
 
@@ -61,4 +68,89 @@ mutation CompanyPortalSelectCompany($companyId: Int!) {
     selected_company_user_id
     companies { company_id name reference selected }
   }
+}
+
+mutation CompanyPortalCreateRole($name: String!, $sortOrder: Int, $allowedResources: [String!]!) {
+  cssSaveCompanyRole(input: {
+    name: $name
+    sort_order: $sortOrder
+    allowed_resources: $allowedResources
+  }) {
+    role_id
+    name
+    sort_order
+    allowed_resources
+    user_count
+    manageable
+  }
+}
+
+mutation CompanyPortalUpdateRole($roleId: Int!, $name: String!, $sortOrder: Int, $allowedResources: [String!]!) {
+  cssSaveCompanyRole(input: {
+    role_id: $roleId
+    name: $name
+    sort_order: $sortOrder
+    allowed_resources: $allowedResources
+  }) {
+    role_id
+    name
+    sort_order
+    allowed_resources
+    user_count
+    manageable
+  }
+}
+
+mutation CompanyPortalDeleteRole($roleId: Int!) {
+  cssDeleteCompanyRole(role_id: $roleId)
+}
+
+mutation CompanyPortalAddUser(
+  $email: String!
+  $roleId: Int!
+  $managerId: Int
+  $approvalType: String
+  $approvalThreshold: Float
+) {
+  cssAddCompanyUser(input: {
+    email: $email
+    role_id: $roleId
+    manager_id: $managerId
+    approval_type: $approvalType
+    approval_threshold: $approvalThreshold
+  }) {
+    user_id
+    email
+    manager_user_id
+    approval_type
+    approval_threshold
+    roles { role_id name }
+  }
+}
+
+mutation CompanyPortalUpdateUser(
+  $userId: Int!
+  $roleId: Int!
+  $managerId: Int
+  $approvalType: String
+  $approvalThreshold: Float
+) {
+  cssUpdateCompanyUser(input: {
+    user_id: $userId
+    role_id: $roleId
+    manager_id: $managerId
+    approval_type: $approvalType
+    approval_threshold: $approvalThreshold
+  }) {
+    user_id
+    email
+    manager_user_id
+    approval_type
+    approval_threshold
+    roles { role_id name }
+  }
+}
+
+mutation CompanyPortalRemoveUser($userId: Int!) {
+  cssRemoveCompanyUser(user_id: $userId)
 }

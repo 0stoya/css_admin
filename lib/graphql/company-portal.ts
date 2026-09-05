@@ -28,6 +28,14 @@ export type CompanyPortalRole = {
   manageable: boolean;
 };
 
+export type CompanyPortalResource = {
+  resource_id: string;
+  title: string;
+  parent_resource_id: string | null;
+  depth: number;
+  assignable: boolean;
+};
+
 export type CompanyPortalUser = {
   user_id: number;
   customer_id: number;
@@ -54,11 +62,40 @@ export type CompanyPortalAdministration = {
   can_manage_roles: boolean;
   users: CompanyPortalUser[];
   roles: CompanyPortalRole[];
+  resources: CompanyPortalResource[];
+};
+
+export type SaveCompanyPortalRoleInput = {
+  role_id?: number;
+  name: string;
+  sort_order?: number;
+  allowed_resources: string[];
+};
+
+export type AddCompanyPortalUserInput = {
+  email: string;
+  role_id: number;
+  manager_id?: number | null;
+  approval_type?: string;
+  approval_threshold?: number | null;
+};
+
+export type UpdateCompanyPortalUserInput = {
+  user_id: number;
+  role_id: number;
+  manager_id?: number | null;
+  approval_type?: string;
+  approval_threshold?: number | null;
 };
 
 type ContextData = { css_company_context: CompanyPortalContext };
 type SelectCompanyData = { cssSelectCompany: CompanyPortalContext };
 type AdministrationData = { css_company_admin: CompanyPortalAdministration };
+type SaveRoleData = { cssSaveCompanyRole: CompanyPortalRole };
+type DeleteRoleData = { cssDeleteCompanyRole: boolean };
+type AddUserData = { cssAddCompanyUser: CompanyPortalUser };
+type UpdateUserData = { cssUpdateCompanyUser: CompanyPortalUser };
+type RemoveUserData = { cssRemoveCompanyUser: boolean };
 
 const CONTEXT_QUERY = /* GraphQL */ `
   query CompanyPortalContext {
@@ -142,7 +179,79 @@ const ADMINISTRATION_QUERY = /* GraphQL */ `
         user_count
         manageable
       }
+      resources {
+        resource_id
+        title
+        parent_resource_id
+        depth
+        assignable
+      }
     }
+  }
+`;
+
+const SAVE_ROLE_MUTATION = /* GraphQL */ `
+  mutation CompanyPortalSaveRole($input: CssSaveCompanyRoleInput!) {
+    cssSaveCompanyRole(input: $input) {
+      role_id
+      name
+      sort_order
+      allowed_resources
+      user_count
+      manageable
+    }
+  }
+`;
+
+const DELETE_ROLE_MUTATION = /* GraphQL */ `
+  mutation CompanyPortalDeleteRole($roleId: Int!) {
+    cssDeleteCompanyRole(role_id: $roleId)
+  }
+`;
+
+const ADD_USER_MUTATION = /* GraphQL */ `
+  mutation CompanyPortalAddUser($input: CssAddCompanyUserInput!) {
+    cssAddCompanyUser(input: $input) {
+      user_id
+      customer_id
+      firstname
+      lastname
+      email
+      is_company_admin
+      manager_user_id
+      approval_type
+      approval_threshold
+      can_checkout
+      can_approve_credit_orders
+      can_auto_approve_credit_order
+      roles { role_id name sort_order allowed_resources user_count manageable }
+    }
+  }
+`;
+
+const UPDATE_USER_MUTATION = /* GraphQL */ `
+  mutation CompanyPortalUpdateUser($input: CssUpdateCompanyUserInput!) {
+    cssUpdateCompanyUser(input: $input) {
+      user_id
+      customer_id
+      firstname
+      lastname
+      email
+      is_company_admin
+      manager_user_id
+      approval_type
+      approval_threshold
+      can_checkout
+      can_approve_credit_orders
+      can_auto_approve_credit_order
+      roles { role_id name sort_order allowed_resources user_count manageable }
+    }
+  }
+`;
+
+const REMOVE_USER_MUTATION = /* GraphQL */ `
+  mutation CompanyPortalRemoveUser($userId: Int!) {
+    cssRemoveCompanyUser(user_id: $userId)
   }
 `;
 
@@ -165,4 +274,44 @@ export async function getCompanyPortalAdministration() {
     {},
   );
   return data.css_company_admin;
+}
+
+export async function saveCompanyPortalRole(input: SaveCompanyPortalRoleInput) {
+  const data = await customerGraphqlRequest<SaveRoleData, { input: SaveCompanyPortalRoleInput }>(
+    SAVE_ROLE_MUTATION,
+    { input },
+  );
+  return data.cssSaveCompanyRole;
+}
+
+export async function deleteCompanyPortalRole(roleId: number) {
+  const data = await customerGraphqlRequest<DeleteRoleData, { roleId: number }>(
+    DELETE_ROLE_MUTATION,
+    { roleId },
+  );
+  return data.cssDeleteCompanyRole;
+}
+
+export async function addCompanyPortalUser(input: AddCompanyPortalUserInput) {
+  const data = await customerGraphqlRequest<AddUserData, { input: AddCompanyPortalUserInput }>(
+    ADD_USER_MUTATION,
+    { input },
+  );
+  return data.cssAddCompanyUser;
+}
+
+export async function updateCompanyPortalUser(input: UpdateCompanyPortalUserInput) {
+  const data = await customerGraphqlRequest<UpdateUserData, { input: UpdateCompanyPortalUserInput }>(
+    UPDATE_USER_MUTATION,
+    { input },
+  );
+  return data.cssUpdateCompanyUser;
+}
+
+export async function removeCompanyPortalUser(userId: number) {
+  const data = await customerGraphqlRequest<RemoveUserData, { userId: number }>(
+    REMOVE_USER_MUTATION,
+    { userId },
+  );
+  return data.cssRemoveCompanyUser;
 }
