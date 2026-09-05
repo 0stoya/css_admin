@@ -34,6 +34,12 @@ The low-level `cssAdminCreateCompany` mutation may remain available in the backe
 
 OGL-owned fields must stay out of the generic company edit surface because a later sync can overwrite them. This includes CREF/reference, OGL status, address/contact data, designated administrator/email and normal sales-representative assignment.
 
+## Product rule: company credit is read-only
+
+The Admin app may display the company credit account returned by Fluid, including limit, usage, remaining amount, currency and over-limit state, but must **not** expose credit writes.
+
+The low-level `cssAdminSaveCompanyCredit` mutation may remain in the backend compatibility contract, but it is not an Admin product workflow and must not be called by this application.
+
 ## Completed core
 
 ### Foundation — PR #1
@@ -110,27 +116,36 @@ Functional acceptance passed on the real Admin environment. UI/UX refinement rem
 
 Company settings persistence and the destructive disposable-company lifecycle both passed on the real environment. Fluid PR #58 is therefore accepted for the guarded OGL-backed delete flow.
 
-## Current core slice: payment configuration
+### Payment configuration — PR #8
 
-Use only the accepted Fluid company-payment contract and its existing company-management ACL.
+- [x] `/companies/[id]/payment` payment configuration screen.
+- [x] read `is_configured`, `is_specific`, allowed methods and backend-provided payment options.
+- [x] save payment flags and selected method codes through `cssAdminSaveCompanyPaymentConfiguration`.
+- [x] preserve backend validation for unknown methods and empty specific-method selections.
+- [x] only Magento-active payment methods are returned/accepted after Fluid PR #59.
+- [x] restricted admins remain backend-authoritative.
 
-- [ ] `/companies/[id]/payment` payment configuration screen.
-- [ ] read `is_configured`, `is_specific`, allowed methods and the backend-provided available method options.
-- [ ] save payment flags and selected method codes through `cssAdminSaveCompanyPaymentConfiguration`.
-- [ ] preserve backend validation for unknown methods and empty specific-method selections.
-- [ ] expose the screen only when the existing commercial availability probe succeeds.
-- [ ] restricted admins remain backend-authoritative rather than gaining client-inferred write access.
+Runtime acceptance passed on the real Admin environment. Fluid PR #59 fixed the app-discovered disabled-payment-method contract defect and is accepted.
+
+## Current core slice: company credit visibility
+
+Company credit is a read-only Admin product surface even though the backend compatibility schema contains a write mutation.
+
+- [ ] `/companies/[id]/credit` read-only company credit screen.
+- [ ] display credit account existence, credit ID and currency.
+- [ ] display backend-returned credit limit, used amount and remaining amount without client-side calculation.
+- [ ] display the backend-returned allow-over-limit state as informational only.
+- [ ] do not add a save action, edit form or call to `cssAdminSaveCompanyCredit`.
+- [ ] probe credit availability separately from payment because the backend credit ACL is distinct.
+- [ ] restricted admins remain backend-authoritative rather than gaining client-inferred access.
 
 ## Remaining core — priority order
 
 ### 1. Commercial configuration
 
-After payment configuration is accepted:
+After read-only company credit is accepted:
 
-- [ ] company credit-limit configuration.
 - [ ] company product discounts.
-
-Credit balance mutation must not be invented if the backend intentionally exposes configuration only.
 
 ### 2. Admin credit orders
 
@@ -165,6 +180,7 @@ Known candidates:
 - [ ] company-user and role forms with stronger layout and contextual controls.
 - [ ] company settings/lifecycle layout, richer parent-company selector and destructive confirmation UX.
 - [ ] payment configuration interaction/layout refinement after functional acceptance.
+- [ ] company-credit presentation refinement after functional acceptance.
 - [ ] tables, filters, pagination and mobile/responsive behavior.
 - [ ] navigation hierarchy / breadcrumbs / section layout.
 - [ ] consistent buttons, badges, form controls, confirmation dialogs and feedback states.
@@ -180,6 +196,7 @@ Accepted/discovered examples:
 
 - Fluid PR #57 fixed admin role-product catalogue boundaries discovered while building Admin catalogue policy.
 - Fluid PR #58 adds OGL-aware company deletion discovered while defining the Admin company lifecycle; its destructive lifecycle acceptance passed with Admin PR #7.
+- Fluid PR #59 restricts the headless company-payment option/validation boundary to Magento-active methods; runtime acceptance passed with Admin PR #8.
 
 ## After Admin
 
@@ -191,6 +208,6 @@ When the Admin core and UI baseline are stable:
 
 ## Immediate next slice
 
-**Payment configuration: read backend options -> save company flags/methods -> verify restricted access.**
+**Company credit visibility: read backend credit state -> display only -> verify credit ACL boundary.**
 
-After acceptance, continue with **company credit -> discounts**.
+After acceptance, continue with **company product discounts**.

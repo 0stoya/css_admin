@@ -1,0 +1,18 @@
+# Read-only Admin product contract for company credit state.
+#
+# The backend compatibility schema also contains a credit save mutation, but the
+# Admin product intentionally does not expose it. Company credit values are
+# read-only here.
+
+query AdminCompanyCredit($companyId: Int!) {
+  css_admin_company_credit(company_id: $companyId) {
+    company_id
+    credit_id
+    has_credit_account
+    credit_limit
+    used_amount
+    remaining_amount
+    currency
+    allow_over_limit
+  }
+}

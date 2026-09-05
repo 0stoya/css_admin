@@ -26,6 +26,7 @@ type ManagementProbeData = {
   catalog: Typename | null;
   purchase_controls: Typename | null;
   commercial: Typename | null;
+  credit: Typename | null;
   credit_orders: Typename | null;
 };
 
@@ -65,6 +66,7 @@ const MANAGEMENT_PROBE_QUERY = /* GraphQL */ `
     catalog: css_admin_company_catalog_policy(company_id: $companyId) { __typename }
     purchase_controls: css_admin_purchase_controls(company_id: $companyId) { __typename }
     commercial: css_admin_company_payment_configuration(company_id: $companyId) { __typename }
+    credit: css_admin_company_credit(company_id: $companyId) { __typename }
     credit_orders: css_admin_credit_orders(company_id: $companyId, currentPage: 1, pageSize: 1) { __typename }
   }
 `;
@@ -97,6 +99,7 @@ export async function getCompanyManagementAvailability(companyId: number) {
     catalog: Boolean(data?.catalog),
     purchase_controls: Boolean(data?.purchase_controls),
     commercial: Boolean(data?.commercial),
+    credit: Boolean(data?.credit),
     credit_orders: Boolean(data?.credit_orders),
   };
 }
