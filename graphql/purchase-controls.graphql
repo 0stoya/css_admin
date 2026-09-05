@@ -1,0 +1,151 @@
+query AdminPurchaseControls($companyId: Int!) {
+  css_admin_purchase_controls(company_id: $companyId) {
+    company_id
+    templates {
+      template_id
+      name
+      rules {
+        rule_id
+        product_id
+        sku
+        product_name
+        quantity_limit
+        duration_days
+        start_date
+      }
+      assigned_roles {
+        role_id
+        role_name
+      }
+    }
+  }
+}
+
+query AdminAppliedPurchaseControls(
+  $companyId: Int!
+  $currentPage: Int!
+  $pageSize: Int!
+  $search: String
+) {
+  css_admin_applied_purchase_controls(
+    company_id: $companyId
+    currentPage: $currentPage
+    pageSize: $pageSize
+    search: $search
+  ) {
+    total_count
+    items {
+      applied_id
+      user_id
+      customer_id
+      email
+      product_id
+      sku
+      product_name
+      quantity_limit
+      duration_days
+      start_date
+      purchases_so_far
+      remaining_quantity
+    }
+    page_info {
+      page_size
+      current_page
+      total_pages
+    }
+  }
+}
+
+query AdminPurchaseControlHistory(
+  $companyId: Int!
+  $currentPage: Int!
+  $pageSize: Int!
+  $search: String
+) {
+  css_admin_purchase_control_history(
+    company_id: $companyId
+    currentPage: $currentPage
+    pageSize: $pageSize
+    search: $search
+  ) {
+    total_count
+    items {
+      log_id
+      applied_id
+      user_id
+      customer_id
+      email
+      product_id
+      sku
+      product_name
+      sales_order_item_id
+      order_number
+      purchased_quantity
+      ordered_at
+    }
+    page_info {
+      page_size
+      current_page
+      total_pages
+    }
+  }
+}
+
+mutation AdminSavePurchaseControlTemplate(
+  $companyId: Int!
+  $input: CssAdminSavePurchaseControlTemplateInput!
+) {
+  cssAdminSavePurchaseControlTemplate(company_id: $companyId, input: $input) {
+    template_id
+    name
+  }
+}
+
+mutation AdminDeletePurchaseControlTemplate(
+  $companyId: Int!
+  $templateId: Int!
+  $confirmName: String!
+) {
+  cssAdminDeletePurchaseControlTemplate(
+    company_id: $companyId
+    template_id: $templateId
+    confirm_name: $confirmName
+  )
+}
+
+mutation AdminAssignPurchaseControlTemplate(
+  $companyId: Int!
+  $roleId: Int!
+  $templateId: Int
+  $applyToUsers: Boolean!
+) {
+  cssAdminAssignPurchaseControlTemplate(
+    company_id: $companyId
+    role_id: $roleId
+    template_id: $templateId
+    apply_to_users: $applyToUsers
+  ) {
+    company_id
+    role_id
+    role_name
+    template_id
+    template_name
+    applied_users
+  }
+}
+
+mutation AdminApplyPurchaseControlTemplate($companyId: Int!, $templateId: Int!) {
+  cssAdminApplyPurchaseControlTemplate(company_id: $companyId, template_id: $templateId) {
+    company_id
+    template_id
+    affected_users
+  }
+}
+
+mutation AdminResetPurchaseControlCounters($companyId: Int!, $templateId: Int!) {
+  cssAdminResetPurchaseControlCounters(company_id: $companyId, template_id: $templateId) {
+    company_id
+    template_id
+    affected_users
+  }
+}
