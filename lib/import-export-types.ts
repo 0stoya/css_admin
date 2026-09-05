@@ -48,3 +48,12 @@ export type CompanyControlsImportState = {
   result: CompanyControlsImportSummary | null;
   error: string | null;
 };
+
+export type CompanyControlsCsvImportState = {
+  phase: "idle" | "preview" | "applied" | "error";
+  sourceCsv: string;
+  sourceCompanyId: number | null;
+  options: CompanyControlsImportOptions;
+  result: CompanyControlsImportSummary | null;
+  error: string | null;
+};
