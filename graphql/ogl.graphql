@@ -1,0 +1,132 @@
+# OGL Admin frontend contract. Runtime code uses equivalent typed fetch strings in lib/graphql/ogl.ts.
+
+query AdminOglCompanies(
+  $currentPage: Int!
+  $pageSize: Int!
+  $search: String
+  $syncEnabled: Boolean
+  $imported: Boolean
+) {
+  css_admin_ogl_companies(
+    currentPage: $currentPage
+    pageSize: $pageSize
+    search: $search
+    sync_enabled: $syncEnabled
+    imported: $imported
+  ) {
+    ogl_enabled
+    company_import_enabled
+    total_count
+    items {
+      cref
+      sync_enabled
+      company_id
+      imported
+      updated_at
+      ogl_rep_code
+      rep_override_enabled
+      rep_override_user_id
+      mapped_sales_representative_id
+      effective_sales_representative_id
+      sales_representative_source
+    }
+    page_info { page_size current_page total_pages }
+  }
+}
+
+query AdminOglCompanyPreview($cref: String!) {
+  css_admin_ogl_company_preview(cref: $cref) {
+    cref
+    importable
+    reason
+    sync_enabled
+    existing_company_id
+    company_name
+    company_status
+    admin_email
+    admin_firstname
+    admin_lastname
+    address_line_1
+    address_line_2
+    city
+    region
+    postcode
+    country_code
+    telephone
+    website_id
+    credit_limit
+    balance
+    cash_sale
+    delivery_code
+    ogl_rep_code
+    rep_override_enabled
+    rep_override_user_id
+    mapped_sales_representative_id
+    effective_sales_representative_id
+    sales_representative_source
+  }
+}
+
+query AdminOglRepMappings {
+  css_admin_ogl_rep_mappings {
+    rep_code
+    admin_user_id
+    username
+    firstname
+    lastname
+    email
+    active
+    affected_company_count
+  }
+}
+
+mutation AdminFetchOglCompanies {
+  cssAdminFetchOglCompanies { fetched_count created_count existing_count }
+}
+
+mutation AdminSetOglCompanySync($cref: String!, $enabled: Boolean!) {
+  cssAdminSetOglCompanySync(cref: $cref, enabled: $enabled) {
+    queued_count
+    company { cref sync_enabled company_id imported updated_at }
+  }
+}
+
+mutation AdminImportOglCompanies($crefs: [String!]) {
+  cssAdminImportOglCompanies(crefs: $crefs) {
+    requested_count
+    eligible_count
+    queued_count
+    skipped_crefs
+  }
+}
+
+mutation AdminSaveOglRepMapping($repCode: String!, $adminUserId: Int!) {
+  cssAdminSaveOglRepMapping(rep_code: $repCode, admin_user_id: $adminUserId) {
+    rep_code
+    admin_user_id
+    affected_company_count
+    deleted
+  }
+}
+
+mutation AdminDeleteOglRepMapping($repCode: String!, $confirmRepCode: String!) {
+  cssAdminDeleteOglRepMapping(rep_code: $repCode, confirm_rep_code: $confirmRepCode) {
+    rep_code
+    admin_user_id
+    affected_company_count
+    deleted
+  }
+}
+
+mutation AdminSetOglCompanyRepOverride($cref: String!, $enabled: Boolean!, $adminUserId: Int) {
+  cssAdminSetOglCompanyRepOverride(cref: $cref, enabled: $enabled, admin_user_id: $adminUserId) {
+    cref
+    company_id
+    ogl_rep_code
+    rep_override_enabled
+    rep_override_user_id
+    mapped_sales_representative_id
+    effective_sales_representative_id
+    sales_representative_source
+  }
+}

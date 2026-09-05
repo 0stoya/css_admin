@@ -22,6 +22,18 @@ followed by a live runtime check against the deployed Fluid GraphQL backend.
 
 GitHub Actions are not the current acceptance authority for this project.
 
+## Product rule: company onboarding is OGL-only
+
+The Admin app must **not** expose manual company creation.
+
+The supported onboarding flow is:
+
+**OGL registry -> live preview -> enable sync/import -> Magento company**.
+
+The low-level `cssAdminCreateCompany` mutation may remain available in the backend compatibility contract, but it is not an Admin product workflow.
+
+OGL-owned fields must stay out of the generic company edit surface because a later sync can overwrite them. This includes CREF/reference, OGL status, address/contact data, designated administrator/email and normal sales-representative assignment.
+
 ## Completed core
 
 ### Foundation — PR #1
@@ -72,21 +84,33 @@ GitHub Actions are not the current acceptance authority for this project.
 
 The current purchase-control rule editor is intentionally functional. A richer SKU selector/modal is deferred to the UI pass.
 
+## Current core slice: OGL administration
+
+Target the existing Fluid OGL administration contract only:
+
+- [ ] `/ogl` registry/search/filtering.
+- [ ] fetch OGL company references into the local registry.
+- [ ] live OGL company preview before import.
+- [ ] enable/disable sync; enabling queues an immediate import.
+- [ ] queue selected sync-enabled CREFs or all enabled CREFs.
+- [ ] OGL rep-code -> Magento admin mappings.
+- [ ] imported-company rep overrides.
+- [ ] backend ACL/config/error states shown without duplicating OGL rules in the frontend.
+
+Fluid PR #58 is merged and deployed. It adds the OGL-aware company-delete guard required by this lifecycle: deletion is blocked while sync is enabled; after a valid delete the CREF registry row is retained and its imported company ID is cleared. Its destructive disposable-company acceptance sequence still needs to pass before that compatibility item is marked accepted.
+
 ## Remaining core — priority order
 
-### 1. Company create/update/delete
+### 1. Company configuration/lifecycle
 
-Close the base company-management gap before moving deeper into commercial/admin operations.
+After OGL onboarding is accepted, expose only Magento-local company settings that are safe to maintain outside the OGL sync contract.
 
-Target existing Fluid admin company operations and options for:
+- [ ] customer-group / local configuration fields supported by the actual GraphQL schema.
+- [ ] other genuinely Magento-local fields after source-ownership review.
+- [ ] safe delete flow using Fluid PR #58 behavior and exact-reference confirmation.
+- [ ] read-only presentation for OGL-owned identity/contact/status/admin/sales-rep fields.
 
-- [ ] create company.
-- [ ] update company identity/configuration.
-- [ ] customer group / sales representative selection where exposed by the backend.
-- [ ] activate/deactivate state where supported.
-- [ ] delete company with explicit destructive confirmation and backend validation.
-
-Do not infer fields or rules from Magento UI behaviour; use the actual Fluid GraphQL schema.
+Do not add a manual create form.
 
 ### 2. Commercial configuration
 
@@ -98,15 +122,7 @@ Build one focused block at a time:
 
 Credit balance mutation must not be invented if the backend intentionally exposes configuration only.
 
-### 3. OGL administration
-
-- [ ] OGL company registry/search.
-- [ ] preview/import company.
-- [ ] sync controls/status.
-- [ ] sales-representative mapping.
-- [ ] relevant destructive/retry actions exposed by Fluid.
-
-### 4. Admin credit orders
+### 3. Admin credit orders
 
 - [ ] company credit-order queue/list/filter/search.
 - [ ] detail view.
@@ -116,7 +132,7 @@ Credit balance mutation must not be invented if the backend intentionally expose
 - [ ] approve/reject/cancel/place/PO-number actions where the backend authorizes them.
 - [ ] payment-resume handling only if the configured business flow actually produces `approved_pending_payment`.
 
-### 5. Core-completion pass
+### 4. Core-completion pass
 
 Before broad UI polish:
 
@@ -133,6 +149,7 @@ Once the core Admin surface is complete, perform a dedicated UI pass without cha
 
 Known candidates:
 
+- [ ] replace raw Magento admin IDs in OGL rep mapping/override forms with richer admin selectors.
 - [ ] purchase-control SKU picker/modal instead of raw `SKU | quantity | duration | date` text lines.
 - [ ] catalogue product search/select controls and clearer role add/remove presentation.
 - [ ] company-user and role forms with stronger layout and contextual controls.
@@ -147,7 +164,10 @@ The rule for this phase is **improve interaction and presentation, not duplicate
 
 If a screen exposes a legitimate contract defect, fix it in `0stoya/Fluid` and validate it on Magento rather than adding a frontend workaround.
 
-Example already accepted: Fluid PR #57 fixed admin role-product catalogue boundaries discovered while building PR #4.
+Accepted/discovered examples:
+
+- Fluid PR #57 fixed admin role-product catalogue boundaries discovered while building Admin catalogue policy.
+- Fluid PR #58 adds OGL-aware company deletion discovered while defining the Admin company lifecycle.
 
 ## After Admin
 
@@ -159,6 +179,6 @@ When the Admin core and UI baseline are stable:
 
 ## Immediate next slice
 
-**Company create/update/delete.**
+**OGL administration: registry -> preview -> sync/import -> rep mapping/override.**
 
-After acceptance, continue with **payment configuration -> company credit -> discounts**.
+After acceptance, continue with **company configuration/lifecycle -> payment configuration -> company credit -> discounts**.
