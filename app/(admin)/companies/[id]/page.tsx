@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCompany, getCompanyManagementAvailability } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { getCompanyPricingStatus } from "@/lib/graphql/company-pricing";
 
 const managementAreas = {
   management: {
@@ -40,14 +41,15 @@ const managementLinks: Partial<Record<keyof typeof managementAreas, (companyId: 
 
 async function loadCompany(companyId: number) {
   try {
-    const [company, availability] = await Promise.all([
+    const [company, availability, pricing] = await Promise.all([
       getCompany(companyId),
       getCompanyManagementAvailability(companyId),
+      getCompanyPricingStatus(companyId),
     ]);
 
-    return { company, availability, error: null };
+    return { company, availability, pricing, error: null };
   } catch (error) {
-    return { company: null, availability: null, error: graphQLErrorMessage(error) };
+    return { company: null, availability: null, pricing: null, error: graphQLErrorMessage(error) };
   }
 }
 
@@ -59,9 +61,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const { company, availability, error } = await loadCompany(companyId);
+  const { company, availability, pricing, error } = await loadCompany(companyId);
 
-  if (!company || !availability) {
+  if (!company || !availability || !pricing) {
     return (
       <div className="stack">
         <div><Link className="back-link" href="/companies">← Companies</Link></div>
@@ -75,6 +77,8 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       </div>
     );
   }
+
+  const pricingSource = pricing.has_custom_prices ? "OGL company-specific pricing" : "Magento pricing";
 
   return (
     <div className="stack">
@@ -104,6 +108,31 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         </div>
         <Link className="button button-link" href={`/companies/${company.company_id}/settings`}>
           Open company settings
+        </Link>
+      </section>
+
+      <section className="card stack">
+        <div className="card-heading-row">
+          <div>
+            <p className="eyebrow">Pricing</p>
+            <h2>{pricingSource}</h2>
+            <p className="muted">
+              {pricing.has_custom_prices
+                ? `${pricing.custom_price_count} custom price row${pricing.custom_price_count === 1 ? "" : "s"}; custom prices ${pricing.status_message}.`
+                : `No OGL custom prices are currently available; ${pricing.status_message}.`}
+            </p>
+          </div>
+          <div className={`badge ${pricing.has_custom_prices ? "badge-ok" : "badge-neutral"}`}>
+            {pricing.has_custom_prices ? "Custom pricing" : "Magento fallback"}
+          </div>
+        </div>
+        <dl className="detail-list">
+          <dt>Company active</dt><dd>{pricing.company_active ? "Yes" : "No"}</dd>
+          <dt>OGL sync</dt><dd>{pricing.sync_enabled ? "Enabled" : "Disabled"}</dd>
+          <dt>Import status</dt><dd>{pricing.import_status}</dd>
+        </dl>
+        <Link className="button button-link" href={`/companies/${company.company_id}/pricing`}>
+          View pricing status & custom prices
         </Link>
       </section>
 

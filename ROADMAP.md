@@ -42,7 +42,7 @@ The Admin app may display the company credit account returned by Fluid, includin
 
 The low-level `cssAdminSaveCompanyCredit` mutation may remain in the backend compatibility contract, but it is not an Admin product workflow and must not be called by this application.
 
-### Product pricing is backend-authoritative
+### Product pricing is backend-authoritative and read-only in Admin
 
 The Admin app does **not** offer company discount or product-price CRUD.
 
@@ -51,9 +51,9 @@ Product pricing comes from the accepted Fluid/Magento pricing path:
 - OGL/company-specific pricing where a company-specific price exists;
 - otherwise the normal Magento product pricing path.
 
-`Css\Commerce\Model\Pricing\CompanyPriceResolver` resolves Fluid's company-specific price model and returns `null` when no company-specific price exists, leaving the normal Magento pricing path authoritative.
+The Admin app may display read-only pricing visibility from the accepted Fluid contract: company/import status, last import time, custom-price count, imported SKU prices and tier-price breaks. It must not create, edit, delete or upload pricing.
 
-The low-level admin company-discount GraphQL operations may remain in the compatibility schema, but they are **not** an Admin product workflow and must not be surfaced by this application.
+`Css\Commerce\Model\Pricing\CompanyPriceResolver` remains part of the storefront source-of-truth pricing path. The low-level admin company-discount GraphQL operations may remain in the compatibility schema, but they are **not** an Admin product workflow and must not be surfaced by this application.
 
 ## Completed core
 
@@ -125,7 +125,20 @@ The low-level admin company-discount GraphQL operations may remain in the compat
 
 Runtime acceptance passed on the real Admin environment.
 
-## Current core slice: Admin credit orders
+## Current core slice: Company pricing visibility
+
+Fluid PR #60 is merged, deployed and runtime-accepted. Build the Admin read-only surface against that accepted contract.
+
+- [x] company detail pricing-status summary.
+- [x] pricing source indication: OGL company-specific pricing when rows exist, Magento pricing otherwise.
+- [x] OGL import status/progress and authoritative last-import message.
+- [x] custom-price count.
+- [x] searchable/paginated company-specific SKU prices.
+- [x] tier-price breaks.
+- [x] no price, discount or import mutations.
+- [ ] Admin runtime acceptance on the real environment.
+
+## Next core slice: Admin credit orders
 
 Build against the accepted explicit-company Admin credit-order contract. The backend remains authoritative for company scope, actor context and allowed actions.
 
@@ -162,6 +175,7 @@ Known candidates:
 - [ ] stronger company-user and role form layout.
 - [ ] company settings/lifecycle layout refinement.
 - [ ] payment and company-credit presentation refinement.
+- [ ] pricing-status and custom-price table presentation refinement.
 - [ ] tables, filters, pagination and responsive behavior.
 - [ ] navigation hierarchy / breadcrumbs / section layout.
 - [ ] consistent buttons, badges, form controls, confirmation dialogs and feedback states.
@@ -178,8 +192,9 @@ Accepted/discovered examples:
 - Fluid PR #57: admin role-product catalogue boundary compatibility.
 - Fluid PR #58: OGL-aware company deletion.
 - Fluid PR #59: headless payment options restricted to Magento-active methods.
+- Fluid PR #60: read-only Admin OGL company-pricing status, import metadata and price-list visibility.
 
-The pricing compatibility layer already includes `CompanyPriceResolver`, backed by Fluid company-specific pricing and returning no company-specific override when one does not exist. Do not replace that pricing source of truth with Admin-managed discount CRUD.
+Do not replace the accepted pricing source of truth with Admin-managed discount CRUD.
 
 ## After Admin
 
@@ -191,4 +206,4 @@ When the Admin core and UI baseline are stable:
 
 ## Immediate next slice
 
-**Admin credit orders: queue/list/filter/search -> detail/history/comments -> actor-authorized lifecycle actions.**
+Finish **Company pricing visibility** runtime acceptance, then continue with **Admin credit orders: queue/list/filter/search -> detail/history/comments -> actor-authorized lifecycle actions**.
