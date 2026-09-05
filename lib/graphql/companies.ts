@@ -20,8 +20,9 @@ export type CompanyList = {
 type CompanyListData = { css_admin_companies: CompanyList };
 type CompanyDetailData = { css_admin_company: CompanySummary };
 type Typename = { __typename: string };
+type ManagementAccess = { company_id: number };
 type ManagementProbeData = {
-  management: Typename | null;
+  management: ManagementAccess | null;
   catalog: Typename | null;
   purchase_controls: Typename | null;
   commercial: Typename | null;
@@ -60,7 +61,7 @@ const COMPANY_DETAIL_QUERY = /* GraphQL */ `
 
 const MANAGEMENT_PROBE_QUERY = /* GraphQL */ `
   query AdminCompanyManagementAvailability($companyId: Int!) {
-    management: css_admin_company_management(company_id: $companyId) { __typename }
+    management: css_admin_company_management(company_id: $companyId) { company_id }
     catalog: css_admin_company_catalog_policy(company_id: $companyId) { __typename }
     purchase_controls: css_admin_purchase_controls(company_id: $companyId) { __typename }
     commercial: css_admin_company_payment_configuration(company_id: $companyId) { __typename }

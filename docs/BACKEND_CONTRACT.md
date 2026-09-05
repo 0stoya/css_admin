@@ -41,9 +41,9 @@ Content-Type: application/json
 
 The app currently uses plain typed `fetch` with `cache: "no-store"`.
 
-## First vertical slice
+## Implemented Admin surface
 
-Implemented operations:
+Current operations:
 
 - `css_admin_companies`
 - `css_admin_company`
@@ -53,7 +53,15 @@ Implemented operations:
 - `css_admin_company_payment_configuration`
 - `css_admin_credit_orders`
 
-The five management operations are initially queried only for `__typename` to establish server-authorized availability. Detailed management screens will add real fields from the authoritative schema as separate focused slices.
+`css_admin_company_management` now has a detailed read-only screen backed by its real schema fields:
+
+- company users and their manager / approval / checkout capabilities;
+- company roles, user counts, manageability and assigned Fluid resources;
+- the company ACL resource hierarchy and assignability metadata.
+
+The remaining catalogue, purchase-control, commercial and credit-order areas are still availability probes and will become detailed screens as separate focused slices.
+
+Company-management write mutations already exist in the backend contract, but they are intentionally not enabled in this read slice. User and role writes should be added with explicit form validation and mutation-specific staging checks rather than inferred from the read model.
 
 ## Authorization rule
 
