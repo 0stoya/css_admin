@@ -3,10 +3,12 @@ import { requestMagentoAdminToken } from "@/lib/magento/admin-auth";
 import { requestMagentoCustomerToken } from "@/lib/magento/customer-auth";
 import { setAdminToken, setCompanyToken } from "@/lib/session";
 
-type AccountType = "staff" | "company";
+function isEmailLogin(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
 
 export async function POST(request: Request) {
-  let payload: { username?: unknown; password?: unknown; account_type?: unknown };
+  let payload: { login?: unknown; username?: unknown; password?: unknown };
 
   try {
     payload = await request.json();
@@ -14,22 +16,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid login request." }, { status: 400 });
   }
 
-  const username = typeof payload.username === "string" ? payload.username.trim() : "";
+  const rawLogin = typeof payload.login === "string"
+    ? payload.login
+    : typeof payload.username === "string"
+      ? payload.username
+      : "";
+  const login = rawLogin.trim();
   const password = typeof payload.password === "string" ? payload.password : "";
-  const accountType: AccountType = payload.account_type === "company" ? "company" : "staff";
 
-  if (!username || !password) {
-    return NextResponse.json({ error: "Username and password are required." }, { status: 400 });
+  if (!login || !password) {
+    return NextResponse.json({ error: "Login and password are required." }, { status: 400 });
   }
 
   try {
-    if (accountType === "company") {
-      const token = await requestMagentoCustomerToken(username, password);
+    if (isEmailLogin(login)) {
+      const token = await requestMagentoCustomerToken(login, password);
       await setCompanyToken(token);
       return NextResponse.json({ ok: true, destination: "/portal" });
     }
 
-    const token = await requestMagentoAdminToken(username, password);
+    const token = await requestMagentoAdminToken(login, password);
     await setAdminToken(token);
     return NextResponse.json({ ok: true, destination: "/companies" });
   } catch (error) {
