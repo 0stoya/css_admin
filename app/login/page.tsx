@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/login-form";
-import { getAdminToken } from "@/lib/session";
+import { getAdminToken, getCompanyToken } from "@/lib/session";
 
 export default async function LoginPage({
   searchParams,
@@ -12,13 +12,18 @@ export default async function LoginPage({
   if (await getAdminToken()) {
     redirect("/companies");
   }
+  if (await getCompanyToken()) {
+    redirect("/portal");
+  }
 
   return (
     <main className="auth-wrap">
       <section className="auth-card">
         <p className="eyebrow">Fluid / CSS Commerce</p>
-        <h1>Admin sign in</h1>
-        <p className="muted">Use your Magento admin credentials. The resulting admin token is stored only in an HttpOnly session cookie.</p>
+        <h1>Management sign in</h1>
+        <p className="muted">
+          Staff use Magento administrator credentials. Company users use their Magento customer email and password; Fluid permissions decide which company-management features are available.
+        </p>
         {reason === "expired" ? (
           <div className="error" role="status">
             Your session expired. Sign in again to continue.

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { clearAdminToken } from "@/lib/session";
+import { clearSession } from "@/lib/session";
 
 export async function POST(request: Request) {
-  await clearAdminToken();
+  await clearSession();
   return NextResponse.redirect(new URL("/login", request.url), 303);
 }

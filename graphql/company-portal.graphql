@@ -1,0 +1,64 @@
+# Customer-token company management portal acceptance.
+# Use a Magento customer bearer token, not an admin token.
+
+query CompanyPortalContext {
+  css_company_context {
+    authenticated
+    customer_id
+    selected_company_id
+    selected_company_user_id
+    is_company_customer
+    is_personal_context
+    companies {
+      company_id
+      company_user_id
+      name
+      reference
+      active
+      selected
+    }
+  }
+}
+
+query CompanyPortalAdministration {
+  css_company_admin {
+    company_id
+    company_user_id
+    is_company_admin
+    can_view_users
+    can_manage_users
+    can_view_roles
+    can_manage_roles
+    users {
+      user_id
+      customer_id
+      firstname
+      lastname
+      email
+      is_company_admin
+      manager_user_id
+      approval_type
+      approval_threshold
+      can_checkout
+      can_approve_credit_orders
+      can_auto_approve_credit_order
+      roles { role_id name manageable }
+    }
+    roles {
+      role_id
+      name
+      sort_order
+      allowed_resources
+      user_count
+      manageable
+    }
+  }
+}
+
+mutation CompanyPortalSelectCompany($companyId: Int!) {
+  cssSelectCompany(company_id: $companyId) {
+    selected_company_id
+    selected_company_user_id
+    companies { company_id name reference selected }
+  }
+}
