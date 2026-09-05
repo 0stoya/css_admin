@@ -84,35 +84,41 @@ OGL-owned fields must stay out of the generic company edit surface because a lat
 
 The current purchase-control rule editor is intentionally functional. A richer SKU selector/modal is deferred to the UI pass.
 
-## Current core slice: OGL administration
+### OGL administration — PR #6
 
-Target the existing Fluid OGL administration contract only:
+- [x] `/ogl` registry/search/filtering.
+- [x] fetch OGL company references into the local registry.
+- [x] live OGL company preview before import.
+- [x] enable/disable sync; enabling queues an immediate import.
+- [x] queue selected sync-enabled CREFs or all enabled CREFs.
+- [x] OGL rep-code -> Magento admin mappings.
+- [x] imported-company rep overrides.
+- [x] backend ACL/config/error states shown without duplicating OGL rules in the frontend.
 
-- [ ] `/ogl` registry/search/filtering.
-- [ ] fetch OGL company references into the local registry.
-- [ ] live OGL company preview before import.
-- [ ] enable/disable sync; enabling queues an immediate import.
-- [ ] queue selected sync-enabled CREFs or all enabled CREFs.
-- [ ] OGL rep-code -> Magento admin mappings.
-- [ ] imported-company rep overrides.
-- [ ] backend ACL/config/error states shown without duplicating OGL rules in the frontend.
+Functional acceptance passed on the real Admin environment. UI/UX refinement remains deferred to the later dedicated pass.
 
-Fluid PR #58 is merged and deployed. It adds the OGL-aware company-delete guard required by this lifecycle: deletion is blocked while sync is enabled; after a valid delete the CREF registry row is retained and its imported company ID is cleared. Its destructive disposable-company acceptance sequence still needs to pass before that compatibility item is marked accepted.
+## Current core slice: company configuration/lifecycle
 
-## Remaining core — priority order
+Expose only Magento-local company settings that are safe to maintain outside the OGL sync contract.
 
-### 1. Company configuration/lifecycle
+Source-ownership review against the current OGL update writer confirms the local edit surface can include customer group, VAT tax ID, parent company, comment, description, homepage content and the company landing-page toggle. OGL identity/status/contact/admin/sales-rep data remains read-only.
 
-After OGL onboarding is accepted, expose only Magento-local company settings that are safe to maintain outside the OGL sync contract.
-
-- [ ] customer-group / local configuration fields supported by the actual GraphQL schema.
-- [ ] other genuinely Magento-local fields after source-ownership review.
-- [ ] safe delete flow using Fluid PR #58 behavior and exact-reference confirmation.
+- [ ] `/companies/[id]/settings` local settings/lifecycle screen.
+- [ ] customer-group selector from the backend company-options contract.
+- [ ] Magento-local VAT/parent/comment/description/homepage/landing-page fields.
 - [ ] read-only presentation for OGL-owned identity/contact/status/admin/sales-rep fields.
+- [ ] exact-reference company deletion.
+- [ ] OGL sync-enabled deletion rejected by Fluid PR #58.
+- [ ] successful sync-disabled deletion retains the CREF registry row and clears its imported company ID.
+- [ ] restricted admins remain backend-authoritative rather than gaining client-inferred write access.
 
 Do not add a manual create form.
 
-### 2. Commercial configuration
+Fluid PR #58 is merged and deployed. Its destructive disposable-company acceptance is intentionally part of this slice's live lifecycle test and is not marked accepted until that test passes.
+
+## Remaining core — priority order
+
+### 1. Commercial configuration
 
 Build one focused block at a time:
 
@@ -122,7 +128,7 @@ Build one focused block at a time:
 
 Credit balance mutation must not be invented if the backend intentionally exposes configuration only.
 
-### 3. Admin credit orders
+### 2. Admin credit orders
 
 - [ ] company credit-order queue/list/filter/search.
 - [ ] detail view.
@@ -132,7 +138,7 @@ Credit balance mutation must not be invented if the backend intentionally expose
 - [ ] approve/reject/cancel/place/PO-number actions where the backend authorizes them.
 - [ ] payment-resume handling only if the configured business flow actually produces `approved_pending_payment`.
 
-### 4. Core-completion pass
+### 3. Core-completion pass
 
 Before broad UI polish:
 
@@ -153,6 +159,7 @@ Known candidates:
 - [ ] purchase-control SKU picker/modal instead of raw `SKU | quantity | duration | date` text lines.
 - [ ] catalogue product search/select controls and clearer role add/remove presentation.
 - [ ] company-user and role forms with stronger layout and contextual controls.
+- [ ] company settings/lifecycle layout, richer parent-company selector and destructive confirmation UX.
 - [ ] tables, filters, pagination and mobile/responsive behavior.
 - [ ] navigation hierarchy / breadcrumbs / section layout.
 - [ ] consistent buttons, badges, form controls, confirmation dialogs and feedback states.
@@ -179,6 +186,6 @@ When the Admin core and UI baseline are stable:
 
 ## Immediate next slice
 
-**OGL administration: registry -> preview -> sync/import -> rep mapping/override.**
+**Company configuration/lifecycle: local settings -> read-only OGL ownership boundary -> guarded delete.**
 
-After acceptance, continue with **company configuration/lifecycle -> payment configuration -> company credit -> discounts**.
+After acceptance, continue with **payment configuration -> company credit -> discounts**.
