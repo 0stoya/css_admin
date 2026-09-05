@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
   getCompanyPortalAdministration,
@@ -6,7 +7,6 @@ import {
   type CompanyPortalContext,
 } from "@/lib/graphql/company-portal";
 import {
-  addPortalUserAction,
   deletePortalRoleAction,
   removePortalUserAction,
   savePortalRoleAction,
@@ -126,53 +126,37 @@ export default async function CompanyPortalPage({
               <dt>Manage users</dt><dd>{administration.can_manage_users ? "Yes" : "No"}</dd>
               <dt>View roles</dt><dd>{administration.can_view_roles ? "Yes" : "No"}</dd>
               <dt>Manage roles</dt><dd>{administration.can_manage_roles ? "Yes" : "No"}</dd>
+              <dt>Manage catalogue visibility</dt><dd>{administration.can_manage_catalog_visibility ? "Yes" : "No"}</dd>
+              <dt>View purchase controls</dt><dd>{administration.can_view_purchase_controls ? "Yes" : "No"}</dd>
+              <dt>Manage purchase controls</dt><dd>{administration.can_manage_purchase_controls ? "Yes" : "No"}</dd>
             </dl>
           </section>
+
+          {administration.can_manage_catalog_visibility || administration.can_view_purchase_controls ? (
+            <section className="grid" aria-label="Authorized company controls">
+              {administration.can_manage_catalog_visibility ? (
+                <article className="card stack">
+                  <div><p className="eyebrow">Authorized</p><h2>Catalogue controls</h2></div>
+                  <p className="muted">Manage company and role catalogue visibility within Fluid&apos;s company catalogue boundary.</p>
+                  <Link className="button button-link" href="/portal/catalog">Open catalogue controls</Link>
+                </article>
+              ) : null}
+              {administration.can_view_purchase_controls ? (
+                <article className="card stack">
+                  <div><p className="eyebrow">Authorized</p><h2>Purchase controls</h2></div>
+                  <p className="muted">{administration.can_manage_purchase_controls ? "Manage templates, assignments and counters, and view allowances and history." : "View templates, allowances and purchase history."}</p>
+                  <Link className="button button-link" href="/portal/purchase-controls">Open purchase controls</Link>
+                </article>
+              ) : null}
+            </section>
+          ) : null}
 
           {administration.can_view_users ? (
             <section className="card stack">
               <div>
                 <h2>Company users</h2>
-                <p className="muted">User writes call Fluid customer-side company administration mutations in the currently selected company context.</p>
+                <p className="muted">Company users are provisioned through the staff Admin app. Authorized company managers can maintain existing role, manager and approval settings here.</p>
               </div>
-
-              {administration.can_manage_users && administration.roles.length ? (
-                <details className="mutation-panel">
-                  <summary>Add company user</summary>
-                  <form className="compact-form" action={addPortalUserAction}>
-                    <div className="field">
-                      <label htmlFor="addUserEmail">Existing Magento customer email</label>
-                      <input id="addUserEmail" name="email" type="email" required />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="addUserRole">Role</label>
-                      <select id="addUserRole" name="roleId" required>
-                        {administration.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label htmlFor="addUserManager">Manager</label>
-                      <select id="addUserManager" name="managerId" defaultValue="">
-                        <option value="">No manager</option>
-                        {administration.users.map((user) => (
-                          <option key={user.user_id} value={user.user_id}>{user.firstname} {user.lastname} · {user.email}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <label htmlFor="addUserApprovalType">Approval type</label>
-                      <input id="addUserApprovalType" name="approvalType" placeholder="Leave blank for backend default" />
-                    </div>
-                    <div className="field">
-                      <label htmlFor="addUserApprovalThreshold">Approval threshold</label>
-                      <input id="addUserApprovalThreshold" name="approvalThreshold" type="number" step="any" placeholder="Optional" />
-                    </div>
-                    <button className="button" type="submit">Add company user</button>
-                  </form>
-                </details>
-              ) : administration.can_manage_users ? (
-                <div className="error">Create a saved company role before adding or updating company users.</div>
-              ) : null}
 
               {administration.users.length ? (
                 <div className="table-wrap">

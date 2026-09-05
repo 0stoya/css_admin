@@ -75,7 +75,11 @@ Role product state in Fluid depends on saved role category state. The Admin UI t
 
 The frontend performs only basic form-shape validation and confirmation prompts. Company scope, ACL authorization, valid role/resource assignment, manager rules, approval rules, catalogue validation and mutation validity remain authoritative in Fluid/Magento. Returned backend metadata may be reflected in the UI but is not treated as a substitute for backend enforcement.
 
-The remaining purchase-control, commercial and credit-order areas are still availability probes and will become detailed screens as separate focused slices.
+The company portal uses a separate Magento customer bearer token. Its catalogue and purchase-control routes call only the selected-company customer operations (`css_company_*` / `css*Company*`) introduced by Fluid PR #61. Those operations do not accept `company_id`; Fluid derives company scope from the authenticated customer's selected company context. Navigation and write controls reflect `css_company_admin` capability flags, while direct requests remain backend-authorized.
+
+Company-user accounts and initial company membership are provisioned through the staff Admin workflow. The portal does not expose `cssAddCompanyUser`; authorized company managers may still maintain existing membership settings through the accepted customer-side update/remove contracts.
+
+The remaining commercial and company-order/credit-order portal areas will become detailed screens as separate focused slices.
 
 ## Authorization rule
 
