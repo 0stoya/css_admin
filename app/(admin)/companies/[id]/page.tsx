@@ -29,6 +29,7 @@ const managementAreas = {
 const managementLinks: Partial<Record<keyof typeof managementAreas, (companyId: number) => string>> = {
   management: (companyId) => `/companies/${companyId}/management`,
   catalog: (companyId) => `/companies/${companyId}/catalog`,
+  purchase_controls: (companyId) => `/companies/${companyId}/purchase-controls`,
 };
 
 async function loadCompany(companyId: number) {
