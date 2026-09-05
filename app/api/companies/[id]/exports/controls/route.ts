@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { exportCompanyControlsCsv } from "@/lib/company-controls-csv";
 import { GraphQLRequestError } from "@/lib/graphql/client";
 import { getCompanyControlsBundle } from "@/lib/graphql/company-controls";
 
@@ -9,11 +10,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   try {
     const bundle = await getCompanyControlsBundle(companyId);
-    return new Response(`${JSON.stringify(bundle, null, 2)}\n`, {
+    return new Response(exportCompanyControlsCsv(bundle), {
       headers: {
         "Cache-Control": "no-store",
-        "Content-Disposition": `attachment; filename="company-${companyId}-controls-v${bundle.schema_version}.json"`,
-        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="company-${companyId}-controls-v${bundle.schema_version}.csv"`,
+        "Content-Type": "text/csv; charset=utf-8",
       },
     });
   } catch (error) {
