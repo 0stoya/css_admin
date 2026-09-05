@@ -1,57 +1,69 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCompany, getCompanyManagementAvailability } from "@/lib/graphql/companies";
+import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getCompanyPricingStatus } from "@/lib/graphql/company-pricing";
 
-const managementAreas = {
-  management: {
+const managementAreas = [
+  {
+    key: "management",
     label: "Company management",
     description: "Users, roles and Fluid company ACL resources.",
+    href: (companyId: number) => `/companies/${companyId}/management`,
   },
-  catalog: {
+  {
+    key: "catalog",
     label: "Catalogue policy",
     description: "Company and role catalogue visibility.",
+    href: (companyId: number) => `/companies/${companyId}/catalog`,
   },
-  purchase_controls: {
+  {
+    key: "purchase-controls",
     label: "Purchase controls",
     description: "Role templates, limits and assignments.",
+    href: (companyId: number) => `/companies/${companyId}/purchase-controls`,
   },
-  commercial: {
+  {
+    key: "payment",
     label: "Payment configuration",
     description: "Company-specific payment-method configuration.",
+    href: (companyId: number) => `/companies/${companyId}/payment`,
   },
-  credit: {
+  {
+    key: "credit",
     label: "Company credit",
     description: "Read-only credit limit, usage and remaining balance.",
+    href: (companyId: number) => `/companies/${companyId}/credit`,
   },
-  credit_orders: {
+  {
+    key: "credit-orders",
     label: "Credit orders",
     description: "Administrative credit-order queues and lifecycle.",
+    href: (companyId: number) => `/companies/${companyId}/credit-orders`,
   },
-} as const;
-
-const managementLinks: Partial<Record<keyof typeof managementAreas, (companyId: number) => string>> = {
-  management: (companyId) => `/companies/${companyId}/management`,
-  catalog: (companyId) => `/companies/${companyId}/catalog`,
-  purchase_controls: (companyId) => `/companies/${companyId}/purchase-controls`,
-  commercial: (companyId) => `/companies/${companyId}/payment`,
-  credit: (companyId) => `/companies/${companyId}/credit`,
-  credit_orders: (companyId) => `/companies/${companyId}/credit-orders`,
-};
+] as const;
 
 async function loadCompany(companyId: number) {
-  try {
-    const [company, availability, pricing] = await Promise.all([
-      getCompany(companyId),
-      getCompanyManagementAvailability(companyId),
-      getCompanyPricingStatus(companyId),
-    ]);
+  const [companyResult, pricingResult] = await Promise.allSettled([
+    getCompany(companyId),
+    getCompanyPricingStatus(companyId),
+  ]);
 
-    return { company, availability, pricing, error: null };
-  } catch (error) {
-    return { company: null, availability: null, pricing: null, error: graphQLErrorMessage(error) };
+  if (companyResult.status === "rejected") {
+    return {
+      company: null,
+      pricing: null,
+      pricingError: null,
+      error: graphQLErrorMessage(companyResult.reason),
+    };
   }
+
+  return {
+    company: companyResult.value,
+    pricing: pricingResult.status === "fulfilled" ? pricingResult.value : null,
+    pricingError: pricingResult.status === "rejected" ? graphQLErrorMessage(pricingResult.reason) : null,
+    error: null,
+  };
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -62,9 +74,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const { company, availability, pricing, error } = await loadCompany(companyId);
+  const { company, pricing, pricingError, error } = await loadCompany(companyId);
 
-  if (!company || !availability || !pricing) {
+  if (!company) {
     return (
       <div className="stack">
         <div><Link className="back-link" href="/companies">← Companies</Link></div>
@@ -79,7 +91,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     );
   }
 
-  const pricingSource = pricing.has_custom_prices ? "OGL company-specific pricing" : "Magento pricing";
+  const pricingSource = pricing?.has_custom_prices ? "OGL company-specific pricing" : "Magento pricing";
 
   return (
     <div className="stack">
@@ -89,7 +101,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <div>
           <p className="eyebrow">Company {company.company_id}</p>
           <h1>{company.name}</h1>
-          <p className="muted">Server-authorized company detail and management surfaces.</p>
+          <p className="muted">Company detail and management entry points. Each management surface remains backend-authorized.</p>
         </div>
       </header>
 
@@ -115,66 +127,69 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       <section className="card stack">
         <div>
           <h2>Import / export</h2>
-          <p className="muted">Export company users or versioned controls, preview portable files, then apply only through Fluid-authorized mutations.</p>
+          <p className="muted">Export or preview company users, roles and product restrictions before applying Fluid-authorized changes.</p>
         </div>
         <Link className="button button-link" href={`/companies/${company.company_id}/import-export`}>
           Open import / export
         </Link>
       </section>
 
-      <section className="card stack">
-        <div className="card-heading-row">
+      {pricing ? (
+        <section className="card stack">
+          <div className="card-heading-row">
+            <div>
+              <p className="eyebrow">Pricing</p>
+              <h2>{pricingSource}</h2>
+              <p className="muted">
+                {pricing.has_custom_prices
+                  ? `${pricing.custom_price_count} custom price row${pricing.custom_price_count === 1 ? "" : "s"}; custom prices ${pricing.status_message}.`
+                  : `No OGL custom prices are currently available; ${pricing.status_message}.`}
+              </p>
+            </div>
+            <div className={`badge ${pricing.has_custom_prices ? "badge-ok" : "badge-neutral"}`}>
+              {pricing.has_custom_prices ? "Custom pricing" : "Magento fallback"}
+            </div>
+          </div>
+          <dl className="detail-list">
+            <dt>Company active</dt><dd>{pricing.company_active ? "Yes" : "No"}</dd>
+            <dt>OGL sync</dt><dd>{pricing.sync_enabled ? "Enabled" : "Disabled"}</dd>
+            <dt>Import status</dt><dd>{pricing.import_status}</dd>
+          </dl>
+          <Link className="button button-link" href={`/companies/${company.company_id}/pricing`}>
+            View pricing status & custom prices
+          </Link>
+        </section>
+      ) : (
+        <section className="card stack">
           <div>
             <p className="eyebrow">Pricing</p>
-            <h2>{pricingSource}</h2>
-            <p className="muted">
-              {pricing.has_custom_prices
-                ? `${pricing.custom_price_count} custom price row${pricing.custom_price_count === 1 ? "" : "s"}; custom prices ${pricing.status_message}.`
-                : `No OGL custom prices are currently available; ${pricing.status_message}.`}
-            </p>
+            <h2>Pricing status unavailable</h2>
+            <p className="muted">Pricing access is independent from the company overview and may be restricted for scoped administrators.</p>
           </div>
-          <div className={`badge ${pricing.has_custom_prices ? "badge-ok" : "badge-neutral"}`}>
-            {pricing.has_custom_prices ? "Custom pricing" : "Magento fallback"}
-          </div>
-        </div>
-        <dl className="detail-list">
-          <dt>Company active</dt><dd>{pricing.company_active ? "Yes" : "No"}</dd>
-          <dt>OGL sync</dt><dd>{pricing.sync_enabled ? "Enabled" : "Disabled"}</dd>
-          <dt>Import status</dt><dd>{pricing.import_status}</dd>
-        </dl>
-        <Link className="button button-link" href={`/companies/${company.company_id}/pricing`}>
-          View pricing status & custom prices
-        </Link>
-      </section>
+          {pricingError ? <div className="error">{pricingError}</div> : null}
+          <Link className="button button-link" href={`/companies/${company.company_id}/pricing`}>
+            Open pricing status
+          </Link>
+        </section>
+      )}
 
       <section className="stack">
         <div>
           <h2>Management areas</h2>
-          <p className="muted">Availability comes from the accepted Fluid GraphQL surfaces; restricted areas stay restricted rather than being inferred client-side.</p>
+          <p className="muted">Open an area to use its backend-authorized surface. Scoped administrators may receive a restricted state from Fluid rather than a hidden or inferred permission.</p>
         </div>
         <div className="grid">
-          {(Object.keys(managementAreas) as Array<keyof typeof managementAreas>).map((key) => {
-            const area = managementAreas[key];
-            const isAvailable = availability[key];
-            const href = managementLinks[key]?.(company.company_id);
-
-            return (
-              <article className="card stack" key={key}>
-                <div className={`badge ${isAvailable ? "badge-ok" : "badge-restricted"}`}>
-                  {isAvailable ? "Available" : "Restricted"}
-                </div>
-                <div>
-                  <h3>{area.label}</h3>
-                  <p className="muted">{area.description}</p>
-                </div>
-                {href && isAvailable ? (
-                  <Link className="button button-link" href={href}>
-                    Open {area.label.toLowerCase()}
-                  </Link>
-                ) : null}
-              </article>
-            );
-          })}
+          {managementAreas.map((area) => (
+            <article className="card stack" key={area.key}>
+              <div>
+                <h3>{area.label}</h3>
+                <p className="muted">{area.description}</p>
+              </div>
+              <Link className="button button-link" href={area.href(company.company_id)}>
+                Open {area.label.toLowerCase()}
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
     </div>
