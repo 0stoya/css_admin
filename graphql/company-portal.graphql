@@ -29,6 +29,9 @@ query CompanyPortalAdministration {
     can_manage_users
     can_view_roles
     can_manage_roles
+    can_manage_catalog_visibility
+    can_view_purchase_controls
+    can_manage_purchase_controls
     users {
       user_id
       customer_id
@@ -51,6 +54,11 @@ query CompanyPortalAdministration {
       allowed_resources
       user_count
       manageable
+    }
+    control_roles {
+      role_id
+      name
+      sort_order
     }
     resources {
       resource_id
@@ -103,29 +111,6 @@ mutation CompanyPortalUpdateRole($roleId: Int!, $name: String!, $sortOrder: Int,
 
 mutation CompanyPortalDeleteRole($roleId: Int!) {
   cssDeleteCompanyRole(role_id: $roleId)
-}
-
-mutation CompanyPortalAddUser(
-  $email: String!
-  $roleId: Int!
-  $managerId: Int
-  $approvalType: String
-  $approvalThreshold: Float
-) {
-  cssAddCompanyUser(input: {
-    email: $email
-    role_id: $roleId
-    manager_id: $managerId
-    approval_type: $approvalType
-    approval_threshold: $approvalThreshold
-  }) {
-    user_id
-    email
-    manager_user_id
-    approval_type
-    approval_threshold
-    roles { role_id name }
-  }
 }
 
 mutation CompanyPortalUpdateUser(

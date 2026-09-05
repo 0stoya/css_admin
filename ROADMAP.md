@@ -163,6 +163,12 @@ Expand `/portal` into capability-driven sections/navigation:
 
 A user with no permission for a section must not see actionable UI; direct backend calls must still be rejected by Fluid.
 
+Implementation clarification:
+
+- OGL onboarding supplies the company and designated company administrator identity.
+- Additional company-user provisioning remains a staff Admin workflow; `/portal` does not create company users.
+- the first portal capability slice adds customer-context catalogue and purchase-control routes from Fluid PR #61, gated only by Fluid-returned `can_*` capabilities.
+
 ## Import/export block — before broad UI/UX
 
 Complete bulk/data portability after the portal capability model is settled and before the final visual redesign.

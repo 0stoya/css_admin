@@ -1,0 +1,97 @@
+# Customer-token catalogue and purchase-control portal acceptance.
+# Every operation resolves company scope from css_company_context; never pass company_id.
+
+query CompanyPortalCatalogPolicy {
+  css_company_catalog_policy {
+    company_id
+    allow_public_catalog
+    category_restriction
+    allowed_category_ids
+    allowed_categories { category_id name path }
+    product_restriction
+    allowed_product_ids
+    allowed_products { product_id sku name }
+  }
+}
+
+query CompanyPortalRoleCatalogPolicy($roleId: Int!, $page: Int!, $search: String) {
+  css_company_role_catalog_policy(role_id: $roleId, page: $page, search: $search) {
+    company_id
+    role_id
+    selected_category_ids
+    has_saved_categories
+    products_count
+    preselect_all_products
+    allowed_product_ids
+    products { total_count page page_size items { id sku name allowed } }
+  }
+}
+
+mutation CompanyPortalSaveCatalogPolicy($input: CssSaveCompanyCatalogPolicyInput!) {
+  cssSaveCompanyCatalogPolicy(input: $input) { company_id }
+}
+
+mutation CompanyPortalSaveRoleCatalogCategories($roleId: Int!, $categoryIds: [Int!]!) {
+  cssSaveCompanyRoleCatalogCategories(role_id: $roleId, category_ids: $categoryIds) {
+    company_id
+    role_id
+  }
+}
+
+mutation CompanyPortalSaveRoleCatalogProducts(
+  $roleId: Int!
+  $allowedProductIds: [Int!]!
+  $preselectAll: Boolean!
+  $deselectedProductIds: [Int!]
+) {
+  cssSaveCompanyRoleCatalogProducts(
+    role_id: $roleId
+    allowed_product_ids: $allowedProductIds
+    preselect_all: $preselectAll
+    deselected_product_ids: $deselectedProductIds
+  ) { company_id role_id }
+}
+
+query CompanyPortalPurchaseControls($search: String) {
+  css_company_purchase_controls {
+    company_id
+    templates {
+      template_id
+      name
+      rules { rule_id product_id sku product_name quantity_limit duration_days start_date }
+      assigned_roles { role_id role_name }
+    }
+  }
+  css_company_applied_purchase_controls(pageSize: 50, search: $search) {
+    total_count
+    items { applied_id email sku product_name quantity_limit purchases_so_far remaining_quantity }
+  }
+  css_company_purchase_control_history(pageSize: 50, search: $search) {
+    total_count
+    items { log_id email sku product_name order_number purchased_quantity ordered_at }
+  }
+}
+
+mutation CompanyPortalSavePurchaseControlTemplate($input: CssSaveCompanyPurchaseControlTemplateInput!) {
+  cssSaveCompanyPurchaseControlTemplate(input: $input) { template_id name }
+}
+
+mutation CompanyPortalAssignPurchaseControlTemplate($roleId: Int!, $templateId: Int, $apply: Boolean!) {
+  cssAssignCompanyPurchaseControlTemplate(
+    role_id: $roleId
+    template_id: $templateId
+    apply_to_users: $apply
+  ) { company_id role_id template_id applied_users }
+}
+
+mutation CompanyPortalApplyPurchaseControlTemplate($templateId: Int!) {
+  cssApplyCompanyPurchaseControlTemplate(template_id: $templateId) { company_id template_id affected_users }
+}
+
+mutation CompanyPortalResetPurchaseControlCounters($templateId: Int!) {
+  cssResetCompanyPurchaseControlCounters(template_id: $templateId) { company_id template_id affected_users }
+}
+
+mutation CompanyPortalDeletePurchaseControlTemplate($templateId: Int!, $confirmName: String!) {
+  cssDeleteCompanyPurchaseControlTemplate(template_id: $templateId, confirm_name: $confirmName)
+}
