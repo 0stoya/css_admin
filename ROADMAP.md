@@ -97,32 +97,36 @@ The current purchase-control rule editor is intentionally functional. A richer S
 
 Functional acceptance passed on the real Admin environment. UI/UX refinement remains deferred to the later dedicated pass.
 
-## Current core slice: company configuration/lifecycle
+### Company configuration/lifecycle — PR #7
 
-Expose only Magento-local company settings that are safe to maintain outside the OGL sync contract.
+- [x] `/companies/[id]/settings` local settings/lifecycle screen.
+- [x] customer-group selector from the backend company-options contract.
+- [x] Magento-local VAT/parent/comment/description/homepage/landing-page fields.
+- [x] read-only presentation for OGL-owned identity/contact/status/admin/sales-rep fields.
+- [x] exact-reference company deletion.
+- [x] OGL sync-enabled deletion rejected by Fluid PR #58.
+- [x] successful sync-disabled deletion retains the CREF registry row and clears its imported company ID.
+- [x] restricted admins remain backend-authoritative rather than gaining client-inferred write access.
 
-Source-ownership review against the current OGL update writer confirms the local edit surface can include customer group, VAT tax ID, parent company, comment, description, homepage content and the company landing-page toggle. OGL identity/status/contact/admin/sales-rep data remains read-only.
+Company settings persistence and the destructive disposable-company lifecycle both passed on the real environment. Fluid PR #58 is therefore accepted for the guarded OGL-backed delete flow.
 
-- [ ] `/companies/[id]/settings` local settings/lifecycle screen.
-- [ ] customer-group selector from the backend company-options contract.
-- [ ] Magento-local VAT/parent/comment/description/homepage/landing-page fields.
-- [ ] read-only presentation for OGL-owned identity/contact/status/admin/sales-rep fields.
-- [ ] exact-reference company deletion.
-- [ ] OGL sync-enabled deletion rejected by Fluid PR #58.
-- [ ] successful sync-disabled deletion retains the CREF registry row and clears its imported company ID.
+## Current core slice: payment configuration
+
+Use only the accepted Fluid company-payment contract and its existing company-management ACL.
+
+- [ ] `/companies/[id]/payment` payment configuration screen.
+- [ ] read `is_configured`, `is_specific`, allowed methods and the backend-provided available method options.
+- [ ] save payment flags and selected method codes through `cssAdminSaveCompanyPaymentConfiguration`.
+- [ ] preserve backend validation for unknown methods and empty specific-method selections.
+- [ ] expose the screen only when the existing commercial availability probe succeeds.
 - [ ] restricted admins remain backend-authoritative rather than gaining client-inferred write access.
-
-Do not add a manual create form.
-
-Fluid PR #58 is merged and deployed. Its destructive disposable-company acceptance is intentionally part of this slice's live lifecycle test and is not marked accepted until that test passes.
 
 ## Remaining core — priority order
 
 ### 1. Commercial configuration
 
-Build one focused block at a time:
+After payment configuration is accepted:
 
-- [ ] payment configuration.
 - [ ] company credit-limit configuration.
 - [ ] company product discounts.
 
@@ -160,6 +164,7 @@ Known candidates:
 - [ ] catalogue product search/select controls and clearer role add/remove presentation.
 - [ ] company-user and role forms with stronger layout and contextual controls.
 - [ ] company settings/lifecycle layout, richer parent-company selector and destructive confirmation UX.
+- [ ] payment configuration interaction/layout refinement after functional acceptance.
 - [ ] tables, filters, pagination and mobile/responsive behavior.
 - [ ] navigation hierarchy / breadcrumbs / section layout.
 - [ ] consistent buttons, badges, form controls, confirmation dialogs and feedback states.
@@ -174,7 +179,7 @@ If a screen exposes a legitimate contract defect, fix it in `0stoya/Fluid` and v
 Accepted/discovered examples:
 
 - Fluid PR #57 fixed admin role-product catalogue boundaries discovered while building Admin catalogue policy.
-- Fluid PR #58 adds OGL-aware company deletion discovered while defining the Admin company lifecycle.
+- Fluid PR #58 adds OGL-aware company deletion discovered while defining the Admin company lifecycle; its destructive lifecycle acceptance passed with Admin PR #7.
 
 ## After Admin
 
@@ -186,6 +191,6 @@ When the Admin core and UI baseline are stable:
 
 ## Immediate next slice
 
-**Company configuration/lifecycle: local settings -> read-only OGL ownership boundary -> guarded delete.**
+**Payment configuration: read backend options -> save company flags/methods -> verify restricted access.**
 
-After acceptance, continue with **payment configuration -> company credit -> discounts**.
+After acceptance, continue with **company credit -> discounts**.
