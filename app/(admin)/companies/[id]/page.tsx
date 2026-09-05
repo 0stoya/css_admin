@@ -37,6 +37,7 @@ const managementLinks: Partial<Record<keyof typeof managementAreas, (companyId: 
   purchase_controls: (companyId) => `/companies/${companyId}/purchase-controls`,
   commercial: (companyId) => `/companies/${companyId}/payment`,
   credit: (companyId) => `/companies/${companyId}/credit`,
+  credit_orders: (companyId) => `/companies/${companyId}/credit-orders`,
 };
 
 async function loadCompany(companyId: number) {

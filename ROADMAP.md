@@ -123,32 +123,28 @@ The Admin app may display read-only pricing visibility from the accepted Fluid c
 - [x] no save action, edit form or credit mutation.
 - [x] credit ACL probed independently from payment access.
 
-Runtime acceptance passed on the real Admin environment.
-
-## Current core slice: Company pricing visibility
-
-Fluid PR #60 is merged, deployed and runtime-accepted. Build the Admin read-only surface against that accepted contract.
+### Company pricing visibility — PR #11
 
 - [x] company detail pricing-status summary.
 - [x] pricing source indication: OGL company-specific pricing when rows exist, Magento pricing otherwise.
 - [x] OGL import status/progress and authoritative last-import message.
-- [x] custom-price count.
-- [x] searchable/paginated company-specific SKU prices.
-- [x] tier-price breaks.
+- [x] custom-price count, searchable/paginated SKU prices and tier-price breaks.
 - [x] no price, discount or import mutations.
-- [ ] Admin runtime acceptance on the real environment.
+- [x] Fluid PR #60 and Admin PR #11 runtime acceptance passed on the real environment.
 
-## Next core slice: Admin credit orders
+## Current core slice: Admin credit orders
 
 Build against the accepted explicit-company Admin credit-order contract. The backend remains authoritative for company scope, actor context and allowed actions.
 
-- [ ] company credit-order queue/list/filter/search.
-- [ ] detail view.
-- [ ] comments.
-- [ ] lifecycle/history.
-- [ ] actor-aware allowed actions.
-- [ ] approve/reject/cancel/place/PO-number actions only where Fluid authorizes them.
-- [ ] payment-resume handling only if the configured business flow actually produces `approved_pending_payment`.
+- [x] company credit-order queue/list/filter/search implemented.
+- [x] detail view implemented.
+- [x] comments and lifecycle/history implemented.
+- [x] real company-user actor selection with backend-computed allowed actions.
+- [x] approve/reject/cancel/place controls rendered only where Fluid authorizes them.
+- [x] destructive reject/cancel/place actions require exact credit-order-number confirmation.
+- [x] `approved_pending_payment` is displayed as requiring creator payment details; Admin does not bypass/resume the customer-owned payment flow.
+- [x] purchase-order number displayed read-only; accepted Admin GraphQL currently exposes no admin PO-number setter.
+- [ ] Admin runtime acceptance on the real environment.
 
 ## Remaining core
 
@@ -176,6 +172,7 @@ Known candidates:
 - [ ] company settings/lifecycle layout refinement.
 - [ ] payment and company-credit presentation refinement.
 - [ ] pricing-status and custom-price table presentation refinement.
+- [ ] credit-order queue/detail/action presentation refinement.
 - [ ] tables, filters, pagination and responsive behavior.
 - [ ] navigation hierarchy / breadcrumbs / section layout.
 - [ ] consistent buttons, badges, form controls, confirmation dialogs and feedback states.
@@ -206,4 +203,4 @@ When the Admin core and UI baseline are stable:
 
 ## Immediate next slice
 
-Finish **Company pricing visibility** runtime acceptance, then continue with **Admin credit orders: queue/list/filter/search -> detail/history/comments -> actor-authorized lifecycle actions**.
+Run **Admin credit orders** build/runtime acceptance, then perform the **Admin core-completion pass** before UI/UX refinement.
