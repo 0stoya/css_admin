@@ -18,7 +18,7 @@ const managementAreas = {
   },
   commercial: {
     label: "Payment configuration",
-    description: "Payment, credit and commercial configuration.",
+    description: "Company-specific payment-method configuration.",
   },
   credit_orders: {
     label: "Credit orders",
@@ -30,6 +30,7 @@ const managementLinks: Partial<Record<keyof typeof managementAreas, (companyId: 
   management: (companyId) => `/companies/${companyId}/management`,
   catalog: (companyId) => `/companies/${companyId}/catalog`,
   purchase_controls: (companyId) => `/companies/${companyId}/purchase-controls`,
+  commercial: (companyId) => `/companies/${companyId}/payment`,
 };
 
 async function loadCompany(companyId: number) {

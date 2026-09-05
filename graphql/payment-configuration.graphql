@@ -1,0 +1,29 @@
+# Frontend contract copied from the accepted Fluid admin commercial-configuration operations.
+
+query AdminCompanyPaymentConfiguration($companyId: Int!) {
+  css_admin_company_payment_configuration(company_id: $companyId) {
+    company_id
+    is_configured
+    is_specific
+    allowed_methods
+    available_methods {
+      code
+      label
+    }
+  }
+}
+
+mutation AdminSaveCompanyPaymentConfiguration(
+  $input: CssAdminSaveCompanyPaymentConfigurationInput!
+) {
+  cssAdminSaveCompanyPaymentConfiguration(input: $input) {
+    company_id
+    is_configured
+    is_specific
+    allowed_methods
+    available_methods {
+      code
+      label
+    }
+  }
+}
