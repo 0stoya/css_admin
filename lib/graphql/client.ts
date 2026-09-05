@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { getMagentoConfig } from "@/lib/config";
 import { getAdminToken } from "@/lib/session";
 
@@ -31,7 +32,7 @@ async function execute<TData, TVariables extends Record<string, unknown>>(
 ) {
   const token = await getAdminToken();
   if (!token) {
-    throw new GraphQLRequestError("Admin authentication is required.");
+    throw new GraphQLRequestError("Admin authentication is required.", [], 401);
   }
 
   const { graphqlUrl, storeCode } = getMagentoConfig();
@@ -79,6 +80,10 @@ export async function graphqlPartialRequest<TData, TVariables extends Record<str
 
 export function graphQLErrorMessage(error: unknown) {
   if (error instanceof GraphQLRequestError) {
+    if (error.status === 401) {
+      redirect("/api/auth/session-expired");
+    }
+
     const category = error.errors[0]?.extensions?.category;
     return category ? `${error.message} (${category})` : error.message;
   }
