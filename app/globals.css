@@ -106,6 +106,10 @@ code { font-size: 0.82rem; overflow-wrap: anywhere; }
 .nested-card { box-shadow: none; }
 .pagination-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .pagination-actions { display: flex; gap: 0.5rem; }
+.button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.import-panel { gap: 1.25rem; }
+.import-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.notice-preview { background: #eff8ff; color: #175cd3; }
 
 @media (max-width: 640px) {
   .topbar { padding: 0.85rem 1rem; }
@@ -113,7 +117,7 @@ code { font-size: 0.82rem; overflow-wrap: anywhere; }
   .page-header { display: grid; }
   .detail-list { grid-template-columns: 1fr; gap: 0.2rem; }
   .detail-list dd { margin-bottom: 0.65rem; }
-  .stat-grid, .form-grid { grid-template-columns: 1fr; }
+  .stat-grid, .form-grid, .import-stats { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
   .card-heading-row, .inline-form, .pagination-row { display: grid; }
 }

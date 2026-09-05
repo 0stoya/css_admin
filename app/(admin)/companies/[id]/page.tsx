@@ -113,6 +113,16 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       </section>
 
       <section className="card stack">
+        <div>
+          <h2>Import / export</h2>
+          <p className="muted">Export company users or versioned controls, preview portable files, then apply only through Fluid-authorized mutations.</p>
+        </div>
+        <Link className="button button-link" href={`/companies/${company.company_id}/import-export`}>
+          Open import / export
+        </Link>
+      </section>
+
+      <section className="card stack">
         <div className="card-heading-row">
           <div>
             <p className="eyebrow">Pricing</p>
