@@ -1,0 +1,103 @@
+query AdminCreditOrders(
+  $companyId: Int!
+  $currentPage: Int!
+  $pageSize: Int!
+  $statuses: [String!]
+  $search: String
+  $actorCompanyUserId: Int
+) {
+  css_admin_credit_orders(
+    company_id: $companyId
+    currentPage: $currentPage
+    pageSize: $pageSize
+    statuses: $statuses
+    search: $search
+    actor_company_user_id: $actorCompanyUserId
+  ) {
+    total_count
+    page_info { page_size current_page total_pages }
+    items {
+      credit_order_id
+      number
+      status
+      company_id
+      creator { company_user_id customer_id firstname lastname email }
+      grand_total
+      shipping_method
+      payment_method
+      purchase_order_number
+      auto_approved
+      approved_by
+      order_id
+      order_number
+      created_at
+      updated_at
+      actions {
+        can_approve
+        can_reject
+        can_cancel
+        can_place_order
+        can_add_comment
+        requires_payment_details
+      }
+    }
+  }
+}
+
+query AdminCreditOrder($companyId: Int!, $number: String!, $actorCompanyUserId: Int) {
+  css_admin_credit_order(
+    company_id: $companyId
+    number: $number
+    actor_company_user_id: $actorCompanyUserId
+  ) {
+    credit_order_id
+    number
+    status
+    company_id
+    creator { company_user_id customer_id firstname lastname email }
+    grand_total
+    shipping_method
+    payment_method
+    purchase_order_number
+    auto_approved
+    approved_by
+    order_id
+    order_number
+    created_at
+    updated_at
+    actions {
+      can_approve
+      can_reject
+      can_cancel
+      can_place_order
+      can_add_comment
+      requires_payment_details
+    }
+    comments { comment_id creator_company_user_id comment created_at }
+    logs { log_id actor_company_user_id activity_type message created_at }
+  }
+}
+
+mutation AdminApproveCreditOrder($input: CssAdminCreditOrderActionInput!) {
+  cssAdminApproveCreditOrder(input: $input) { number status approved_by order_id order_number }
+}
+
+mutation AdminRejectCreditOrder($input: CssAdminCreditOrderActionInput!) {
+  cssAdminRejectCreditOrder(input: $input) { number status }
+}
+
+mutation AdminCancelCreditOrder($input: CssAdminCreditOrderActionInput!) {
+  cssAdminCancelCreditOrder(input: $input) { number status }
+}
+
+mutation AdminPlaceCreditOrder($input: CssAdminCreditOrderActionInput!) {
+  cssAdminPlaceCreditOrder(input: $input) { number status order_id order_number }
+}
+
+mutation AdminAddCreditOrderComment($input: CssAdminCreditOrderCommentInput!) {
+  cssAdminAddCreditOrderComment(input: $input) {
+    number
+    status
+    comments { comment_id creator_company_user_id comment created_at }
+  }
+}
