@@ -19,5 +19,6 @@ export function getMagentoConfig() {
     storeCode,
     graphqlUrl: process.env.MAGENTO_GRAPHQL_URL?.trim() || `${baseUrl}/graphql`,
     adminTokenUrl: process.env.MAGENTO_ADMIN_TOKEN_URL?.trim() || `${baseUrl}/rest/V1/integration/admin/token`,
+    customerTokenUrl: process.env.MAGENTO_CUSTOMER_TOKEN_URL?.trim() || `${baseUrl}/rest/V1/integration/customer/token`,
   };
 }

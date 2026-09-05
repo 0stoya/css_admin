@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { clearAdminToken } from "@/lib/session";
+import { clearSession } from "@/lib/session";
 
 export async function GET(request: Request) {
-  await clearAdminToken();
+  await clearSession();
 
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("reason", "expired");
