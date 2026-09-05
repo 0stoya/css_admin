@@ -5,7 +5,14 @@ import {
   type CompanyPortalAdministration,
   type CompanyPortalContext,
 } from "@/lib/graphql/company-portal";
-import { selectPortalCompanyAction } from "./actions";
+import {
+  addPortalUserAction,
+  deletePortalRoleAction,
+  removePortalUserAction,
+  savePortalRoleAction,
+  selectPortalCompanyAction,
+  updatePortalUserAction,
+} from "./actions";
 
 async function loadPortal() {
   let context: CompanyPortalContext | null = null;
@@ -32,7 +39,7 @@ async function loadPortal() {
 export default async function CompanyPortalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const params = await searchParams;
   const { context, administration, error } = await loadPortal();
@@ -51,6 +58,7 @@ export default async function CompanyPortalPage({
   }
 
   const selected = context.companies.find((company) => company.selected) ?? null;
+  const assignableResources = administration?.resources.filter((resource) => resource.assignable) ?? [];
 
   return (
     <div className="stack">
@@ -59,11 +67,12 @@ export default async function CompanyPortalPage({
           <p className="eyebrow">Company user</p>
           <h1>Company management</h1>
           <p className="muted">
-            Fluid company membership and role permissions are authoritative. This portal does not grant Magento-admin privileges.
+            Fluid company membership, ACL resources and write authorization remain authoritative. This portal does not grant Magento-admin privileges.
           </p>
         </div>
       </header>
 
+      {params.success ? <div className="notice" role="status">{params.success}</div> : null}
       {message ? <div className="error" role="alert">{message}</div> : null}
 
       <section className="card stack">
@@ -124,13 +133,52 @@ export default async function CompanyPortalPage({
             <section className="card stack">
               <div>
                 <h2>Company users</h2>
-                <p className="muted">Read-only validation of the existing customer-side Fluid company-administration contract.</p>
+                <p className="muted">User writes call Fluid customer-side company administration mutations in the currently selected company context.</p>
               </div>
+
+              {administration.can_manage_users && administration.roles.length ? (
+                <details className="mutation-panel">
+                  <summary>Add company user</summary>
+                  <form className="compact-form" action={addPortalUserAction}>
+                    <div className="field">
+                      <label htmlFor="addUserEmail">Existing Magento customer email</label>
+                      <input id="addUserEmail" name="email" type="email" required />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="addUserRole">Role</label>
+                      <select id="addUserRole" name="roleId" required>
+                        {administration.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="addUserManager">Manager</label>
+                      <select id="addUserManager" name="managerId" defaultValue="">
+                        <option value="">No manager</option>
+                        {administration.users.map((user) => (
+                          <option key={user.user_id} value={user.user_id}>{user.firstname} {user.lastname} · {user.email}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="addUserApprovalType">Approval type</label>
+                      <input id="addUserApprovalType" name="approvalType" placeholder="Leave blank for backend default" />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="addUserApprovalThreshold">Approval threshold</label>
+                      <input id="addUserApprovalThreshold" name="approvalThreshold" type="number" step="any" placeholder="Optional" />
+                    </div>
+                    <button className="button" type="submit">Add company user</button>
+                  </form>
+                </details>
+              ) : administration.can_manage_users ? (
+                <div className="error">Create a saved company role before adding or updating company users.</div>
+              ) : null}
+
               {administration.users.length ? (
                 <div className="table-wrap">
                   <table>
                     <thead>
-                      <tr><th>User</th><th>Role</th><th>Manager</th><th>Approval</th><th>Capabilities</th></tr>
+                      <tr><th>User</th><th>Role</th><th>Manager</th><th>Approval</th><th>Capabilities</th><th>Manage</th></tr>
                     </thead>
                     <tbody>
                       {administration.users.map((user) => (
@@ -146,6 +194,49 @@ export default async function CompanyPortalPage({
                               user.can_auto_approve_credit_order ? "Auto approve" : null,
                             ].filter(Boolean).join(", ") || "—"}
                           </td>
+                          <td>
+                            {administration.can_manage_users && !user.is_company_admin && administration.roles.length ? (
+                              <details className="mutation-panel">
+                                <summary>Edit</summary>
+                                <form className="compact-form" action={updatePortalUserAction}>
+                                  <input type="hidden" name="userId" value={user.user_id} />
+                                  <div className="field">
+                                    <label htmlFor={`role-${user.user_id}`}>Role</label>
+                                    <select id={`role-${user.user_id}`} name="roleId" defaultValue={user.roles[0]?.role_id ?? ""} required>
+                                      <option value="" disabled>Select a role</option>
+                                      {administration.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.name}</option>)}
+                                    </select>
+                                  </div>
+                                  <div className="field">
+                                    <label htmlFor={`manager-${user.user_id}`}>Manager</label>
+                                    <select id={`manager-${user.user_id}`} name="managerId" defaultValue={user.manager_user_id ?? ""}>
+                                      <option value="">No manager</option>
+                                      {administration.users.map((candidate) => (
+                                        <option key={candidate.user_id} value={candidate.user_id}>{candidate.firstname} {candidate.lastname} · {candidate.email}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="field">
+                                    <label htmlFor={`approval-${user.user_id}`}>Approval type</label>
+                                    <input id={`approval-${user.user_id}`} name="approvalType" defaultValue={user.approval_type} />
+                                  </div>
+                                  <div className="field">
+                                    <label htmlFor={`threshold-${user.user_id}`}>Approval threshold</label>
+                                    <input id={`threshold-${user.user_id}`} name="approvalThreshold" type="number" step="any" defaultValue={user.approval_threshold ?? ""} />
+                                  </div>
+                                  <button className="button" type="submit">Save user</button>
+                                </form>
+                                <form className="compact-form danger-zone" action={removePortalUserAction}>
+                                  <input type="hidden" name="userId" value={user.user_id} />
+                                  <div className="field">
+                                    <label htmlFor={`remove-${user.user_id}`}>Type {user.email} to remove</label>
+                                    <input id={`remove-${user.user_id}`} name="confirmEmail" autoComplete="off" required />
+                                  </div>
+                                  <button className="button button-danger" type="submit">Remove company user</button>
+                                </form>
+                              </details>
+                            ) : user.is_company_admin ? <span className="muted">Company admin protected by Fluid</span> : "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -159,12 +250,41 @@ export default async function CompanyPortalPage({
             <section className="card stack">
               <div>
                 <h2>Company roles</h2>
-                <p className="muted">Fluid decides which saved roles are manageable and which ACL resources belong to them.</p>
+                <p className="muted">ACL resources and assignability below come directly from Fluid. Role saves are still validated by the backend.</p>
               </div>
+
+              {administration.can_manage_roles ? (
+                <details className="mutation-panel">
+                  <summary>Create role</summary>
+                  <form className="compact-form" action={savePortalRoleAction}>
+                    <div className="field">
+                      <label htmlFor="newRoleName">Role name</label>
+                      <input id="newRoleName" name="name" required />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="newRoleSort">Sort order</label>
+                      <input id="newRoleSort" name="sortOrder" type="number" step="1" />
+                    </div>
+                    <div className="field">
+                      <label>Allowed resources</label>
+                      <div className="resource-picker">
+                        {assignableResources.map((resource) => (
+                          <label className="resource-option" key={resource.resource_id} style={{ paddingLeft: `${Math.min(resource.depth, 6) * 12}px` }}>
+                            <input type="checkbox" name="allowedResources" value={resource.resource_id} />
+                            <span>{resource.title}<br /><code>{resource.resource_id}</code></span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <button className="button" type="submit">Create role</button>
+                  </form>
+                </details>
+              ) : null}
+
               {administration.roles.length ? (
                 <div className="table-wrap">
                   <table>
-                    <thead><tr><th>Role</th><th>Users</th><th>Sort</th><th>Resources</th></tr></thead>
+                    <thead><tr><th>Role</th><th>Users</th><th>Sort</th><th>Resources</th><th>Manage</th></tr></thead>
                     <tbody>
                       {administration.roles.map((role) => (
                         <tr key={role.role_id}>
@@ -172,12 +292,55 @@ export default async function CompanyPortalPage({
                           <td>{role.user_count}</td>
                           <td>{role.sort_order}</td>
                           <td>{role.allowed_resources.length}</td>
+                          <td>
+                            {administration.can_manage_roles && role.manageable ? (
+                              <details className="mutation-panel">
+                                <summary>Edit</summary>
+                                <form className="compact-form" action={savePortalRoleAction}>
+                                  <input type="hidden" name="roleId" value={role.role_id} />
+                                  <div className="field">
+                                    <label htmlFor={`role-name-${role.role_id}`}>Role name</label>
+                                    <input id={`role-name-${role.role_id}`} name="name" defaultValue={role.name} required />
+                                  </div>
+                                  <div className="field">
+                                    <label htmlFor={`role-sort-${role.role_id}`}>Sort order</label>
+                                    <input id={`role-sort-${role.role_id}`} name="sortOrder" type="number" step="1" defaultValue={role.sort_order} />
+                                  </div>
+                                  <div className="field">
+                                    <label>Allowed resources</label>
+                                    <div className="resource-picker">
+                                      {assignableResources.map((resource) => (
+                                        <label className="resource-option" key={resource.resource_id} style={{ paddingLeft: `${Math.min(resource.depth, 6) * 12}px` }}>
+                                          <input
+                                            type="checkbox"
+                                            name="allowedResources"
+                                            value={resource.resource_id}
+                                            defaultChecked={role.allowed_resources.includes(resource.resource_id)}
+                                          />
+                                          <span>{resource.title}<br /><code>{resource.resource_id}</code></span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <button className="button" type="submit">Save role</button>
+                                </form>
+                                <form className="compact-form danger-zone" action={deletePortalRoleAction}>
+                                  <input type="hidden" name="roleId" value={role.role_id} />
+                                  <div className="field">
+                                    <label htmlFor={`delete-role-${role.role_id}`}>Type {role.name} to delete</label>
+                                    <input id={`delete-role-${role.role_id}`} name="confirmRoleName" autoComplete="off" required />
+                                  </div>
+                                  <button className="button button-danger" type="submit">Delete role</button>
+                                </form>
+                              </details>
+                            ) : "—"}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="muted">No roles returned for this company.</p>}
+              ) : <p className="muted">No saved roles returned for this company.</p>}
             </section>
           ) : null}
         </>

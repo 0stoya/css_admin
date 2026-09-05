@@ -85,12 +85,12 @@ export default async function AdminCreditOrderDetailPage({
       </section>
 
       <section className="card stack">
-        <div><h2>Acting company user</h2><p className="muted">Admin lifecycle mutations require a real company-user actor. Selecting a user only asks Fluid to compute that actor's permissions; it does not bypass authorization.</p></div>
+        <div><h2>Acting company user</h2><p className="muted">Admin lifecycle mutations require a real company-user actor. Selecting a user only asks Fluid to compute permissions for that actor; it does not bypass authorization.</p></div>
         <form method="get"><label>Actor<select name="actor" defaultValue={actor ? String(actor) : ""}><option value="">Read only — no actor</option>{management.users.map((user) => <option key={user.user_id} value={user.user_id}>{userLabel(user)}</option>)}</select></label><button type="submit">Use actor</button></form>
         {selectedActor ? <p className="muted">Selected: {userLabel(selectedActor)} · Approver capability reported by company management: {selectedActor.can_approve_credit_orders ? "Yes" : "No"}.</p> : null}
       </section>
 
-      {actions?.requires_payment_details ? <div className="error">Payment details are required before this credit order can become a sales order. The Admin API deliberately cannot bypass or resume the creator's customer payment-details flow.</div> : null}
+      {actions?.requires_payment_details ? <div className="error">Payment details are required before this credit order can become a sales order. The Admin API deliberately cannot bypass or resume the customer payment-details flow owned by the creator.</div> : null}
 
       {actor && actions ? <section className="stack"><div><h2>Authorized actions</h2><p className="muted">Only actions explicitly returned by Fluid for the selected actor are rendered.</p></div><div className="grid">
         {actions.can_approve ? <form className="card stack" action={approveCreditOrderAction}><HiddenContext companyId={companyId} number={order.number} actor={actor} /><h3>Approve</h3><label>Optional comment<textarea name="comment" rows={3} /></label><button type="submit">Approve credit order</button></form> : null}
