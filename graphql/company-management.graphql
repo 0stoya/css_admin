@@ -1,9 +1,52 @@
-# Initial management-surface availability probe from the accepted Phase 14 contract.
-# Detailed management screens will add fields from Css/Commerce/etc/schema.graphqls as each area is implemented.
+# Company Management read contract from Css/Commerce/etc/schema.graphqls.
+# This is the first detailed management surface implemented by the Admin app.
 
+query AdminCompanyManagement($companyId: Int!) {
+  css_admin_company_management(company_id: $companyId) {
+    company_id
+    users {
+      user_id
+      customer_id
+      firstname
+      lastname
+      email
+      is_company_admin
+      manager_user_id
+      approval_type
+      approval_threshold
+      can_checkout
+      can_approve_credit_orders
+      can_auto_approve_credit_order
+      roles {
+        role_id
+        name
+        manageable
+      }
+    }
+    roles {
+      role_id
+      name
+      sort_order
+      allowed_resources
+      user_count
+      manageable
+    }
+    resources {
+      resource_id
+      title
+      parent_resource_id
+      depth
+      assignable
+    }
+  }
+}
+
+# Company detail still probes the remaining management areas independently so one
+# restricted surface does not hide the others. Company management uses a real
+# stable field rather than __typename now that the detailed screen exists.
 query AdminCompanyManagementAvailability($companyId: Int!) {
   management: css_admin_company_management(company_id: $companyId) {
-    __typename
+    company_id
   }
   catalog: css_admin_company_catalog_policy(company_id: $companyId) {
     __typename
