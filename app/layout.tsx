@@ -4,6 +4,7 @@ import "./globals.css";
 import "./company-structure.css";
 import "./company-management.css";
 import "./sidebar.css";
+import "./control-surfaces.css";
 
 export const metadata: Metadata = {
   title: {
