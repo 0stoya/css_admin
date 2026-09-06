@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AppHeader, type NavigationItem } from "@/components/app-header";
+import { AppHeaderContextProvider } from "@/components/app-header-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getAdminToken } from "@/lib/session";
 
@@ -16,12 +17,14 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   }
 
   return (
-    <div className="shell">
-      <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
-      <div className="app-workspace">
-        <AppSidebar productLabel="Admin" navigation={navigation} />
-        <main className="content">{children}</main>
+    <AppHeaderContextProvider>
+      <div className="shell">
+        <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
+        <div className="app-workspace">
+          <AppSidebar productLabel="Admin" navigation={navigation} />
+          <main className="content">{children}</main>
+        </div>
       </div>
-    </div>
+    </AppHeaderContextProvider>
   );
 }
