@@ -68,16 +68,6 @@ export function PurchaseProductPicker({
     };
   }, [companyId, query]);
 
-  useEffect(() => {
-    setSelected((current) => {
-      const next = new Map(current);
-      current.forEach((product, id) => {
-        if (excluded.has(product.sku.toLocaleLowerCase("en"))) next.delete(id);
-      });
-      return next;
-    });
-  }, [excluded]);
-
   const availableItems = (result?.items ?? []).filter(
     (product) => !excluded.has(product.sku.toLocaleLowerCase("en")),
   );
@@ -108,7 +98,9 @@ export function PurchaseProductPicker({
   }
 
   function addSelected() {
-    const products = Array.from(selected.values());
+    const products = Array.from(selected.values()).filter(
+      (product) => !excluded.has(product.sku.toLocaleLowerCase("en")),
+    );
     if (!products.length) return;
     onAdd(products);
     setSelected(new Map());
