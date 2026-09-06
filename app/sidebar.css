@@ -114,48 +114,19 @@
 .sidebar-subnav {
   display: grid;
   gap: 0.12rem;
-  margin: 0.1rem 0 0.55rem 0.72rem;
-  padding: 0.35rem 0 0.15rem 0.8rem;
+  margin: 0.05rem 0 0.55rem 0.72rem;
+  padding: 0.3rem 0 0.15rem 0.8rem;
   border-left: 1px solid var(--css-border);
 }
-.sidebar-company-subnav { padding-top: 0.5rem; }
-.sidebar-company-context {
-  display: grid;
-  min-width: 0;
-  gap: 0.12rem;
-  margin: 0 0.35rem 0.65rem 0;
-  padding: 0.62rem 0.68rem;
-  border: 1px solid var(--css-border);
-  border-radius: 8px;
-  background: #f8fafc;
-}
-.sidebar-company-context strong {
-  overflow: hidden;
-  color: var(--css-text);
-  font-family: var(--font-primary);
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sidebar-subnav-kicker,
+.sidebar-company-subnav { padding-top: 0.4rem; }
 .sidebar-subnav-heading {
-  color: var(--css-primary);
+  margin: 0 0 0.32rem;
+  padding: 0 0.52rem;
+  color: var(--css-muted);
   font-size: 0.64rem;
   font-weight: 600;
   letter-spacing: 0.075em;
   text-transform: uppercase;
-}
-.sidebar-subnav-heading {
-  margin: 0.15rem 0 0.32rem;
-  padding: 0 0.52rem;
-  color: var(--css-muted);
-}
-.sidebar-company-reference {
-  color: var(--css-primary);
-  font-size: 0.72rem;
-  font-weight: 600;
 }
 .sidebar-sublink {
   display: grid;
