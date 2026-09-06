@@ -19,6 +19,7 @@ import {
 } from "./actions";
 
 type CatalogueView = "company" | "roles";
+type RoleControl = "products" | "categories";
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -26,6 +27,10 @@ function firstParam(value: string | string[] | undefined) {
 
 function catalogueView(value: string | undefined): CatalogueView {
   return value === "roles" ? "roles" : "company";
+}
+
+function roleControl(value: string | undefined): RoleControl {
+  return value === "categories" ? "categories" : "products";
 }
 
 function positivePage(value: string | undefined) {
@@ -128,10 +133,20 @@ function CompanyPolicyStatus({ policy }: { policy: CompanyCatalogPolicy }) {
   );
 }
 
+function roleControlHref(companyId: number, roleId: number, control: RoleControl) {
+  const params = new URLSearchParams({
+    view: "roles",
+    roleId: String(roleId),
+    roleControl: control,
+  });
+  return `/companies/${companyId}/catalog?${params.toString()}#role-editor`;
+}
+
 function productPageHref(companyId: number, roleId: number, page: number, search?: string) {
   const params = new URLSearchParams({
     view: "roles",
     roleId: String(roleId),
+    roleControl: "products",
     rolePage: String(page),
   });
   if (search) params.set("roleProductSearch", search);
@@ -151,6 +166,7 @@ export default async function CompanyCatalogPage({
   if (!Number.isInteger(companyId) || companyId <= 0) notFound();
 
   const view = catalogueView(firstParam(query.view));
+  const activeRoleControl = roleControl(firstParam(query.roleControl));
   const notice = firstParam(query.notice);
   const mutationError = firstParam(query.error);
   const roleSearch = firstParam(query.roleSearch)?.trim() ?? "";
@@ -340,7 +356,7 @@ export default async function CompanyCatalogPage({
                   return (
                     <Link
                       className={`catalogue-role-row${active ? " catalogue-role-row-active" : ""}`}
-                      href={`/companies/${company.company_id}/catalog?view=roles&roleId=${role.role_id}#role-editor`}
+                      href={`/companies/${company.company_id}/catalog?view=roles&roleId=${role.role_id}&roleControl=products#role-editor`}
                       key={role.role_id}
                       aria-current={active ? "page" : undefined}
                     >
@@ -362,22 +378,133 @@ export default async function CompanyCatalogPage({
                     <div>
                       <p className="eyebrow">Role catalogue</p>
                       <h2>{selectedRole.name}</h2>
-                      <p className="muted">Change categories and products independently. Fluid validates both against the company catalogue.</p>
+                      <p className="muted">Choose which additional product or category restriction to manage.</p>
                     </div>
                     {!selectedRole.manageable ? <span className="badge badge-neutral">Protected role</span> : null}
                   </div>
 
-                  <div className="catalogue-role-status">
-                    <div><span>Categories</span><strong>{usesAllCompanyCategories ? "All company categories" : `${rolePolicy.selected_category_ids.length} selected`}</strong></div>
-                    <div><span>Products in scope</span><strong>{rolePolicy.products_count}</strong></div>
-                    <div><span>Product restriction</span><strong>{rolePolicy.preselect_all_products ? "All products" : `${rolePolicy.allowed_product_ids.length} selected`}</strong></div>
-                  </div>
+                  <nav className="catalogue-role-subtabs" aria-label={`${selectedRole.name} catalogue controls`}>
+                    <Link
+                      className={activeRoleControl === "products" ? "catalogue-role-subtab catalogue-role-subtab-active" : "catalogue-role-subtab"}
+                      href={roleControlHref(company.company_id, selectedRole.role_id, "products")}
+                      aria-current={activeRoleControl === "products" ? "page" : undefined}
+                    >
+                      <span className={`catalogue-role-status-icon ${rolePolicy.preselect_all_products ? "catalogue-role-status-icon-empty" : "catalogue-role-status-icon-set"}`} aria-hidden="true" />
+                      <span>Products</span>
+                      <strong>{rolePolicy.preselect_all_products ? 0 : rolePolicy.allowed_product_ids.length}</strong>
+                    </Link>
+                    <Link
+                      className={activeRoleControl === "categories" ? "catalogue-role-subtab catalogue-role-subtab-active" : "catalogue-role-subtab"}
+                      href={roleControlHref(company.company_id, selectedRole.role_id, "categories")}
+                      aria-current={activeRoleControl === "categories" ? "page" : undefined}
+                    >
+                      <span className={`catalogue-role-status-icon ${usesAllCompanyCategories ? "catalogue-role-status-icon-empty" : "catalogue-role-status-icon-set"}`} aria-hidden="true" />
+                      <span>Categories</span>
+                      <strong>{usesAllCompanyCategories ? 0 : rolePolicy.selected_category_ids.length}</strong>
+                    </Link>
+                  </nav>
 
                   {selectedRole.manageable ? (
-                    <div className="catalogue-role-controls">
-                      <section className="card catalogue-role-control">
+                    activeRoleControl === "products" ? (
+                      <div className="stack catalogue-role-tab-panel">
+                        <section className="card catalogue-role-control catalogue-role-control-single" id="role-products">
+                          <div className="catalogue-control-heading">
+                            <div>
+                              <p className="eyebrow">Products</p>
+                              <h3>Role products</h3>
+                              <p className="muted">Optional product restriction, independent from categories.</p>
+                            </div>
+                            <div className="catalogue-control-heading-meta">
+                              <span className={`badge ${rolePolicy.preselect_all_products ? "badge-ok" : "badge-neutral"}`}>{rolePolicy.preselect_all_products ? "No restriction" : "Restricted"}</span>
+                              <span className="muted small-text">{rolePolicy.products_count} products in scope</span>
+                            </div>
+                          </div>
+
+                          {!rolePolicy.preselect_all_products ? (
+                            <form action={saveRoleProductsAction} className="catalogue-reset-action">
+                              <input name="companyId" type="hidden" value={company.company_id} />
+                              <input name="roleId" type="hidden" value={selectedRole.role_id} />
+                              <input name="productMode" type="hidden" value="all" />
+                              <span><strong>Use all available products</strong><small>Remove the role-level product restriction.</small></span>
+                              <button className="button button-secondary" type="submit">Remove restriction</button>
+                            </form>
+                          ) : null}
+
+                          <details className="catalogue-control-editor" open={!rolePolicy.preselect_all_products}>
+                            <summary><span><strong>{rolePolicy.preselect_all_products ? "Restrict products" : "Edit products"}</strong><small>Products are validated independently against the company boundary</small></span><span className="catalogue-summary-chevron" aria-hidden="true" /></summary>
+                            <div className="catalogue-control-editor-body">
+                              {canUseCompanyProductChecklist ? (
+                                <form action={saveRoleProductsAction} className="stack">
+                                  <input name="companyId" type="hidden" value={company.company_id} />
+                                  <input name="roleId" type="hidden" value={selectedRole.role_id} />
+                                  <input name="productMode" type="hidden" value="explicit" />
+                                  <CatalogProductPicker
+                                    key={`${selectedRole.role_id}:${rolePolicy.preselect_all_products ? "all" : rolePolicy.allowed_product_ids.join("-")}`}
+                                    products={policy.allowed_products.map((product) => ({ id: product.product_id, sku: product.sku, name: product.name }))}
+                                    selectedProductIds={rolePolicy.allowed_product_ids}
+                                    preselectAll={rolePolicy.preselect_all_products}
+                                    label={`${selectedRole.name} products`}
+                                  />
+                                  <div className="catalogue-form-actions"><button className="button" type="submit">Save role products</button></div>
+                                </form>
+                              ) : (
+                                <form action={saveRoleProductsAction} className="stack catalogue-explicit-products">
+                                  <input name="companyId" type="hidden" value={company.company_id} />
+                                  <input name="roleId" type="hidden" value={selectedRole.role_id} />
+                                  <input name="productMode" type="hidden" value="explicit" />
+                                  <div className="field">
+                                    <label htmlFor={`allowedProductIds-${selectedRole.role_id}`}>Allowed product IDs</label>
+                                    <textarea id={`allowedProductIds-${selectedRole.role_id}`} name="allowedProductIds" rows={6} defaultValue={rolePolicy.allowed_product_ids.join(", ")} placeholder="123, 456, 789" />
+                                    <span className="muted small-text">Every product ID is validated against the company catalogue on save.</span>
+                                  </div>
+                                  <div className="catalogue-form-actions"><button className="button" type="submit">Save role products</button></div>
+                                </form>
+                              )}
+                            </div>
+                          </details>
+                        </section>
+
+                        {rolePolicy.show_product_grid ? (
+                          <details className="card catalogue-effective-products" id="effective-products">
+                            <summary className="catalogue-editor-summary"><span><strong>Verify effective products</strong><small>Optional audit of what this role can actually see</small></span><span className="catalogue-summary-chevron" aria-hidden="true" /></summary>
+                            <div className="catalogue-editor-body">
+                              <form className="inline-form" method="get">
+                                <input name="view" type="hidden" value="roles" />
+                                <input name="roleId" type="hidden" value={selectedRole.role_id} />
+                                <input name="roleControl" type="hidden" value="products" />
+                                <div className="field grow"><label htmlFor="roleProductSearch">Product search</label><input id="roleProductSearch" name="roleProductSearch" defaultValue={roleProductSearch} placeholder="SKU or product name" /></div>
+                                <button className="button button-secondary" type="submit">Search</button>
+                              </form>
+                              <div className="table-wrap">
+                                <table>
+                                  <thead><tr><th>Product</th><th>SKU</th><th>ID</th><th>Effective access</th></tr></thead>
+                                  <tbody>
+                                    {rolePolicy.products.items.map((product) => (
+                                      <tr key={product.id}><td>{product.name}</td><td><code>{product.sku}</code></td><td>{product.id}</td><td><span className={`badge ${product.allowed ? "badge-ok" : "badge-neutral"}`}>{product.allowed ? "Allowed" : "Not allowed"}</span></td></tr>
+                                    ))}
+                                    {!rolePolicy.products.items.length ? <tr><td colSpan={4}>No products match this role/search.</td></tr> : null}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <div className="pagination-row">
+                                <span className="muted small-text">Page {rolePolicy.products.page} of {totalProductPages} · {rolePolicy.products.total_count} products</span>
+                                <div className="pagination-actions">
+                                  {rolePolicy.products.page > 1 ? <Link className="button button-secondary button-link" href={productPageHref(company.company_id, selectedRole.role_id, rolePolicy.products.page - 1, roleProductSearch)}>Previous</Link> : null}
+                                  {rolePolicy.products.page < totalProductPages ? <Link className="button button-secondary button-link" href={productPageHref(company.company_id, selectedRole.role_id, rolePolicy.products.page + 1, roleProductSearch)}>Next</Link> : null}
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <section className="card catalogue-role-control catalogue-role-control-single">
                         <div className="catalogue-control-heading">
-                          <div><p className="eyebrow">Categories</p><h3>Role categories</h3><p className="muted">Optional additional category restriction.</p></div>
+                          <div>
+                            <p className="eyebrow">Categories</p>
+                            <h3>Role categories</h3>
+                            <p className="muted">Optional additional category restriction.</p>
+                          </div>
                           <span className={`badge ${usesAllCompanyCategories ? "badge-ok" : "badge-neutral"}`}>{usesAllCompanyCategories ? "No restriction" : "Restricted"}</span>
                         </div>
 
@@ -401,94 +528,13 @@ export default async function CompanyCatalogPage({
                           </form>
                         </details>
                       </section>
-
-                      <section className="card catalogue-role-control" id="role-products">
-                        <div className="catalogue-control-heading">
-                          <div><p className="eyebrow">Products</p><h3>Role products</h3><p className="muted">Optional product restriction, independent from categories.</p></div>
-                          <span className={`badge ${rolePolicy.preselect_all_products ? "badge-ok" : "badge-neutral"}`}>{rolePolicy.preselect_all_products ? "No restriction" : "Restricted"}</span>
-                        </div>
-
-                        {!rolePolicy.preselect_all_products ? (
-                          <form action={saveRoleProductsAction} className="catalogue-reset-action">
-                            <input name="companyId" type="hidden" value={company.company_id} />
-                            <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                            <input name="productMode" type="hidden" value="all" />
-                            <span><strong>Use all available products</strong><small>Remove the role-level product restriction.</small></span>
-                            <button className="button button-secondary" type="submit">Remove restriction</button>
-                          </form>
-                        ) : null}
-
-                        <details className="catalogue-control-editor" open={!rolePolicy.preselect_all_products}>
-                          <summary><span><strong>{rolePolicy.preselect_all_products ? "Restrict products" : "Edit products"}</strong><small>Products are validated independently against the company boundary</small></span><span className="catalogue-summary-chevron" aria-hidden="true" /></summary>
-                          <div className="catalogue-control-editor-body">
-                            {canUseCompanyProductChecklist ? (
-                              <form action={saveRoleProductsAction} className="stack">
-                                <input name="companyId" type="hidden" value={company.company_id} />
-                                <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                                <input name="productMode" type="hidden" value="explicit" />
-                                <CatalogProductPicker
-                                  products={policy.allowed_products.map((product) => ({ id: product.product_id, sku: product.sku, name: product.name }))}
-                                  selectedProductIds={rolePolicy.allowed_product_ids}
-                                  preselectAll={rolePolicy.preselect_all_products}
-                                  label={`${selectedRole.name} products`}
-                                />
-                                <div className="catalogue-form-actions"><button className="button" type="submit">Save role products</button></div>
-                              </form>
-                            ) : (
-                              <form action={saveRoleProductsAction} className="stack catalogue-explicit-products">
-                                <input name="companyId" type="hidden" value={company.company_id} />
-                                <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                                <input name="productMode" type="hidden" value="explicit" />
-                                <div className="field">
-                                  <label htmlFor={`allowedProductIds-${selectedRole.role_id}`}>Allowed product IDs</label>
-                                  <textarea id={`allowedProductIds-${selectedRole.role_id}`} name="allowedProductIds" rows={6} defaultValue={rolePolicy.allowed_product_ids.join(", ")} placeholder="123, 456, 789" />
-                                  <span className="muted small-text">The current Fluid contract exposes the complete selection as product IDs for this category scope. Every ID is validated on save.</span>
-                                </div>
-                                <div className="catalogue-form-actions"><button className="button" type="submit">Save role products</button></div>
-                              </form>
-                            )}
-                          </div>
-                        </details>
-                      </section>
-                    </div>
+                    )
                   ) : (
                     <div className="card catalogue-protected-note">
                       <strong>Protected role</strong>
                       <span>Fluid exposes this catalogue state for reference but does not allow the role to be edited here.</span>
                     </div>
                   )}
-
-                  {rolePolicy.show_product_grid ? (
-                    <details className="card catalogue-effective-products" id="effective-products">
-                      <summary className="catalogue-editor-summary"><span><strong>Browse effective products</strong><small>Verify what this role can actually see</small></span><span className="catalogue-summary-chevron" aria-hidden="true" /></summary>
-                      <div className="catalogue-editor-body">
-                        <form className="inline-form" method="get">
-                          <input name="view" type="hidden" value="roles" />
-                          <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                          <div className="field grow"><label htmlFor="roleProductSearch">Product search</label><input id="roleProductSearch" name="roleProductSearch" defaultValue={roleProductSearch} placeholder="SKU or product name" /></div>
-                          <button className="button button-secondary" type="submit">Search</button>
-                        </form>
-                        <div className="table-wrap">
-                          <table>
-                            <thead><tr><th>Product</th><th>SKU</th><th>ID</th><th>Effective access</th></tr></thead>
-                            <tbody>
-                              {rolePolicy.products.items.map((product) => (
-                                <tr key={product.id}><td>{product.name}</td><td><code>{product.sku}</code></td><td>{product.id}</td><td><span className={`badge ${product.allowed ? "badge-ok" : "badge-neutral"}`}>{product.allowed ? "Allowed" : "Not allowed"}</span></td></tr>
-                              ))}
-                              {!rolePolicy.products.items.length ? <tr><td colSpan={4}>No products match this role/search.</td></tr> : null}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div className="pagination-row">
-                          <span className="muted small-text">Page {rolePolicy.products.page} of {totalProductPages} · {rolePolicy.products.total_count} products</span>
-                          <div className="pagination-actions">
-                            {rolePolicy.products.page > 1 ? <Link className="button button-secondary button-link" href={productPageHref(company.company_id, selectedRole.role_id, rolePolicy.products.page - 1, roleProductSearch)}>Previous</Link> : null}
-                            {rolePolicy.products.page < totalProductPages ? <Link className="button button-secondary button-link" href={productPageHref(company.company_id, selectedRole.role_id, rolePolicy.products.page + 1, roleProductSearch)}>Next</Link> : null}
-                          </div>
-                        </div>
-                      </div>
-                    </details>
-                  ) : null}
                 </div>
               )}
             </>
