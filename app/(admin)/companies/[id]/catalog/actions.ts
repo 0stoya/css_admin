@@ -7,54 +7,9 @@ import {
   saveRoleCatalogCategories,
   saveRoleCatalogProducts,
 } from "@/lib/graphql/catalog-policy";
-import {
-  graphQLErrorMessage,
-  graphqlRequest,
-  GraphQLRequestError,
-} from "@/lib/graphql/client";
+import { graphQLErrorMessage } from "@/lib/graphql/client";
 
 type RoleControl = "products" | "categories";
-
-type CategoryStateNode = {
-  id: number;
-  children?: CategoryStateNode[];
-};
-
-type AdminRoleCategoryStateData = {
-  css_admin_role_catalog_policy: {
-    has_saved_categories: boolean;
-    category_tree: CategoryStateNode[];
-  };
-};
-
-const ROLE_CATEGORY_STATE_QUERY = /* GraphQL */ `
-  query AdminRoleCategoryState($companyId: Int!, $roleId: Int!) {
-    css_admin_role_catalog_policy(company_id: $companyId, role_id: $roleId, page: 1) {
-      has_saved_categories
-      category_tree {
-        id
-        children {
-          id
-          children {
-            id
-            children {
-              id
-              children {
-                id
-                children {
-                  id
-                  children {
-                    id
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-`;
 
 function catalogPath(companyId: number) {
   return `/companies/${companyId}/catalog`;
@@ -112,57 +67,6 @@ function stringList(raw: string) {
 
 function checked(formData: FormData, key: string) {
   return formData.get(key) !== null;
-}
-
-function categoryStateIds(nodes: CategoryStateNode[]): number[] {
-  return Array.from(
-    new Set(
-      nodes
-        .flatMap((node) => [node.id, ...categoryStateIds(node.children ?? [])])
-        .filter((id) => id > 0),
-    ),
-  );
-}
-
-function isSelectedCategoryProductError(error: unknown) {
-  const message = error instanceof GraphQLRequestError
-    ? error.message
-    : error instanceof Error
-      ? error.message
-      : "";
-
-  return message
-    .toLocaleLowerCase("en")
-    .includes("not available for the selected categories");
-}
-
-async function saveExplicitRoleProductsWithCompatibility(
-  companyId: number,
-  roleId: number,
-  allowedProductIds: number[],
-) {
-  try {
-    await saveRoleCatalogProducts(companyId, roleId, allowedProductIds, false, []);
-    return;
-  } catch (error) {
-    if (!isSelectedCategoryProductError(error)) throw error;
-
-    const data = await graphqlRequest<
-      AdminRoleCategoryStateData,
-      { companyId: number; roleId: number }
-    >(ROLE_CATEGORY_STATE_QUERY, { companyId, roleId });
-
-    const state = data.css_admin_role_catalog_policy;
-    if (state.has_saved_categories) throw error;
-
-    const categoryIds = categoryStateIds(state.category_tree);
-    if (!categoryIds.length) throw error;
-
-    // Magento treats a missing role-category record as no extra category restriction.
-    // Persist that equivalent state once, then retry the independent product write.
-    await saveRoleCatalogCategories(companyId, roleId, categoryIds);
-    await saveRoleCatalogProducts(companyId, roleId, allowedProductIds, false, []);
-  }
 }
 
 async function runMutation(
@@ -236,6 +140,6 @@ export async function saveRoleProductsAction(formData: FormData) {
     }
 
     const allowedProductIds = positiveIntEntries(formData, "allowedProductIds");
-    await saveExplicitRoleProductsWithCompatibility(companyId, roleId, allowedProductIds);
+    await saveRoleCatalogProducts(companyId, roleId, allowedProductIds, false, []);
   }, roleId, "products");
 }
