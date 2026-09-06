@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type NavigationItem = {
+export type NavigationItem = {
   href: string;
   label: string;
   exact?: boolean;
