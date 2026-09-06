@@ -1,0 +1,308 @@
+.workspace {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.headerBadge {
+  align-self: flex-start;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.4rem;
+}
+
+.summaryHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.summaryHeading h2 {
+  margin: 0.05rem 0 0.15rem;
+  font-family: var(--font-secondary);
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.summaryHeading p {
+  margin: 0;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #f8fbfd;
+}
+
+.metric {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.95rem 1rem;
+}
+
+.metric + .metric {
+  border-left: 1px solid var(--css-border);
+}
+
+.metric span,
+.statusLabel {
+  color: var(--css-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.progressBlock {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.progressHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.86rem;
+}
+
+.progressHeading span {
+  color: var(--css-muted);
+}
+
+.progressTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eef3;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--css-primary);
+}
+
+.statusMessage {
+  margin: 0;
+  color: var(--css-muted);
+  font-size: 0.84rem;
+}
+
+.priceCard {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.priceHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem 0;
+}
+
+.priceHeader h2,
+.emptyState h2 {
+  margin: 0;
+}
+
+.priceHeaderText {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.searchBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  padding: 0 1.25rem;
+}
+
+.searchBar label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.searchBar button {
+  align-self: end;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--css-border);
+  border-bottom: 1px solid var(--css-border);
+}
+
+.priceTable {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.priceTable th {
+  padding: 0.7rem 1rem;
+  background: #f5f8fa;
+  color: var(--css-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.priceTable td {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid #e7edf2;
+  vertical-align: top;
+}
+
+.priceTable tbody tr:first-child td {
+  border-top: 0;
+}
+
+.productCell {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.productCell strong {
+  font-size: 0.92rem;
+}
+
+.sku {
+  color: var(--css-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.priceValue {
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tierList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tierBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.missingProduct {
+  color: var(--css-warning);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.emptyState {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 1.25rem;
+  padding: 1rem;
+  border: 1px dashed var(--css-border);
+  border-radius: 10px;
+  background: #fbfcfd;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.pagination p {
+  margin: 0;
+}
+
+.paginationActions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.readOnlyNote {
+  margin: -0.2rem 0 0;
+  color: var(--css-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--css-border);
+  }
+
+  .metric:nth-child(4) {
+    border-top: 1px solid var(--css-border);
+  }
+}
+
+@media (max-width: 680px) {
+  .summaryHeading,
+  .priceHeader,
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric + .metric,
+  .metric:nth-child(3),
+  .metric:nth-child(4) {
+    border-left: 0;
+    border-top: 1px solid var(--css-border);
+  }
+
+  .searchBar {
+    grid-template-columns: 1fr;
+  }
+
+  .searchBar button {
+    width: 100%;
+  }
+
+  .paginationActions {
+    width: 100%;
+  }
+
+  .paginationActions a {
+    flex: 1;
+    justify-content: center;
+  }
+}
