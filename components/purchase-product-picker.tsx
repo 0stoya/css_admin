@@ -31,7 +31,9 @@ export function PurchaseProductPicker({
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const [selected, setSelected] = useState<Map<number, PurchaseProductPickerItem>>(
+    () => new Map(),
+  );
   const excluded = useMemo(
     () => new Set(excludedSkus.map((sku) => sku.trim().toLocaleLowerCase("en"))),
     [excludedSkus],
@@ -68,34 +70,48 @@ export function PurchaseProductPicker({
 
   useEffect(() => {
     setSelected((current) => {
-      const next = new Set(
-        Array.from(current).filter((id) => {
-          const product = result?.items.find((item) => item.product_id === id);
-          return product && !excluded.has(product.sku.toLocaleLowerCase("en"));
-        }),
-      );
+      const next = new Map(current);
+      current.forEach((product, id) => {
+        if (excluded.has(product.sku.toLocaleLowerCase("en"))) next.delete(id);
+      });
       return next;
     });
-  }, [excluded, result]);
+  }, [excluded]);
 
   const availableItems = (result?.items ?? []).filter(
     (product) => !excluded.has(product.sku.toLocaleLowerCase("en")),
   );
 
-  function toggle(productId: number) {
+  function toggle(product: PurchaseProductPickerItem) {
     setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
+      const next = new Map(current);
+      if (next.has(product.product_id)) next.delete(product.product_id);
+      else next.set(product.product_id, product);
+      return next;
+    });
+  }
+
+  function selectVisible() {
+    setSelected((current) => {
+      const next = new Map(current);
+      availableItems.forEach((product) => next.set(product.product_id, product));
+      return next;
+    });
+  }
+
+  function clearVisible() {
+    setSelected((current) => {
+      const next = new Map(current);
+      availableItems.forEach((product) => next.delete(product.product_id));
       return next;
     });
   }
 
   function addSelected() {
-    const products = availableItems.filter((product) => selected.has(product.product_id));
+    const products = Array.from(selected.values());
     if (!products.length) return;
     onAdd(products);
-    setSelected(new Set());
+    setSelected(new Map());
   }
 
   return (
@@ -107,9 +123,27 @@ export function PurchaseProductPicker({
             {result ? `${result.total_count} products in the company catalogue` : "Search the company catalogue"}
           </small>
         </div>
-        <button className="button button-compact" type="button" disabled={!selected.size} onClick={addSelected}>
-          Add selected{selected.size ? ` (${selected.size})` : ""}
-        </button>
+        <div className="purchase-product-picker-actions">
+          <button
+            className="button button-secondary button-compact"
+            type="button"
+            disabled={!availableItems.length}
+            onClick={selectVisible}
+          >
+            Select visible
+          </button>
+          <button
+            className="button button-secondary button-compact"
+            type="button"
+            disabled={!availableItems.some((product) => selected.has(product.product_id))}
+            onClick={clearVisible}
+          >
+            Clear visible
+          </button>
+          <button className="button button-compact" type="button" disabled={!selected.size} onClick={addSelected}>
+            Add selected{selected.size ? ` (${selected.size})` : ""}
+          </button>
+        </div>
       </div>
 
       <div className="field purchase-product-search">
@@ -134,7 +168,7 @@ export function PurchaseProductPicker({
               <input
                 type="checkbox"
                 checked={selected.has(product.product_id)}
-                onChange={() => toggle(product.product_id)}
+                onChange={() => toggle(product)}
               />
               <span>
                 <strong>{product.name}</strong>
