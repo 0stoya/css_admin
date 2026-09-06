@@ -59,6 +59,7 @@ export function CompanyStructureCard({
   const companyCount = countStructureCompanies(root);
   const isIndependent = companyCount === 1 && root.company.parent_company_id === null;
   const canonicalRoot = root.company.parent_company_id === null;
+  const rootLabel = canonicalRoot ? "Group head" : "Highest visible branch";
 
   return (
     <section className="card company-structure-card stack">
@@ -74,7 +75,7 @@ export function CompanyStructureCard({
               ? "This company is not currently linked to a parent or child company in your visible scope."
               : canonicalRoot
                 ? `${root.company.reference || root.company.name} is the group head for ${companyCount} visible companies.`
-                : `This is the highest visible branch in your current admin scope. Its parent company is outside the visible company set.`}
+                : "This is the highest visible branch in your current admin scope. Its parent company is outside the visible company set."}
           </p>
         </div>
         {!isIndependent ? <span className="badge badge-neutral">{companyCount} companies</span> : null}
@@ -102,7 +103,7 @@ export function CompanyStructureCard({
             <span className="company-tree-root-line" aria-hidden="true" />
             <div className="company-tree-company">
               <Link href={`/companies/${root.company.company_id}`}>{root.company.name}</Link>
-              <span>{root.company.reference || `Company ${root.company.company_id}`} · Group head</span>
+              <span>{root.company.reference || `Company ${root.company.company_id}`} · {rootLabel}</span>
             </div>
             {root.company.company_id === companyId ? <span className="badge badge-ok">Current company</span> : null}
           </div>
