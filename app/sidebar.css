@@ -3,7 +3,33 @@
   max-width: none;
   padding: 0 1.25rem;
 }
-.brand-link { grid-column: 1; }
+.brand-link {
+  grid-column: 1;
+  min-width: 0;
+  max-width: min(72vw, 980px);
+}
+.brand-context-company {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+.brand-company-name {
+  max-width: min(48vw, 620px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brand-context-separator { color: var(--css-border-strong); }
+.brand-company-reference {
+  flex: 0 0 auto;
+  color: var(--css-primary);
+  font-family: var(--font-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+}
 .primary-nav { display: none; }
 .signout-form { grid-column: 3; justify-self: end; }
 
@@ -97,7 +123,8 @@
     padding: 0.7rem 0;
     grid-template-columns: minmax(0, 1fr) auto;
   }
-  .brand-link { grid-column: 1; }
+  .brand-link { grid-column: 1; max-width: 100%; }
+  .brand-company-name { max-width: 42vw; }
   .signout-form { grid-column: 2; }
   .primary-nav {
     display: flex;
@@ -113,5 +140,15 @@
 }
 
 @media (max-width: 640px) {
+  .brand-context-company {
+    display: grid;
+    gap: 0.08rem;
+  }
+  .brand-company-name {
+    max-width: 38vw;
+    font-size: 0.82rem;
+  }
+  .brand-context-separator { display: none; }
+  .brand-company-reference { font-size: 0.72rem; }
   .content { padding: 1rem 0.625rem 2.5rem; }
 }

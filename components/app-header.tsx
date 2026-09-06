@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAppHeaderContext } from "@/components/app-header-context";
 
 export type NavigationItem = {
   href: string;
@@ -20,11 +21,15 @@ export function AppHeader({
   navigation: NavigationItem[];
 }) {
   const pathname = usePathname();
+  const { company } = useAppHeaderContext();
+  const contextLabel = company
+    ? `${company.name} | ${company.reference || `Company ${company.companyId}`}`
+    : productLabel;
 
   return (
     <header className="app-header">
       <div className="app-header-inner">
-        <Link href={homeHref} className="brand-link" aria-label={`CSS Commerce ${productLabel}`}>
+        <Link href={homeHref} className="brand-link" aria-label={`CSS Commerce — ${contextLabel}`}>
           <Image
             className="brand-logo"
             src="/css-logo.png"
@@ -34,7 +39,15 @@ export function AppHeader({
             sizes="(max-width: 700px) 148px, 180px"
             priority
           />
-          <span className="brand-context">{productLabel}</span>
+          {company ? (
+            <span className="brand-context brand-context-company" title={`Current company: ${contextLabel}`}>
+              <span className="brand-company-name">{company.name}</span>
+              <span className="brand-context-separator" aria-hidden="true">|</span>
+              <span className="brand-company-reference">{company.reference || `Company ${company.companyId}`}</span>
+            </span>
+          ) : (
+            <span className="brand-context">{productLabel}</span>
+          )}
         </Link>
 
         <nav className="primary-nav" aria-label="Primary navigation">
