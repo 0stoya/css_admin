@@ -2,7 +2,7 @@ import { parseCsv, stringifyCsv } from "@/lib/csv";
 import { getCompanies, type CompanySummary } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { updateCompanyParent } from "@/lib/graphql/company-settings";
-import type { FlatCompanyImportRow, ImportRowStatus } from "@/lib/import-export-types";
+import type { FlatCompanyImportRow } from "@/lib/import-export-types";
 
 const MAX_ROWS = 5000;
 const HEADERS = ["company_reference", "parent_reference"] as const;
@@ -14,6 +14,8 @@ type PlannedStructureRow = FlatCompanyImportRow & {
   currentParentId: number | null;
   desiredParentId: number | null;
 };
+
+type ChangedStructureRow = PlannedStructureRow & { companyId: number };
 
 type StructurePlan = {
   rows: PlannedStructureRow[];
@@ -56,7 +58,9 @@ function errorRow(row: number, companyRef: string, item: string, message: string
 function parseStructureCsv(source: string) {
   const rows = parseCsv(source).filter((row) => row.some((value) => value.trim() !== ""));
   if (!rows.length) throw new Error("The CSV file is empty.");
-  if (rows.length - 1 > MAX_ROWS) throw new Error(`CSV import is limited to ${MAX_ROWS.toLocaleString()} data rows per preview.`);
+  if (rows.length - 1 > MAX_ROWS) {
+    throw new Error(`CSV import is limited to ${MAX_ROWS.toLocaleString()} data rows per preview.`);
+  }
 
   const headers = rows[0].map(normalized);
   if (
@@ -161,25 +165,50 @@ async function planCompanyStructureCsv(source: string): Promise<StructurePlan> {
       return errorRow(input.row, "", item, "company_reference is required.");
     }
     if ((csvRefCounts.get(companyKey) ?? 0) > 1) {
-      return errorRow(input.row, input.companyReference, item, "company_reference appears more than once in this CSV. Each company may have only one parent assignment per import.");
+      return errorRow(
+        input.row,
+        input.companyReference,
+        item,
+        "company_reference appears more than once in this CSV. Each company may have only one parent assignment per import.",
+      );
     }
     if (duplicateDatabaseRefs.has(companyKey)) {
-      return errorRow(input.row, input.companyReference, item, "The company reference is not unique in the visible Magento company set.");
+      return errorRow(
+        input.row,
+        input.companyReference,
+        item,
+        "The company reference is not unique in the visible Magento company set.",
+      );
     }
 
     const company = byRef.get(companyKey);
     if (!company) {
-      return errorRow(input.row, input.companyReference, item, "Company reference was not found in the current admin scope.");
+      return errorRow(
+        input.row,
+        input.companyReference,
+        item,
+        "Company reference was not found in the current admin scope.",
+      );
     }
 
     let parent: ResolvedCompany | null = null;
     if (input.parentReference) {
       if (duplicateDatabaseRefs.has(parentKey)) {
-        return errorRow(input.row, company.reference, item, "parent_reference is not unique in the visible Magento company set.");
+        return errorRow(
+          input.row,
+          company.reference,
+          item,
+          "parent_reference is not unique in the visible Magento company set.",
+        );
       }
       parent = byRef.get(parentKey) ?? null;
       if (!parent) {
-        return errorRow(input.row, company.reference, item, "Parent reference was not found in the current admin scope.");
+        return errorRow(
+          input.row,
+          company.reference,
+          item,
+          "Parent reference was not found in the current admin scope.",
+        );
       }
       if (parent.company_id === company.company_id) {
         return errorRow(input.row, company.reference, item, "A company cannot be its own parent.");
@@ -234,36 +263,73 @@ export async function previewCompanyStructureCsv(source: string) {
   return plan.rows.map(publicRow);
 }
 
+function changedRows(plan: StructurePlan): ChangedStructureRow[] {
+  return plan.rows.filter(
+    (row): row is ChangedStructureRow => row.status === "Updated" && row.companyId !== null,
+  );
+}
+
 export async function applyCompanyStructureCsv(source: string) {
   const plan = await planCompanyStructureCsv(source);
   if (plan.rows.some((row) => row.status === "Error")) return plan.rows.map(publicRow);
 
-  const changed = plan.rows.filter(
-    (row): row is PlannedStructureRow & { companyId: number } => row.status === "Updated" && row.companyId !== null,
-  );
+  const changed = changedRows(plan);
   const resultByRow = new Map(plan.rows.map((row) => [row.row, { ...row }]));
-  const failed = new Set<number>();
+  const byId = new Map(plan.companies.map((company) => [company.company_id, company]));
+  const detached: ChangedStructureRow[] = [];
+  const detachFailures: ChangedStructureRow[] = [];
 
-  // Detach changed children first. This avoids transient cycles when several branches are moved in one file.
+  // Detach moved branches first so the attachment phase cannot create a transient hierarchy cycle.
   for (const row of changed) {
     if (row.currentParentId === null) continue;
     try {
       await updateCompanyParent(row.companyId, null);
+      detached.push(row);
     } catch (error) {
-      failed.add(row.companyId);
+      detachFailures.push(row);
       const result = resultByRow.get(row.row)!;
       result.status = "Error";
       result.message = `Could not detach the existing parent: ${graphQLErrorMessage(error)}`;
     }
   }
 
-  // Attach the requested parents after all required detaches have completed.
+  if (detachFailures.length) {
+    // Do not create any new parent edges if the detach phase was incomplete. Restore prior edges best-effort.
+    const rollbackFailures = new Set<number>();
+    for (const row of [...detached].reverse()) {
+      try {
+        await updateCompanyParent(row.companyId, row.currentParentId);
+      } catch (error) {
+        rollbackFailures.add(row.companyId);
+        const result = resultByRow.get(row.row)!;
+        result.status = "Error";
+        result.message = `The structure apply stopped after another detach failed, and restoring the original parent also failed: ${graphQLErrorMessage(error)}`;
+      }
+    }
+
+    for (const row of changed) {
+      if (detachFailures.some((failed) => failed.companyId === row.companyId) || rollbackFailures.has(row.companyId)) {
+        continue;
+      }
+      const result = resultByRow.get(row.row)!;
+      result.status = "Error";
+      result.message = row.currentParentId === null
+        ? "No change was applied because another required parent detach failed. Re-preview the structure before retrying."
+        : "The original parent was restored because another required detach failed. Re-preview the structure before retrying.";
+    }
+
+    return [...resultByRow.values()].sort((left, right) => left.row - right.row).map(publicRow);
+  }
+
+  const attachmentFailures = new Set<number>();
+
+  // Attach requested parents only after every required detach succeeded.
   for (const row of changed) {
-    if (failed.has(row.companyId) || row.desiredParentId === null) continue;
+    if (row.desiredParentId === null) continue;
     try {
       await updateCompanyParent(row.companyId, row.desiredParentId);
     } catch (error) {
-      failed.add(row.companyId);
+      attachmentFailures.add(row.companyId);
       const result = resultByRow.get(row.row)!;
       result.status = "Error";
       result.message = row.currentParentId === null
@@ -273,12 +339,12 @@ export async function applyCompanyStructureCsv(source: string) {
   }
 
   for (const row of changed) {
-    if (failed.has(row.companyId)) continue;
+    if (attachmentFailures.has(row.companyId)) continue;
     const result = resultByRow.get(row.row)!;
     result.status = "Updated";
     result.message = row.desiredParentId === null
       ? "Company is now a root company with no parent."
-      : `Parent relationship updated to ${parentLabel(row.desiredParentId, new Map(plan.companies.map((company) => [company.company_id, company])))}.`;
+      : `Parent relationship updated to ${parentLabel(row.desiredParentId, byId)}.`;
   }
 
   return [...resultByRow.values()].sort((left, right) => left.row - right.row).map(publicRow);
@@ -287,7 +353,14 @@ export async function applyCompanyStructureCsv(source: string) {
 export async function exportBulkCompanyStructureCsv() {
   const allCompanies = await getAllCompanies();
   const companies = referencedCompanies(allCompanies);
-  if (!companies.length) throw new Error("No companies with references are available for company-structure export.");
+  if (!companies.length) {
+    throw new Error("No companies with references are available for company-structure export.");
+  }
+
+  const { duplicates } = referenceIndex(companies);
+  if (duplicates.size) {
+    throw new Error("Cannot safely export company structure because company references are not unique in the current admin scope.");
+  }
 
   const byId = new Map(companies.map((company) => [company.company_id, company]));
   const rows: Array<Array<string | number>> = [[...HEADERS]];
@@ -305,34 +378,6 @@ export async function exportBulkCompanyStructureCsv() {
       );
     }
     rows.push([company.reference, parent.reference]);
-  }
-
-  return csvWithBom(rows);
-}
-
-export async function exampleBulkCompanyStructureCsv() {
-  const allCompanies = await getAllCompanies();
-  const companies = referencedCompanies(allCompanies);
-  if (!companies.length) throw new Error("No companies with references are available for the company-structure example.");
-
-  const byId = new Map(companies.map((company) => [company.company_id, company]));
-  const childrenByParent = new Map<number, ResolvedCompany[]>();
-  for (const company of companies) {
-    if (company.parent_company_id === null || !byId.has(company.parent_company_id)) continue;
-    const children = childrenByParent.get(company.parent_company_id) ?? [];
-    children.push(company);
-    childrenByParent.set(company.parent_company_id, children);
-  }
-
-  const existingHead = companies.find((company) => (childrenByParent.get(company.company_id)?.length ?? 0) > 0);
-  const sample = existingHead
-    ? [existingHead, ...(childrenByParent.get(existingHead.company_id) ?? []).slice(0, 4)]
-    : companies.slice(0, 5);
-
-  const rows: Array<Array<string | number>> = [[...HEADERS]];
-  for (const company of sample) {
-    const parent = company.parent_company_id === null ? null : byId.get(company.parent_company_id) ?? null;
-    rows.push([company.reference, parent?.reference ?? ""]);
   }
 
   return csvWithBom(rows);
