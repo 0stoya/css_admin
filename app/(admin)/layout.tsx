@@ -33,11 +33,11 @@ const sectionNavigation: SidebarSectionNavigation[] = [
     parentHref: "/bulk-import",
     heading: "Bulk import tools",
     items: [
-      { href: "/bulk-import#company-structure", label: "Company structure" },
-      { href: "/bulk-import#company-users", label: "Company users" },
-      { href: "/bulk-import#roles-permissions", label: "Roles & permissions" },
-      { href: "/bulk-import#role-products", label: "Role product restrictions" },
-      { href: "/bulk-import#company-products", label: "Company product restrictions" },
+      { href: "/bulk-import", label: "Company structure" },
+      { href: "/bulk-import?view=users", label: "Users" },
+      { href: "/bulk-import?view=roles", label: "Roles & permissions" },
+      { href: "/bulk-import?view=role-products", label: "Role products" },
+      { href: "/bulk-import?view=company-products", label: "Company products" },
     ],
   },
 ];
