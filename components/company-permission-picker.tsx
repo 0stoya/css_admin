@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 export type CompanyPermissionResource = {
   resource_id: string;
@@ -19,6 +19,13 @@ type Props = {
   resources: CompanyPermissionResource[];
   selectedResourceIds?: string[];
   label?: string;
+};
+
+type PermissionCheckboxProps = {
+  node: ResourceNode;
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: (checked: boolean) => void;
 };
 
 function normalized(value: string) {
@@ -79,6 +86,26 @@ function branchMatches(node: ResourceNode, query: string): boolean {
   return ownText.includes(query) || node.children.some((child) => branchMatches(child, query));
 }
 
+function PermissionCheckbox({ node, checked, indeterminate, onChange }: PermissionCheckboxProps) {
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  return (
+    <input
+      ref={ref}
+      aria-label={node.path}
+      name="allowedResources"
+      type="checkbox"
+      value={node.resource_id}
+      checked={checked}
+      onChange={(event) => onChange(event.target.checked)}
+    />
+  );
+}
+
 export function CompanyPermissionPicker({ resources, selectedResourceIds = [], label = "Permissions" }: Props) {
   const searchId = useId();
   const tree = useMemo(() => buildTree(resources), [resources]);
@@ -92,11 +119,14 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
 
   const selectedAssignable = assignable.reduce((total, resource) => total + (selected.has(resource.resource_id) ? 1 : 0), 0);
 
-  function toggleResource(resourceId: string, checked: boolean) {
+  function setResourceSelection(node: ResourceNode, checked: boolean) {
+    const ids = node.children.length ? assignableIds(node) : [node.resource_id];
     setSelected((current) => {
       const next = new Set(current);
-      if (checked) next.add(resourceId);
-      else next.delete(resourceId);
+      ids.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
       return next;
     });
   }
@@ -111,15 +141,7 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
   }
 
   function setBranchSelection(node: ResourceNode, checked: boolean) {
-    const ids = assignableIds(node);
-    setSelected((current) => {
-      const next = new Set(current);
-      ids.forEach((id) => {
-        if (checked) next.add(id);
-        else next.delete(id);
-      });
-      return next;
-    });
+    setResourceSelection(node, checked);
   }
 
   function renderNode(node: ResourceNode, level = 0): ReactNode {
@@ -128,6 +150,8 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
     const open = search ? true : openBranches.has(node.resource_id);
     const branchAssignableIds = hasChildren ? assignableIds(node) : [];
     const branchSelected = branchAssignableIds.filter((id) => selected.has(id)).length;
+    const branchFullySelected = branchAssignableIds.length > 0 && branchSelected === branchAssignableIds.length;
+    const branchPartiallySelected = branchSelected > 0 && !branchFullySelected;
 
     return (
       <div className={`permission-node ${level === 0 ? "permission-node-root" : ""}`} key={node.resource_id}>
@@ -145,13 +169,11 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
           ) : <span className="permission-toggle-spacer" aria-hidden="true" />}
 
           {node.assignable ? (
-            <input
-              aria-label={node.path}
-              name="allowedResources"
-              type="checkbox"
-              value={node.resource_id}
-              checked={selected.has(node.resource_id)}
-              onChange={(event) => toggleResource(node.resource_id, event.target.checked)}
+            <PermissionCheckbox
+              node={node}
+              checked={hasChildren ? branchFullySelected : selected.has(node.resource_id)}
+              indeterminate={hasChildren && branchPartiallySelected}
+              onChange={(checked) => setResourceSelection(node, checked)}
             />
           ) : (
             <>
