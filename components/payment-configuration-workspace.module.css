@@ -1,0 +1,312 @@
+.workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.policyCard,
+.methodsCard {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.15rem;
+  background: var(--css-surface);
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 4%);
+}
+
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardHeading h2 {
+  margin: 0 0 0.35rem;
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.modeCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.8rem;
+  min-height: 150px;
+  padding: 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fbfdff;
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, transform 100ms ease;
+}
+
+.modeCard:hover {
+  border-color: #9bb6cc;
+  background: #f7fbff;
+}
+
+.modeCardActive {
+  border-color: var(--css-primary);
+  background: var(--css-primary-soft);
+  box-shadow: inset 0 -3px var(--css-secondary), 0 0 0 1px rgb(0 87 168 / 7%);
+}
+
+.modeCard input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.iconWrap {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--css-border);
+  color: var(--css-primary);
+}
+
+.modeCardActive .iconWrap {
+  border-color: #9fc3e5;
+  background: #fff;
+}
+
+.modeIcon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.modeCopy {
+  display: grid;
+  gap: 0.38rem;
+  min-width: 0;
+}
+
+.modeCopy strong {
+  color: var(--css-text);
+  font-size: 0.98rem;
+}
+
+.modeCopy span {
+  color: var(--css-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.modeCopy small {
+  color: var(--css-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.radioMark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #9fb1c0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.modeCardActive .radioMark {
+  border-color: var(--css-primary);
+  background: var(--css-primary);
+}
+
+.selectionCount {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+  color: var(--css-muted);
+  font-size: 0.82rem;
+}
+
+.selectionCount strong {
+  color: var(--css-primary);
+  font-family: var(--font-secondary);
+  font-size: 1.55rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.methodToolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.8rem;
+}
+
+.searchField {
+  display: grid;
+  gap: 0.42rem;
+  color: var(--css-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.searchField input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.7rem 0.82rem;
+  border: 1px solid var(--css-border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--css-text);
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.methodGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.methodRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 68px;
+  padding: 0.78rem 0.9rem;
+  border-bottom: 1px solid #e7edf2;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.methodRow:nth-child(odd) {
+  border-right: 1px solid #e7edf2;
+}
+
+.methodRow:hover {
+  background: #f8fbfd;
+}
+
+.methodRowSelected {
+  background: #f1f8fe;
+}
+
+.methodRow input {
+  width: 16px;
+  height: 16px;
+}
+
+.methodCopy {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+}
+
+.methodCopy strong {
+  overflow: hidden;
+  color: var(--css-text);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.methodState {
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  background: #edf2f6;
+  color: #536779;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.methodRowSelected .methodState {
+  background: var(--css-success-soft);
+  color: var(--css-success);
+}
+
+.emptyState {
+  padding: 1rem;
+  border: 1px dashed var(--css-border-strong);
+  border-radius: 9px;
+  color: var(--css-muted);
+  background: #fbfdff;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--css-border-strong);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 10px 28px rgb(0 35 72 / 10%);
+  backdrop-filter: blur(10px);
+}
+
+.saveBar > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.saveBar strong {
+  color: var(--css-text);
+}
+
+.saveBar span {
+  color: var(--css-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 980px) {
+  .modeGrid,
+  .methodGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .methodRow:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .methodToolbar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .cardHeading,
+  .saveBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selectionCount {
+    justify-items: start;
+  }
+
+  .modeCard {
+    min-height: auto;
+  }
+
+  .saveBar button {
+    width: 100%;
+  }
+}
