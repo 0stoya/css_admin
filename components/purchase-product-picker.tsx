@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { searchPurchaseControlProducts } from "@/lib/actions/purchase-control-product-search";
 
 export type PurchaseProductPickerItem = {
   product_id: number;
@@ -40,31 +41,32 @@ export function PurchaseProductPicker({
   );
 
   useEffect(() => {
-    const controller = new AbortController();
+    let active = true;
     const timer = window.setTimeout(async () => {
       setLoading(true);
       setError(null);
+
       try {
-        const params = new URLSearchParams({ page: "1", pageSize: "50" });
-        if (query.trim()) params.set("search", query.trim());
-        const response = await fetch(
-          `/api/companies/${companyId}/purchase-control-products?${params.toString()}`,
-          { cache: "no-store", signal: controller.signal },
-        );
-        const body = await response.json();
-        if (!response.ok) throw new Error(body?.error || "Product search failed.");
-        setResult(body as SearchResult);
+        const response = await searchPurchaseControlProducts(companyId, query.trim());
+        if (!active) return;
+
+        if (!response.ok) {
+          setError(response.error);
+          return;
+        }
+
+        setResult(response.result);
       } catch (caught) {
-        if (controller.signal.aborted) return;
+        if (!active) return;
         setError(caught instanceof Error ? caught.message : "Product search failed.");
       } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (active) setLoading(false);
       }
     }, 220);
 
     return () => {
+      active = false;
       window.clearTimeout(timer);
-      controller.abort();
     };
   }, [companyId, query]);
 
