@@ -1,0 +1,437 @@
+.workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.tabs {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  overflow-x: auto;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 35, 72, 0.05);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 38px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  color: var(--css-text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: #f5f9fc;
+}
+
+.tabActive {
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.tabCount {
+  display: inline-grid;
+  min-width: 24px;
+  min-height: 22px;
+  place-items: center;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: #eaf0f4;
+  color: var(--css-muted);
+  font-size: 0.72rem;
+}
+
+.tabActive .tabCount {
+  background: var(--css-primary);
+  color: #fff;
+}
+
+.healthStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.healthItem {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.9rem 1rem;
+}
+
+.healthItem + .healthItem {
+  border-left: 1px solid var(--css-border);
+}
+
+.healthLabel {
+  color: var(--css-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.healthValue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--css-text);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.healthDot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #9eabb6;
+}
+
+.healthDotOk {
+  background: #19a463;
+}
+
+.healthDotBad {
+  background: #c73535;
+}
+
+.sectionHeader,
+.previewHeader,
+.tableToolbar,
+.mappingHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sectionHeader h2,
+.previewHeader h2,
+.mappingHeader h2 {
+  margin: 0.1rem 0 0.25rem;
+}
+
+.sectionHeader p,
+.previewHeader p,
+.mappingHeader p {
+  margin-bottom: 0;
+}
+
+.headerActions,
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.filterCard {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) minmax(160px, 1fr) minmax(160px, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.filterActions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.previewPanel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #bfd4e5;
+  border-radius: 12px;
+  background: #f8fbfd;
+}
+
+.previewMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.previewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.previewCard {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.previewCard h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.previewCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr);
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--css-border);
+}
+
+.detailGrid dt,
+.detailGrid dd {
+  margin: 0;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--css-border);
+}
+
+.detailGrid dt {
+  color: var(--css-muted);
+  font-size: 0.78rem;
+}
+
+.detailGrid dd {
+  overflow-wrap: anywhere;
+  color: var(--css-text);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.overrideForm {
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 0.2rem;
+}
+
+.tableCard {
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.tableToolbar {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--css-border);
+  background: #fbfdfe;
+}
+
+.tableToolbarText {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.tableToolbarText strong {
+  font-size: 0.92rem;
+}
+
+.tableToolbarText span {
+  color: var(--css-muted);
+  font-size: 0.78rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableWrap table {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.companyCell {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.companyCell strong {
+  font-size: 0.88rem;
+}
+
+.companyCell a {
+  width: fit-content;
+}
+
+.repCell {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.repCell strong {
+  font-size: 0.82rem;
+}
+
+.repCell span {
+  color: var(--css-muted);
+  font-size: 0.74rem;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--css-border);
+  background: #fbfdfe;
+}
+
+.mappingForm {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) minmax(220px, 1.2fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  padding: 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.mappingName {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.mappingName strong {
+  font-size: 0.86rem;
+}
+
+.mappingName span {
+  color: var(--css-muted);
+  font-size: 0.75rem;
+}
+
+.emptyState {
+  padding: 1.4rem;
+  border: 1px dashed #bfd0de;
+  border-radius: 12px;
+  background: #fbfdfe;
+}
+
+.emptyState strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 1050px) {
+  .healthStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .healthItem:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--css-border);
+  }
+
+  .healthItem:nth-child(4) {
+    border-top: 1px solid var(--css-border);
+  }
+
+  .previewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterCard,
+  .mappingForm {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filterActions,
+  .mappingForm > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .healthStrip,
+  .filterCard,
+  .mappingForm {
+    grid-template-columns: 1fr;
+  }
+
+  .healthItem + .healthItem,
+  .healthItem:nth-child(3),
+  .healthItem:nth-child(4) {
+    border-top: 1px solid var(--css-border);
+    border-left: 0;
+  }
+
+  .sectionHeader,
+  .previewHeader,
+  .tableToolbar,
+  .mappingHeader,
+  .pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .headerActions,
+  .toolbarActions,
+  .filterActions {
+    width: 100%;
+  }
+
+  .headerActions > *,
+  .toolbarActions > *,
+  .filterActions > * {
+    flex: 1 1 auto;
+  }
+
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .detailGrid dt {
+    padding-bottom: 0.15rem;
+    border-bottom: 0;
+  }
+
+  .detailGrid dd {
+    padding-top: 0;
+  }
+}
