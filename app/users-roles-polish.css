@@ -1,0 +1,121 @@
+.management-view-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 1rem;
+}
+
+.management-create-inline {
+  min-width: 0;
+  justify-self: end;
+  align-self: start;
+  overflow: visible;
+}
+
+.management-create-inline > summary {
+  display: inline-flex;
+  width: max-content;
+  min-height: 42px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--css-border);
+  border-radius: 8px;
+  background: var(--css-surface);
+  box-shadow: 0 1px 3px rgb(0 35 72 / 4%);
+}
+
+.management-create-inline > summary:hover {
+  border-color: #b7c8d7;
+  background: #f8fbfd;
+}
+
+.management-create-inline > summary::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230057A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='M12 5v14'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+}
+
+.management-create-inline > summary::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  margin-left: 0.15rem;
+  border-radius: 0;
+  background: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230057A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  box-shadow: none;
+  transition: transform 140ms ease;
+}
+
+.management-create-inline[open] {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: var(--css-surface);
+}
+
+.management-create-inline[open] > summary {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: #f8fbfd;
+  box-shadow: none;
+}
+
+.management-create-inline[open] > summary::after {
+  content: "";
+  transform: rotate(180deg);
+}
+
+.management-create-inline[open] .management-panel-body {
+  border-top: 1px solid var(--css-border);
+}
+
+.management-record-action > span {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  color: transparent;
+  font-size: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230057A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  transition: transform 140ms ease;
+}
+
+.management-record[open] .management-record-action > span {
+  transform: rotate(90deg);
+}
+
+@media (max-width: 700px) {
+  .management-view-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .management-create-inline {
+    width: auto;
+    justify-self: start;
+  }
+
+  .management-create-inline[open] {
+    width: 100%;
+  }
+}
