@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { NavigationItem } from "@/components/app-header";
 import { useAppHeaderContext } from "@/components/app-header-context";
 
@@ -21,7 +21,7 @@ export type SidebarSectionNavigation = {
 };
 
 function hrefPath(href: string) {
-  return href.split("#", 1)[0] || href;
+  return href.split("#", 1)[0].split("?", 1)[0] || href;
 }
 
 function isActive(pathname: string, item: NavigationItem) {
@@ -38,6 +38,24 @@ function isChildActive(pathname: string, href: string, exact = false) {
     : pathname === path || pathname.startsWith(`${path}/`);
 }
 
+function isSectionChildActive(pathname: string, currentQuery: string, href: string) {
+  const [withoutHash] = href.split("#", 1);
+  const [path, query = ""] = withoutHash.split("?", 2);
+  if (pathname !== path) return false;
+
+  const current = new URLSearchParams(currentQuery);
+  const expected = new URLSearchParams(query);
+  if (![...expected.keys()].length) {
+    return !current.get("view");
+  }
+
+  for (const [key, value] of expected.entries()) {
+    if (current.get(key) !== value) return false;
+  }
+
+  return true;
+}
+
 export function AppSidebar({
   productLabel,
   navigation,
@@ -50,6 +68,8 @@ export function AppSidebar({
   sectionNavigation?: SidebarSectionNavigation[];
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams.toString();
   const { company } = useAppHeaderContext();
   const companyBase = company ? `/companies/${company.companyId}` : null;
   const companySectionVisible = Boolean(
@@ -72,7 +92,10 @@ export function AppSidebar({
             const staticSection = sectionNavigation.find((section) => section.parentHref === item.href);
             const showCompanySection = item.href === "/companies" && companySectionVisible;
             const showStaticSection = Boolean(staticSection && active);
-            const topLevelCurrent = pathname === hrefPath(item.href);
+            const staticChildCurrent = Boolean(
+              staticSection?.items.some((child) => isSectionChildActive(pathname, currentQuery, child.href)),
+            );
+            const topLevelCurrent = pathname === hrefPath(item.href) && !staticChildCurrent;
 
             return (
               <div className="sidebar-group" key={item.href}>
@@ -110,12 +133,20 @@ export function AppSidebar({
                 {showStaticSection && staticSection ? (
                   <div className="sidebar-subnav">
                     <span className="sidebar-subnav-heading">{staticSection.heading}</span>
-                    {staticSection.items.map((child) => (
-                      <Link className="sidebar-sublink" href={child.href} key={child.href}>
-                        <span className="sidebar-sublink-marker" aria-hidden="true" />
-                        <span>{child.label}</span>
-                      </Link>
-                    ))}
+                    {staticSection.items.map((child) => {
+                      const childActive = isSectionChildActive(pathname, currentQuery, child.href);
+                      return (
+                        <Link
+                          className={`sidebar-sublink${childActive ? " sidebar-sublink-active" : ""}`}
+                          href={child.href}
+                          aria-current={childActive ? "page" : undefined}
+                          key={child.href}
+                        >
+                          <span className="sidebar-sublink-marker" aria-hidden="true" />
+                          <span>{child.label}</span>
+                        </Link>
+                      );
+                    })}
                   </div>
                 ) : null}
               </div>
