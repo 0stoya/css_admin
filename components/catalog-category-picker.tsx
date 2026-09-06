@@ -11,8 +11,9 @@ export type CatalogCategoryPickerNode = {
   children: CatalogCategoryPickerNode[];
 };
 
-type TreeNode = CatalogCategoryPickerNode & {
+type TreeNode = Omit<CatalogCategoryPickerNode, "children"> & {
   path: string;
+  children: TreeNode[];
 };
 
 function normalize(value: string) {
