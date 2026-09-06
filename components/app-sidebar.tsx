@@ -38,18 +38,19 @@ function isChildActive(pathname: string, href: string, exact = false) {
     : pathname === path || pathname.startsWith(`${path}/`);
 }
 
-function isSectionChildActive(pathname: string, searchParams: URLSearchParams, href: string) {
+function isSectionChildActive(pathname: string, currentQuery: string, href: string) {
   const [withoutHash] = href.split("#", 1);
   const [path, query = ""] = withoutHash.split("?", 2);
   if (pathname !== path) return false;
 
+  const current = new URLSearchParams(currentQuery);
   const expected = new URLSearchParams(query);
   if (![...expected.keys()].length) {
-    return !searchParams.get("view");
+    return !current.get("view");
   }
 
   for (const [key, value] of expected.entries()) {
-    if (searchParams.get(key) !== value) return false;
+    if (current.get(key) !== value) return false;
   }
 
   return true;
@@ -68,6 +69,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const currentQuery = searchParams.toString();
   const { company } = useAppHeaderContext();
   const companyBase = company ? `/companies/${company.companyId}` : null;
   const companySectionVisible = Boolean(
@@ -90,7 +92,10 @@ export function AppSidebar({
             const staticSection = sectionNavigation.find((section) => section.parentHref === item.href);
             const showCompanySection = item.href === "/companies" && companySectionVisible;
             const showStaticSection = Boolean(staticSection && active);
-            const topLevelCurrent = pathname === hrefPath(item.href);
+            const staticChildCurrent = Boolean(
+              staticSection?.items.some((child) => isSectionChildActive(pathname, currentQuery, child.href)),
+            );
+            const topLevelCurrent = pathname === hrefPath(item.href) && !staticChildCurrent;
 
             return (
               <div className="sidebar-group" key={item.href}>
@@ -129,7 +134,7 @@ export function AppSidebar({
                   <div className="sidebar-subnav">
                     <span className="sidebar-subnav-heading">{staticSection.heading}</span>
                     {staticSection.items.map((child) => {
-                      const childActive = isSectionChildActive(pathname, searchParams, child.href);
+                      const childActive = isSectionChildActive(pathname, currentQuery, child.href);
                       return (
                         <Link
                           className={`sidebar-sublink${childActive ? " sidebar-sublink-active" : ""}`}
