@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
-import { getCompanyCredit } from "@/lib/graphql/company-credit";
+import { getCompanyCredit, type CompanyCredit } from "@/lib/graphql/company-credit";
+import styles from "@/components/company-credit-workspace.module.css";
 
 async function loadCompanyCredit(companyId: number) {
   try {
@@ -34,6 +35,20 @@ function formatAmount(value: number | null, currency: string | null) {
   return value.toFixed(2);
 }
 
+function utilisation(credit: CompanyCredit) {
+  if (credit.credit_limit === null || credit.used_amount === null || credit.credit_limit <= 0) {
+    return null;
+  }
+
+  return (credit.used_amount / credit.credit_limit) * 100;
+}
+
+function accountStatus(credit: CompanyCredit) {
+  if (!credit.has_credit_account) return "No credit account";
+  if (credit.remaining_amount !== null && credit.remaining_amount < 0) return "Over credit limit";
+  return "Credit account active";
+}
+
 export default async function CompanyCreditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const companyId = Number(id);
@@ -45,7 +60,6 @@ export default async function CompanyCreditPage({ params }: { params: Promise<{ 
   if (!company || !credit) {
     return (
       <div className="stack">
-        <div><Link className="back-link" href={`/companies/${companyId}`}>← Company detail</Link></div>
         <section className="card stack">
           <div>
             <p className="eyebrow">Backend request failed</p>
@@ -57,65 +71,131 @@ export default async function CompanyCreditPage({ params }: { params: Promise<{ 
     );
   }
 
-  return (
-    <div className="stack section-gap">
-      <div className="breadcrumbs">
-        <Link href="/companies">Companies</Link><span aria-hidden="true">/</span>
-        <Link href={`/companies/${company.company_id}`}>{company.name}</Link><span aria-hidden="true">/</span>
-        <span>Company credit</span>
-      </div>
+  const usage = utilisation(credit);
+  const usageBar = usage === null ? 0 : Math.min(100, Math.max(0, usage));
+  const isOverLimit = credit.remaining_amount !== null && credit.remaining_amount < 0;
 
+  return (
+    <div className={styles.workspace}>
       <header className="page-header">
         <div>
-          <p className="eyebrow">Company {company.company_id}</p>
+          <p className="eyebrow">Credit account</p>
           <h1>Company credit</h1>
-          <p className="muted">Read-only credit account state returned by Fluid for {company.name}.</p>
+          <p className="muted">Current credit position and policy returned directly by Fluid.</p>
         </div>
+        <Link className="button button-secondary button-link" href={`/companies/${company.company_id}/credit-orders`}>
+          Open credit orders
+        </Link>
       </header>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-value">{formatAmount(credit.credit_limit, credit.currency)}</span>
-          <span className="stat-label">Credit limit</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{formatAmount(credit.used_amount, credit.currency)}</span>
-          <span className="stat-label">Used amount</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{formatAmount(credit.remaining_amount, credit.currency)}</span>
-          <span className="stat-label">Remaining amount</span>
-        </div>
-      </div>
-
-      <section className="card stack">
-        <div className="card-heading-row">
+      {!credit.has_credit_account ? (
+        <section className={`card ${styles.emptyState}`}>
+          <div className={styles.emptyIcon} aria-hidden="true">£</div>
           <div>
-            <h2>Current credit state</h2>
-            <p className="muted">Values are displayed exactly from the backend; the Admin app does not calculate or modify credit.</p>
+            <span className="badge badge-neutral">No credit account</span>
+            <h2>No company credit is configured</h2>
+            <p className="muted">
+              Fluid returned no credit account for this company. Credit values are read-only in this portal.
+            </p>
           </div>
-          <div className={`badge ${credit.has_credit_account ? "badge-ok" : "badge-neutral"}`}>
-            {credit.has_credit_account ? "Credit account" : "No credit account"}
+        </section>
+      ) : (
+        <>
+          <section className={`card ${styles.positionCard}`}>
+            <div className={styles.positionHeading}>
+              <div>
+                <p className="eyebrow">Credit position</p>
+                <h2>{formatAmount(credit.remaining_amount, credit.currency)}</h2>
+                <p className="muted">Available credit</p>
+              </div>
+              <span className={`badge ${isOverLimit ? styles.dangerBadge : "badge-ok"}`}>
+                {accountStatus(credit)}
+              </span>
+            </div>
+
+            <div className={styles.amountGrid}>
+              <div className={styles.amountMetric}>
+                <span>Credit limit</span>
+                <strong>{formatAmount(credit.credit_limit, credit.currency)}</strong>
+              </div>
+              <div className={styles.amountMetric}>
+                <span>Used credit</span>
+                <strong>{formatAmount(credit.used_amount, credit.currency)}</strong>
+              </div>
+              <div className={styles.amountMetric}>
+                <span>Available</span>
+                <strong className={isOverLimit ? styles.dangerText : undefined}>
+                  {formatAmount(credit.remaining_amount, credit.currency)}
+                </strong>
+              </div>
+            </div>
+
+            <div className={styles.usageBlock}>
+              <div className={styles.usageHeading}>
+                <span>Credit used</span>
+                <strong>{usage === null ? "—" : `${usage.toFixed(1)}%`}</strong>
+              </div>
+              <div className={styles.usageTrack} aria-hidden="true">
+                <div
+                  className={`${styles.usageFill} ${isOverLimit ? styles.usageFillOver : ""}`}
+                  style={{ width: `${usageBar}%` }}
+                />
+              </div>
+              {isOverLimit ? (
+                <p className={styles.overLimitNote}>
+                  The returned used balance is above the configured credit limit.
+                </p>
+              ) : null}
+            </div>
+          </section>
+
+          <div className={styles.detailGrid}>
+            <section className={`card ${styles.policyCard}`}>
+              <div className={styles.cardHeading}>
+                <div>
+                  <p className="eyebrow">Policy</p>
+                  <h2>Credit policy</h2>
+                </div>
+                <span className={`badge ${credit.allow_over_limit ? styles.warningBadge : "badge-neutral"}`}>
+                  {credit.allow_over_limit ? "Over limit allowed" : "Hard limit"}
+                </span>
+              </div>
+
+              <div className={styles.policyRows}>
+                <div>
+                  <span>Over-limit purchases</span>
+                  <strong>{credit.allow_over_limit ? "Allowed" : "Not allowed"}</strong>
+                </div>
+                <div>
+                  <span>Currency</span>
+                  <strong>{credit.currency ?? "—"}</strong>
+                </div>
+                <div>
+                  <span>Credit account ID</span>
+                  <strong>{credit.credit_id ?? "—"}</strong>
+                </div>
+              </div>
+            </section>
+
+            <section className={`card ${styles.workflowCard}`}>
+              <div>
+                <p className="eyebrow">Credit workflow</p>
+                <h2>Credit orders</h2>
+                <p className="muted">
+                  Review the company&apos;s credit-order queue, status and Fluid-authorized approval actions.
+                </p>
+              </div>
+              <Link className="button button-link" href={`/companies/${company.company_id}/credit-orders`}>
+                View credit orders
+              </Link>
+            </section>
           </div>
-        </div>
 
-        <dl className="detail-list">
-          <dt>Company ID</dt><dd>{credit.company_id}</dd>
-          <dt>Credit ID</dt><dd>{credit.credit_id ?? "—"}</dd>
-          <dt>Currency</dt><dd>{credit.currency ?? "—"}</dd>
-          <dt>Credit account</dt><dd>{credit.has_credit_account ? "Yes" : "No"}</dd>
-          <dt>Allow over limit</dt><dd>{credit.allow_over_limit ? "Yes" : "No"}</dd>
-        </dl>
-      </section>
-
-      <section className="card stack">
-        <div>
-          <h2>Read-only value</h2>
-          <p className="muted">
-            Company credit is informational in this Admin product. There are intentionally no controls here to change the credit limit, used balance or over-limit policy.
+          <p className={styles.readOnlyNote}>
+            Credit limit, balance and over-limit policy are read-only here and are not recalculated by the Admin portal.
           </p>
-        </div>
-      </section>
+        </>
+      )}
     </div>
   );
 }

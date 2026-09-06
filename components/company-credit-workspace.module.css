@@ -1,0 +1,233 @@
+.workspace {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.positionCard {
+  display: grid;
+  gap: 1.35rem;
+  padding: 1.4rem;
+}
+
+.positionHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.positionHeading h2 {
+  margin: 0.05rem 0 0.15rem;
+  font-family: var(--font-secondary);
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.amountGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f8fbfd;
+}
+
+.amountMetric {
+  display: grid;
+  gap: 0.28rem;
+  padding: 1rem 1.1rem;
+}
+
+.amountMetric + .amountMetric {
+  border-left: 1px solid var(--css-border);
+}
+
+.amountMetric span {
+  color: var(--css-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.amountMetric strong {
+  color: var(--css-text);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.usageBlock {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.usageHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.usageHeading span {
+  color: var(--css-muted);
+}
+
+.usageTrack {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eef3;
+}
+
+.usageFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--css-primary);
+  transition: width 180ms ease;
+}
+
+.usageFillOver {
+  background: var(--css-danger);
+}
+
+.overLimitNote {
+  margin: 0;
+  color: var(--css-danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 1rem;
+}
+
+.policyCard,
+.workflowCard {
+  display: grid;
+  gap: 1rem;
+}
+
+.cardHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardHeading h2,
+.workflowCard h2,
+.emptyState h2 {
+  margin: 0;
+}
+
+.policyRows {
+  display: grid;
+  border-top: 1px solid var(--css-border);
+}
+
+.policyRows > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #e7edf2;
+}
+
+.policyRows > div:last-child {
+  border-bottom: 0;
+}
+
+.policyRows span {
+  color: var(--css-muted);
+}
+
+.policyRows strong {
+  text-align: right;
+}
+
+.workflowCard {
+  align-content: space-between;
+}
+
+.workflowCard > div {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.4rem;
+}
+
+.emptyState > div:last-child {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.emptyIcon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid var(--css-border);
+  border-radius: 14px;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+  font-family: var(--font-secondary);
+  font-size: 1.45rem;
+}
+
+.dangerBadge {
+  background: var(--css-danger-soft);
+  color: var(--css-danger);
+}
+
+.warningBadge {
+  background: var(--css-warning-soft);
+  color: var(--css-warning);
+}
+
+.dangerText {
+  color: var(--css-danger) !important;
+}
+
+.readOnlyNote {
+  margin: -0.2rem 0 0;
+  color: var(--css-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .positionHeading,
+  .cardHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .amountGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .amountMetric + .amountMetric {
+    border-left: 0;
+    border-top: 1px solid var(--css-border);
+  }
+
+  .emptyState {
+    align-items: flex-start;
+  }
+}
