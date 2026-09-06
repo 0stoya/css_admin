@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import {
   companyProductsFlatImportAction,
   companyRoleProductsFlatImportAction,
@@ -175,6 +175,8 @@ function FlatImportPanel({
   workspace = false,
 }: PanelProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [fileName, setFileName] = useState("");
+  const fileInputId = useId();
   const errors = state.rows.filter((row) => row.status === "Error").length;
   const actionable = state.rows.filter((row) => row.status === "Created" || row.status === "Updated").length;
   const rootClass = workspace ? `card ${styles.panel}` : "card stack import-panel";
@@ -206,8 +208,27 @@ function FlatImportPanel({
         <input name="intent" type="hidden" value="preview" />
         <div className={workspace ? styles.uploadGrid : undefined}>
           <div className="field">
-            <label>CSV file</label>
-            <input name="file" type="file" accept=".csv,text/csv" required />
+            <label htmlFor={fileInputId}>CSV file</label>
+            <div className={styles.filePicker}>
+              <input
+                id={fileInputId}
+                className={styles.fileInput}
+                name="file"
+                type="file"
+                accept=".csv,text/csv"
+                required
+                onChange={(event) => setFileName(event.currentTarget.files?.[0]?.name ?? "")}
+              />
+              <label className={styles.fileButton} htmlFor={fileInputId}>
+                <svg className={styles.fileIcon} viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4" />
+                </svg>
+                <span>{fileName ? "Change CSV" : "Choose CSV"}</span>
+              </label>
+              <span className={`${styles.fileName} ${fileName ? styles.fileNameSelected : ""}`}>
+                {fileName || "No CSV selected"}
+              </span>
+            </div>
           </div>
           <button className="button" type="submit" disabled={pending}>{pending ? "Checking…" : "Preview CSV"}</button>
         </div>
