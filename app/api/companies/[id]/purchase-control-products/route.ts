@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { GraphQLRequestError } from "@/lib/graphql/client";
-import { getCompanyCatalogProducts } from "@/lib/graphql/company-catalog-products";
+import {
+  CompanyCatalogProductSearchError,
+  getCompanyCatalogProducts,
+} from "@/lib/graphql/company-catalog-products";
 
 function positiveInt(value: string | null, fallback: number) {
   const parsed = Number(value);
@@ -25,12 +27,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    if (error instanceof GraphQLRequestError && error.status === 401) {
+    if (error instanceof CompanyCatalogProductSearchError && error.status === 401) {
       return NextResponse.json({ error: "Session expired." }, { status: 401 });
     }
+    const status = error instanceof CompanyCatalogProductSearchError && error.status
+      ? error.status
+      : 403;
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Product search failed." },
-      { status: 403 },
+      { status },
     );
   }
 }
