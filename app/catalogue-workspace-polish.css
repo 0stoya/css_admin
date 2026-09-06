@@ -11,6 +11,89 @@
   gap: 0.8rem;
 }
 
+.catalogue-role-subtabs {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border: 1px solid var(--css-border);
+  border-radius: 11px;
+  background: var(--css-surface);
+  box-shadow: 0 3px 12px rgb(0 35 72 / 5%);
+}
+
+.catalogue-role-subtab {
+  display: inline-flex;
+  min-width: 170px;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.62rem 0.75rem;
+  border-radius: 8px;
+  color: var(--css-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.catalogue-role-subtab:hover {
+  background: #f4f8fb;
+  color: var(--css-primary);
+}
+
+.catalogue-role-subtab-active {
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.catalogue-role-subtab > strong {
+  min-width: 1.8rem;
+  margin-left: auto;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  background: #edf2f6;
+  color: var(--css-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.catalogue-role-subtab-active > strong {
+  background: var(--css-primary);
+  color: #fff;
+}
+
+.catalogue-role-status-icon {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 19px 19px;
+}
+
+.catalogue-role-status-icon-set {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2314804A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+}
+
+.catalogue-role-status-icon-empty {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23B42318' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/%3E%3Cpath d='m9 9 6 6'/%3E%3Cpath d='m15 9-6 6'/%3E%3C/svg%3E");
+}
+
+.catalogue-role-tab-panel {
+  width: 100%;
+}
+
+.catalogue-role-control-single {
+  width: 100%;
+}
+
+.catalogue-control-heading-meta {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+  text-align: right;
+}
+
 .catalogue-role-control {
   transition: box-shadow 140ms ease, border-color 140ms ease;
 }
@@ -121,5 +204,19 @@
 @media (max-width: 640px) {
   .catalogue-role-list {
     max-height: none;
+  }
+
+  .catalogue-role-subtabs {
+    width: 100%;
+  }
+
+  .catalogue-role-subtab {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .catalogue-control-heading-meta {
+    justify-items: start;
+    text-align: left;
   }
 }
