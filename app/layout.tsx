@@ -9,6 +9,7 @@ import "./control-surfaces.css";
 import "./company-overview.css";
 import "./catalogue-workspace.css";
 import "./catalogue-workspace-polish.css";
+import "./purchase-controls.css";
 
 export const metadata: Metadata = {
   title: {
