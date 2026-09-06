@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 export type CompanyPermissionResource = {
   resource_id: string;
@@ -80,6 +80,7 @@ function branchMatches(node: ResourceNode, query: string): boolean {
 }
 
 export function CompanyPermissionPicker({ resources, selectedResourceIds = [], label = "Permissions" }: Props) {
+  const searchId = useId();
   const tree = useMemo(() => buildTree(resources), [resources]);
   const branchIds = useMemo(() => allBranchIds(tree), [tree]);
   const initialOpen = useMemo(() => rootBranchIds(tree), [tree]);
@@ -113,12 +114,15 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
     const ids = assignableIds(node);
     setSelected((current) => {
       const next = new Set(current);
-      ids.forEach((id) => checked ? next.add(id) : next.delete(id));
+      ids.forEach((id) => {
+        if (checked) next.add(id);
+        else next.delete(id);
+      });
       return next;
     });
   }
 
-  function renderNode(node: ResourceNode, level = 0): React.ReactNode {
+  function renderNode(node: ResourceNode, level = 0): ReactNode {
     if (search && !branchMatches(node, search)) return null;
     const hasChildren = node.children.length > 0;
     const open = search ? true : openBranches.has(node.resource_id);
@@ -127,7 +131,7 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
 
     return (
       <div className={`permission-node ${level === 0 ? "permission-node-root" : ""}`} key={node.resource_id}>
-        <div className="permission-row" style={{ "--permission-depth": Math.min(level, 7) } as React.CSSProperties}>
+        <div className="permission-row" style={{ "--permission-depth": Math.min(level, 7) } as CSSProperties}>
           {hasChildren ? (
             <button
               className="permission-toggle"
@@ -199,9 +203,9 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
       </div>
 
       <div className="field permission-search-field">
-        <label htmlFor={`permission-search-${label.replaceAll(" ", "-").toLowerCase()}`}>Find a permission</label>
+        <label htmlFor={searchId}>Find a permission</label>
         <input
-          id={`permission-search-${label.replaceAll(" ", "-").toLowerCase()}`}
+          id={searchId}
           type="search"
           value={query}
           placeholder="Search by title or resource ID"
