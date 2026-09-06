@@ -86,13 +86,8 @@ export function AppSidebar({
                   <span>{item.label}</span>
                 </Link>
 
-                {showCompanySection && company && companyBase ? (
+                {showCompanySection && companyBase ? (
                   <div className="sidebar-subnav sidebar-company-subnav">
-                    <div className="sidebar-company-context" title={`${company.name} | ${company.reference || `Company ${company.companyId}`}`}>
-                      <span className="sidebar-subnav-kicker">Current company</span>
-                      <strong>{company.name}</strong>
-                      <span className="sidebar-company-reference">{company.reference || `Company ${company.companyId}`}</span>
-                    </div>
                     <span className="sidebar-subnav-heading">Company management</span>
                     {companyNavigation.map((child) => {
                       const href = child.segment ? `${companyBase}/${child.segment}` : companyBase;
