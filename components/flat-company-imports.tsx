@@ -27,6 +27,7 @@ const initialState: FlatCompanyImportState = {
 type ImportAction = (state: FlatCompanyImportState, formData: FormData) => Promise<FlatCompanyImportState>;
 
 type PanelProps = {
+  id?: string;
   title: string;
   eyebrow: string;
   description: string;
@@ -133,6 +134,7 @@ function ImportResult({ state, groupByCompany = true }: { state: FlatCompanyImpo
 }
 
 function FlatImportPanel({
+  id,
   title,
   eyebrow,
   description,
@@ -150,7 +152,7 @@ function FlatImportPanel({
   const actionable = state.rows.filter((row) => row.status === "Created" || row.status === "Updated").length;
 
   return (
-    <section className="card stack import-panel">
+    <section className="card stack import-panel" id={id}>
       <div className="card-heading-row">
         <div>
           <p className="eyebrow">{eyebrow}</p>
@@ -262,6 +264,7 @@ export function BulkFlatImportPanels() {
   return (
     <>
       <FlatImportPanel
+        id="company-structure"
         eyebrow="Company hierarchy"
         title="Company structure"
         description="Maintain parent and child company relationships across large company groups using references rather than Magento IDs."
@@ -273,6 +276,7 @@ export function BulkFlatImportPanels() {
         help="Columns: company_reference, parent_reference. Leave parent_reference blank to make a company a root. Unknown references, duplicate company rows, self-parenting and hierarchy cycles are blocked before Apply. Only parent_company_id is changed; all other company settings are re-read and preserved."
       />
       <FlatImportPanel
+        id="company-users"
         eyebrow="Multi-company users"
         title="Users"
         description="Create/update company memberships across several company references in one preview."
@@ -282,6 +286,7 @@ export function BulkFlatImportPanels() {
         help="company_ref routes each row to a company. Email must resolve to an existing Magento customer. The preview groups results by company before apply."
       />
       <FlatImportPanel
+        id="roles-permissions"
         eyebrow="Multi-company roles"
         title="Roles & permissions"
         description="Create or update roles across several companies from one permission matrix."
@@ -292,6 +297,7 @@ export function BulkFlatImportPanels() {
         help="All companies referenced by one roles CSV must expose the same Fluid permission tree. Each company is dry-run and applied independently; one company failure does not block another company’s backend transaction."
       />
       <FlatImportPanel
+        id="role-products"
         eyebrow="Multi-company role catalogue"
         title="Role product restrictions"
         description="Update role-level SKU allowlists across several companies."
@@ -301,6 +307,7 @@ export function BulkFlatImportPanels() {
         help="Rows are grouped by company_ref + user_role_name. Only named roles are changed."
       />
       <FlatImportPanel
+        id="company-products"
         eyebrow="Multi-company catalogue"
         title="Company product restrictions"
         description="Update company-level SKU allowlists for several companies in one file."
