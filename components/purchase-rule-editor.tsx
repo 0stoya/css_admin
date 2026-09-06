@@ -79,7 +79,7 @@ export function PurchaseRuleEditor({
   const [rows, setRows] = useState<DraftRule[]>(() =>
     initialRules.map((rule, index) => toDraft(rule, index + 1)),
   );
-  const [pickerOpen, setPickerOpen] = useState(initialRules.length === 0);
+  const [pickerOpen, setPickerOpen] = useState(Boolean(resolvedCompanyId) && initialRules.length === 0);
   const serialized = useMemo(() => serialize(rows), [rows]);
 
   function updateRow(
@@ -112,6 +112,15 @@ export function PurchaseRuleEditor({
     setPickerOpen(false);
   }
 
+  function addManualRule() {
+    const key = nextKey;
+    setNextKey((current) => current + 1);
+    setRows((current) => [
+      ...current,
+      { key, sku: "", quantity: "1", duration: "30", startDate: "" },
+    ]);
+  }
+
   function removeRule(key: number) {
     setRows((current) => current.filter((row) => row.key !== key));
   }
@@ -127,16 +136,26 @@ export function PurchaseRuleEditor({
             {rows.length} rule{rows.length === 1 ? "" : "s"}
           </span>
         </div>
-        <button
-          className="button button-secondary button-compact icon-button-label"
-          type="button"
-          aria-expanded={pickerOpen}
-          disabled={!resolvedCompanyId}
-          onClick={() => setPickerOpen((current) => !current)}
-        >
-          <PlusIcon />
-          {pickerOpen ? "Close product picker" : "Add products"}
-        </button>
+        {resolvedCompanyId ? (
+          <button
+            className="button button-secondary button-compact icon-button-label"
+            type="button"
+            aria-expanded={pickerOpen}
+            onClick={() => setPickerOpen((current) => !current)}
+          >
+            <PlusIcon />
+            {pickerOpen ? "Close product picker" : "Add products"}
+          </button>
+        ) : (
+          <button
+            className="button button-secondary button-compact icon-button-label"
+            type="button"
+            onClick={addManualRule}
+          >
+            <PlusIcon />
+            Add rule
+          </button>
+        )}
       </div>
 
       {pickerOpen && resolvedCompanyId ? (
@@ -168,9 +187,11 @@ export function PurchaseRuleEditor({
                     id={`${prefix}-sku`}
                     value={row.sku}
                     required
-                    readOnly
-                    aria-readonly="true"
-                    title="Choose a different product by removing this row and adding another catalogue product."
+                    readOnly={Boolean(resolvedCompanyId)}
+                    aria-readonly={resolvedCompanyId ? "true" : undefined}
+                    placeholder="Product SKU"
+                    title={resolvedCompanyId ? "Choose a different product by removing this row and adding another catalogue product." : undefined}
+                    onChange={resolvedCompanyId ? undefined : (event) => updateRow(row.key, "sku", event.target.value)}
                   />
                 </div>
                 <div className="field purchase-rule-field">
@@ -224,13 +245,17 @@ export function PurchaseRuleEditor({
         <div className="purchase-empty-inline">
           <strong>No product rules yet</strong>
           <span className="muted small-text">
-            Choose one or more products from this company&apos;s catalogue to add rule rows.
+            {resolvedCompanyId
+              ? "Choose one or more products from this company's catalogue to add rule rows."
+              : "Add a rule when this template should limit a specific SKU."}
           </span>
         </div>
       )}
 
       <p className="muted small-text">
-        Products are chosen from the company catalogue. Fluid validates every SKU, quantity, duration and start date when the template is saved.
+        {resolvedCompanyId
+          ? "Products are chosen from the company catalogue. Fluid validates every SKU, quantity, duration and start date when the template is saved."
+          : "Fluid validates every SKU, quantity, duration and start date when the template is saved."}
       </p>
     </div>
   );
