@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import "./company-structure.css";
 import "./company-management.css";
+import "./sidebar.css";
 
 export const metadata: Metadata = {
   title: {

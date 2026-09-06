@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { AppHeader } from "@/components/app-header";
+import { AppHeader, type NavigationItem } from "@/components/app-header";
+import { AppSidebar } from "@/components/app-sidebar";
 import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
 import { getCompanyToken } from "@/lib/session";
 
@@ -16,7 +17,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
     // Company selection and capability errors are rendered by the requested page.
   }
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     { href: "/portal", label: "Company", exact: true },
     ...(capabilities?.can_manage_catalog_visibility ? [{ href: "/portal/catalog", label: "Catalogue" }] : []),
     ...(capabilities?.can_view_purchase_controls ? [{ href: "/portal/purchase-controls", label: "Purchase controls" }] : []),
@@ -25,7 +26,10 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   return (
     <div className="shell">
       <AppHeader homeHref="/portal" productLabel="Company Portal" navigation={navigation} />
-      <main className="content">{children}</main>
+      <div className="app-workspace">
+        <AppSidebar productLabel="Company Portal" navigation={navigation} />
+        <main className="content">{children}</main>
+      </div>
     </div>
   );
 }
