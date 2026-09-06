@@ -83,7 +83,10 @@ async function runMutation(
   }
 
   const params = new URLSearchParams();
-  if (roleId) params.set("roleId", String(roleId));
+  if (roleId) {
+    params.set("view", "roles");
+    params.set("roleId", String(roleId));
+  }
   if (errorMessage) params.set("error", errorMessage);
   else params.set("notice", notice);
   redirect(`${catalogPath(companyId)}?${params.toString()}`);
