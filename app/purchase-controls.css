@@ -1,0 +1,646 @@
+.purchase-workspace {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.purchase-workspace-tabs {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.3rem;
+  padding: 0.34rem;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(0 35 72 / 6%);
+  overflow-x: auto;
+}
+
+.purchase-workspace-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 38px;
+  padding: 0.48rem 0.72rem;
+  border-radius: 8px;
+  color: var(--css-text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.purchase-workspace-tabs a:hover {
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.purchase-workspace-tabs a[aria-current="page"] {
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.purchase-tab-count {
+  display: inline-grid;
+  min-width: 1.65rem;
+  min-height: 1.35rem;
+  place-items: center;
+  padding: 0.08rem 0.38rem;
+  border-radius: 999px;
+  background: #e8eef3;
+  color: var(--css-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.purchase-workspace-tabs a[aria-current="page"] .purchase-tab-count {
+  background: var(--css-primary);
+  color: #fff;
+}
+
+.purchase-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.purchase-section-heading > div:first-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.purchase-section-heading h2,
+.purchase-template-heading h2,
+.purchase-assignment-heading h2 {
+  margin: 0;
+}
+
+.purchase-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.icon-button-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+}
+
+.purchase-filter-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+
+.purchase-filter-card .field {
+  margin: 0;
+}
+
+.purchase-list-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.purchase-list-card table {
+  margin: 0;
+}
+
+.purchase-active-row td {
+  background: #f0f7fd;
+}
+
+.purchase-active-row td:first-child {
+  box-shadow: inset 3px 0 0 var(--css-primary);
+}
+
+.purchase-name-cell {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 190px;
+}
+
+.purchase-name-cell small,
+.purchase-role-cell small {
+  color: var(--css-muted);
+}
+
+.purchase-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--css-primary);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.purchase-open-link:hover {
+  color: var(--css-primary-hover);
+  text-decoration: underline;
+}
+
+.purchase-open-link svg {
+  transition: transform 120ms ease;
+}
+
+.purchase-open-link:hover svg {
+  transform: translateX(2px);
+}
+
+.purchase-status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.purchase-template-workspace,
+.purchase-assignment-workspace {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.purchase-template-heading,
+.purchase-assignment-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.15rem 0;
+}
+
+.purchase-template-heading > div:first-child,
+.purchase-assignment-heading > div:first-child {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.purchase-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block: 1px solid var(--css-border);
+  background: #fbfdfe;
+}
+
+.purchase-summary-item {
+  display: grid;
+  gap: 0.15rem;
+  min-height: 72px;
+  padding: 0.8rem 1rem;
+  border-right: 1px solid var(--css-border);
+}
+
+.purchase-summary-item:last-child {
+  border-right: 0;
+}
+
+.purchase-summary-item span:first-child {
+  color: var(--css-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.purchase-summary-item strong {
+  color: var(--css-text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.purchase-template-content,
+.purchase-assignment-content {
+  display: grid;
+  gap: 1rem;
+  padding: 0 1.15rem 1.15rem;
+}
+
+.purchase-rule-table td,
+.purchase-rule-table th {
+  vertical-align: middle;
+}
+
+.purchase-rule-table code,
+.purchase-history-table code,
+.purchase-allowance-table code {
+  font-size: 0.78rem;
+}
+
+.purchase-editor-panel,
+.purchase-operation-panel,
+.purchase-create-panel {
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.purchase-editor-panel > summary,
+.purchase-operation-panel > summary,
+.purchase-create-panel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.purchase-editor-panel > summary::-webkit-details-marker,
+.purchase-operation-panel > summary::-webkit-details-marker,
+.purchase-create-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.purchase-editor-panel > summary span,
+.purchase-operation-panel > summary span,
+.purchase-create-panel > summary span {
+  display: grid;
+  gap: 0.14rem;
+}
+
+.purchase-editor-panel > summary::after,
+.purchase-operation-panel > summary::after,
+.purchase-create-panel > summary::after {
+  content: "+";
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.purchase-editor-panel[open] > summary::after,
+.purchase-operation-panel[open] > summary::after,
+.purchase-create-panel[open] > summary::after {
+  content: "−";
+}
+
+.purchase-editor-body,
+.purchase-create-body,
+.purchase-operation-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--css-border);
+  background: #fbfdfe;
+}
+
+.purchase-create-panel {
+  margin-bottom: 0.2rem;
+}
+
+.purchase-create-panel[open] > summary {
+  color: var(--css-primary);
+}
+
+.purchase-operation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.purchase-operation-card {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.purchase-operation-card p {
+  margin: 0.2rem 0 0;
+}
+
+.purchase-danger-panel {
+  border-color: #efcaca;
+}
+
+.purchase-danger-panel > summary {
+  color: #9b1c1c;
+}
+
+.purchase-danger-panel > summary::after {
+  background: #fff1f1;
+  color: #b42318;
+}
+
+.purchase-role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.purchase-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.purchase-role-cell {
+  display: grid;
+  gap: 0.14rem;
+}
+
+.purchase-assignment-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr);
+  gap: 1rem;
+}
+
+.purchase-assignment-form .purchase-assignment-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.purchase-check-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+.purchase-check-field input {
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+}
+
+.purchase-check-field span {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.purchase-empty-state,
+.purchase-empty-inline {
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem;
+  border: 1px dashed var(--css-border);
+  border-radius: 10px;
+  background: #fbfdfe;
+}
+
+.purchase-empty-inline {
+  padding: 0.8rem 0.9rem;
+}
+
+.purchase-rule-editor {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.purchase-rule-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.purchase-rule-toolbar > div:first-child {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.purchase-rule-grid {
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.purchase-rule-head,
+.purchase-rule-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(110px, 0.65fr) minmax(110px, 0.65fr) minmax(150px, 0.85fr) 48px;
+  gap: 0.7rem;
+  align-items: end;
+  padding: 0.72rem 0.8rem;
+}
+
+.purchase-rule-head {
+  align-items: center;
+  border-bottom: 1px solid var(--css-border);
+  background: #f3f7fa;
+  color: var(--css-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.purchase-rule-row {
+  border-bottom: 1px solid #edf1f4;
+}
+
+.purchase-rule-row:last-child {
+  border-bottom: 0;
+}
+
+.purchase-rule-field {
+  min-width: 0;
+  margin: 0;
+}
+
+.purchase-rule-field label {
+  display: none;
+}
+
+.purchase-rule-remove {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  align-self: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #9b1c1c;
+  box-shadow: none;
+}
+
+.purchase-rule-remove:hover {
+  border-color: #f0c5c5;
+  background: #fff4f4;
+  color: #b42318;
+}
+
+.purchase-rule-remove-label,
+.purchase-mobile-only {
+  display: none;
+}
+
+.purchase-allowance-remaining {
+  display: inline-flex;
+  min-width: 2.2rem;
+  justify-content: center;
+  padding: 0.22rem 0.48rem;
+  border-radius: 999px;
+  background: #e7f8ef;
+  color: #087a42;
+  font-weight: 700;
+}
+
+.purchase-allowance-remaining[data-level="low"] {
+  background: #fff4d6;
+  color: #8a5a00;
+}
+
+.purchase-allowance-remaining[data-level="none"] {
+  background: #fdeaea;
+  color: #b42318;
+}
+
+.purchase-table-count {
+  margin: -0.2rem 0 0;
+  color: var(--css-muted);
+  font-size: 0.82rem;
+}
+
+.purchase-history-order {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.purchase-pagination-note {
+  color: var(--css-muted);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1000px) {
+  .purchase-rule-head,
+  .purchase-rule-row {
+    grid-template-columns: minmax(150px, 1.3fr) 100px 100px minmax(135px, 0.8fr) 44px;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .purchase-section-heading,
+  .purchase-template-heading,
+  .purchase-assignment-heading {
+    align-items: flex-start;
+  }
+
+  .purchase-section-heading {
+    display: grid;
+  }
+
+  .purchase-heading-actions {
+    justify-content: flex-start;
+  }
+
+  .purchase-filter-card {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-filter-card .button {
+    width: 100%;
+  }
+
+  .purchase-summary-strip,
+  .purchase-operation-grid,
+  .purchase-assignment-form {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-summary-item {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--css-border);
+  }
+
+  .purchase-summary-item:last-child {
+    border-bottom: 0;
+  }
+
+  .purchase-rule-head {
+    display: none;
+  }
+
+  .purchase-rule-row {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    padding: 0.9rem;
+  }
+
+  .purchase-rule-field label {
+    display: block;
+  }
+
+  .purchase-rule-field:first-child,
+  .purchase-rule-field:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .purchase-rule-remove {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    width: fit-content;
+    height: auto;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .purchase-rule-remove-label,
+  .purchase-mobile-only {
+    display: inline;
+  }
+}
+
+@media (max-width: 520px) {
+  .purchase-workspace-tabs {
+    width: 100%;
+  }
+
+  .purchase-workspace-tabs a {
+    flex: 1 0 auto;
+    justify-content: center;
+  }
+
+  .purchase-rule-toolbar {
+    display: grid;
+  }
+
+  .purchase-rule-toolbar .button {
+    width: 100%;
+  }
+
+  .purchase-rule-row {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-rule-field,
+  .purchase-rule-field:first-child,
+  .purchase-rule-field:nth-child(4),
+  .purchase-rule-remove {
+    grid-column: 1;
+  }
+}

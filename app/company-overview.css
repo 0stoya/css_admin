@@ -1,0 +1,224 @@
+.company-overview {
+  gap: 1.35rem;
+}
+
+.company-overview-heading-row {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.company-overview-header {
+  padding-bottom: 0.15rem;
+}
+
+.company-overview-header h1 {
+  margin-bottom: 0.35rem;
+}
+
+.company-overview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.company-overview-stat {
+  display: grid;
+  min-width: 0;
+  gap: 0.22rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: var(--css-surface);
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+
+.company-overview-stat-value {
+  overflow: hidden;
+  color: var(--css-primary);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  font-weight: 600;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.company-overview-stat-label {
+  color: var(--css-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.company-overview-stat-meta {
+  overflow: hidden;
+  color: var(--css-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.company-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.72fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.company-overview-main,
+.company-overview-rail {
+  min-width: 0;
+}
+
+.company-overview-rail {
+  display: grid;
+  gap: 1rem;
+}
+
+.company-overview-panel {
+  gap: 0.9rem;
+}
+
+.company-overview-panel h2 {
+  margin: 0.05rem 0 0;
+  font-size: 1.1rem;
+}
+
+.company-overview-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.company-overview-detail-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.company-overview-detail-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--css-border);
+}
+
+.company-overview-detail-list > div:first-child {
+  padding-top: 0.15rem;
+}
+
+.company-overview-detail-list > div:last-child {
+  padding-bottom: 0.15rem;
+  border-bottom: 0;
+}
+
+.company-overview-detail-list dt {
+  color: var(--css-muted);
+  font-size: 0.78rem;
+}
+
+.company-overview-detail-list dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--css-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.company-overview-detail-list dd a {
+  color: var(--css-primary);
+  text-decoration: none;
+}
+
+.company-overview-detail-list dd a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.company-overview-text-link {
+  width: fit-content;
+  color: var(--css-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.company-overview-text-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.overview-error-detail {
+  font-size: 0.8rem;
+}
+
+.overview-error-detail summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--css-primary);
+  font-weight: 600;
+}
+
+.overview-error-detail .error {
+  margin-top: 0.65rem;
+}
+
+.company-overview .company-structure-card {
+  min-width: 0;
+}
+
+.company-overview .company-detail-tree-panel {
+  max-height: min(62vh, 680px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+@media (max-width: 1180px) {
+  .company-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .company-overview-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .company-overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .company-overview-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .company-overview-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .company-overview-stat {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .company-overview-panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .company-overview-detail-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
+
+  .company-overview-detail-list dd {
+    text-align: left;
+  }
+}

@@ -1,48 +1,66 @@
-.management-section { scroll-margin-top: 110px; }
+.management-workspace { max-width: 1560px; }
+.management-page-header { margin-bottom: 0.15rem; }
 
-.management-jump-nav {
+.management-tabs {
   position: sticky;
   top: 88px;
   z-index: 12;
-  display: flex;
+  display: inline-flex;
   width: fit-content;
-  gap: 0.4rem;
-  padding: 0.35rem;
+  gap: 0.25rem;
+  padding: 0.3rem;
   border: 1px solid var(--css-border);
   border-radius: 11px;
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 4px 14px rgb(0 35 72 / 6%);
   backdrop-filter: blur(10px);
 }
-.management-jump-nav a {
+.management-tab {
   display: inline-flex;
+  min-width: 118px;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.58rem 0.78rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.62rem 0.78rem;
   border-radius: 8px;
   color: var(--css-text);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
 }
-.management-jump-nav a:hover { background: var(--css-primary-soft); color: var(--css-primary); }
-.management-jump-nav a span {
-  min-width: 1.6rem;
-  padding: 0.12rem 0.38rem;
+.management-tab:hover { background: #f4f8fb; color: var(--css-primary); }
+.management-tab strong {
+  min-width: 1.8rem;
+  padding: 0.12rem 0.42rem;
   border-radius: 999px;
   background: #edf2f6;
   color: var(--css-muted);
   font-size: 0.75rem;
   text-align: center;
 }
+.management-tab-active { background: var(--css-primary-soft); color: var(--css-primary); }
+.management-tab-active strong { background: var(--css-primary); color: #fff; }
 
-.management-create-panel { padding: 0; overflow: hidden; }
+.management-view { gap: 1rem; }
+.management-view-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+.management-view-heading h2 { margin-bottom: 0.2rem; }
+
+.management-create-panel {
+  min-width: 270px;
+  padding: 0;
+  overflow: hidden;
+}
 .management-create-panel > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.15rem;
+  padding: 0.85rem 1rem;
   cursor: pointer;
   color: var(--css-primary);
   list-style: none;
@@ -51,47 +69,239 @@
 .management-create-panel > summary::after {
   content: "+";
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
   background: var(--css-primary-soft);
   color: var(--css-primary);
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   line-height: 1;
 }
 .management-create-panel[open] > summary::after { content: "−"; }
-.management-create-panel > summary span { display: grid; gap: 0.2rem; }
-.management-create-panel > summary small { color: var(--css-muted); font-weight: 400; }
+.management-create-panel > summary span { display: grid; gap: 0.15rem; }
+.management-create-panel > summary small { color: var(--css-muted); font-size: 0.76rem; font-weight: 400; }
+.management-create-inline[open] {
+  width: min(940px, 100%);
+  flex: 0 1 940px;
+}
 .management-panel-body {
-  padding: 1.15rem;
+  padding: 1rem;
   border-top: 1px solid var(--css-border);
   background: #fbfdfe;
 }
-
-.management-table td { vertical-align: middle; }
-.management-table .cell-stack { min-width: 150px; }
-.management-edit-panel > summary { white-space: nowrap; }
-.management-edit-body {
+.management-candidate-search {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+}
+.management-user-form {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.management-field-wide,
+.management-form-actions { grid-column: 1 / -1; }
+.management-form-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.management-filter-bar {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+}
+.management-filter-bar .field { margin: 0; }
+.management-filter-select { width: min(250px, 30vw); }
+.management-role-filter .grow { max-width: 620px; }
+.management-result-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-height: 22px;
+  padding: 0 0.15rem;
+  font-size: 0.84rem;
+}
+
+.management-record-list {
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: var(--css-surface);
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+.management-record-header {
+  min-height: 42px;
+  align-items: center;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--css-border);
+  background: #f5f8fa;
+  color: var(--css-primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+.management-user-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.45fr) minmax(130px, 0.8fr) minmax(120px, 0.75fr) minmax(110px, 0.65fr) minmax(180px, 1.1fr) 82px;
+  gap: 0.8rem;
+}
+.management-role-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.5fr) 90px 80px minmax(190px, 1fr) 82px;
+  gap: 0.8rem;
+}
+.management-record { border-bottom: 1px solid #e8eef3; }
+.management-record:last-of-type { border-bottom: 0; }
+.management-record > summary { list-style: none; }
+.management-record > summary::-webkit-details-marker { display: none; }
+.management-record-summary {
+  min-height: 68px;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+.management-record-summary:hover { background: #f8fbfd; }
+.management-record[open] > .management-record-summary {
+  background: #f2f7fb;
+  box-shadow: inset 3px 0 var(--css-primary);
+}
+.management-record-identity {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  gap: 0.16rem;
+}
+.management-record-identity strong {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--css-text);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.management-record-identity small {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--css-muted);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.management-record-cell {
+  min-width: 0;
+  color: var(--css-text);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+.management-record-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  color: var(--css-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.management-record-action > span {
+  font-size: 1.15rem;
+  transition: transform 120ms ease;
+}
+.management-record[open] .management-record-action > span { transform: rotate(90deg); }
+.management-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+.management-pill {
+  padding: 0.2rem 0.42rem;
+  border-radius: 999px;
+  background: #edf6fb;
+  color: #245979;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.management-pill-row-spaced { margin-top: 0.45rem; }
+
+.management-record-body {
+  padding: 1rem 1.1rem 1.15rem;
+  border-top: 1px solid var(--css-border);
+  background: #fbfdfe;
+}
+.management-record-body-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
-  min-width: min(380px, 72vw);
-  margin-top: 0.8rem;
+  margin-bottom: 1rem;
+}
+.management-record-body-heading h3 { margin: 0.08rem 0 0; }
+.management-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 1rem;
+  align-items: start;
+}
+.management-edit-form {
   padding: 1rem;
   border: 1px solid var(--css-border);
   border-radius: 10px;
-  background: #fbfdfe;
+  background: var(--css-surface);
 }
-.management-edit-body .compact-form { min-width: 0; margin-top: 0; }
-.role-edit-body { width: min(780px, 78vw); }
-.compact-resource-summary { border-top: 0; padding-top: 0; min-width: 110px; }
-.compact-resource-summary .compact-list {
-  min-width: min(360px, 60vw);
-  max-height: 260px;
+.management-editor-aside {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: var(--css-surface);
+}
+.management-danger-disclosure {
+  border-top: 1px solid var(--css-border);
+  padding-top: 0.75rem;
+}
+.management-danger-disclosure > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #9a2c2c;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.management-danger-disclosure .danger-zone { margin-top: 0.75rem; }
+.management-role-danger { margin-top: 0.15rem; }
+.management-role-editor { max-width: 1120px; }
+.management-protected-role { display: grid; gap: 0.8rem; max-width: 920px; }
+.management-permission-list {
+  display: grid;
+  max-height: 320px;
+  gap: 0.35rem;
+  margin: 0;
   overflow: auto;
-  padding-right: 0.5rem;
+  padding: 0.8rem 0.8rem 0.8rem 1.8rem;
+  border: 1px solid var(--css-border);
+  border-radius: 8px;
+  background: var(--css-surface);
+  color: var(--css-text);
+  font-size: 0.8rem;
 }
+.management-empty-state {
+  display: grid;
+  gap: 0.25rem;
+  margin: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.management-empty-state span { color: var(--css-muted); font-size: 0.85rem; }
 
 .permission-picker {
   display: grid;
@@ -115,7 +325,7 @@
 .permission-search-field { padding: 0 1rem; }
 .permission-search-field input { min-height: 42px; }
 .permission-tree {
-  max-height: 480px;
+  max-height: min(520px, 56vh);
   overflow: auto;
   border-top: 1px solid #edf1f4;
   background: #fbfdfe;
@@ -185,19 +395,56 @@
 .permission-text-button:hover { border: 0; background: var(--css-primary-soft); color: var(--css-primary-hover); }
 .permission-empty { padding: 1rem; }
 
+@media (max-width: 1180px) {
+  .management-record-header { display: none; }
+  .management-user-grid,
+  .management-role-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem 1rem;
+  }
+  .management-record-identity { grid-column: 1 / -1; }
+  .management-record-cell { display: grid; grid-template-columns: 90px minmax(0, 1fr); align-items: baseline; gap: 0.5rem; }
+  .management-record-cell::before {
+    content: attr(data-label);
+    color: var(--css-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .management-record-action { grid-column: 1 / -1; justify-self: end; }
+}
+
 @media (max-width: 900px) {
-  .management-jump-nav { top: 132px; }
-  .role-edit-body { width: min(660px, 82vw); }
+  .management-tabs { top: 132px; }
+  .management-view-heading { flex-wrap: wrap; }
+  .management-create-inline,
+  .management-create-inline[open] { width: 100%; flex-basis: 100%; }
+  .management-filter-bar { align-items: stretch; flex-wrap: wrap; }
+  .management-filter-bar .grow { flex-basis: 100%; }
+  .management-filter-select { width: min(320px, 100%); flex: 1; }
+  .management-editor-layout { grid-template-columns: 1fr; }
   .permission-row { grid-template-columns: 28px 20px minmax(130px, 1fr) auto; }
   .permission-branch-actions { grid-column: 3 / -1; justify-content: flex-start; padding-bottom: 0.25rem; }
   .permission-protected { grid-column: 4; justify-self: end; }
 }
 
 @media (max-width: 640px) {
-  .management-jump-nav { position: static; width: 100%; }
-  .management-jump-nav a { flex: 1; justify-content: center; }
-  .management-create-panel > summary { align-items: flex-start; }
-  .management-edit-body, .role-edit-body { width: auto; min-width: min(300px, 78vw); }
+  .management-tabs { position: static; width: 100%; }
+  .management-tab { flex: 1; }
+  .management-candidate-search { align-items: stretch; flex-direction: column; }
+  .management-user-form { grid-template-columns: 1fr; }
+  .management-field-wide,
+  .management-form-actions { grid-column: auto; }
+  .management-user-grid,
+  .management-role-grid { grid-template-columns: 1fr; }
+  .management-record-identity,
+  .management-record-action { grid-column: auto; }
+  .management-record-cell { grid-template-columns: 80px minmax(0, 1fr); }
+  .management-record-action { justify-self: start; }
+  .management-record-body-heading { display: grid; }
+  .management-filter-bar { display: grid; }
+  .management-filter-select { width: 100%; }
   .permission-picker-toolbar { display: grid; }
   .permission-picker-actions { width: 100%; }
   .permission-picker-actions .button { flex: 1; }

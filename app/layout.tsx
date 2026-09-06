@@ -3,7 +3,14 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import "./company-structure.css";
 import "./company-management.css";
+import "./users-roles-polish.css";
 import "./sidebar.css";
+import "./control-surfaces.css";
+import "./company-overview.css";
+import "./catalogue-workspace.css";
+import "./catalogue-workspace-polish.css";
+import "./purchase-controls.css";
+import "./purchase-product-picker.css";
 
 export const metadata: Metadata = {
   title: {

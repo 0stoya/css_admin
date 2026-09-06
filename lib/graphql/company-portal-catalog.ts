@@ -1,7 +1,8 @@
 import { customerGraphqlRequest } from "@/lib/graphql/customer-client";
-import type {
-  CompanyCatalogPolicy,
-  RoleCatalogPolicy,
+import {
+  normalizeRoleCatalogPolicy,
+  type CompanyCatalogPolicy,
+  type RoleCatalogPolicy,
 } from "@/lib/graphql/catalog-policy";
 
 export type SaveCompanyPortalCatalogPolicyInput = {
@@ -120,7 +121,7 @@ export async function getCompanyPortalRoleCatalogPolicy(
     { css_company_role_catalog_policy: RoleCatalogPolicy },
     { roleId: number; page: number; search?: string }
   >(ROLE_CATALOG_POLICY_QUERY, { roleId, page, search });
-  return data.css_company_role_catalog_policy;
+  return normalizeRoleCatalogPolicy(data.css_company_role_catalog_policy);
 }
 
 export async function saveCompanyPortalCatalogPolicy(
