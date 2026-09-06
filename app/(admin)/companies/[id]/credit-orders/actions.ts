@@ -25,10 +25,23 @@ function requiredString(formData: FormData, key: string) {
   return value;
 }
 
+function returnView(formData: FormData, fallback = "overview") {
+  const value = String(formData.get("returnView") ?? fallback).trim();
+  return value === "conversation" || value === "history" ? value : "overview";
+}
+
 function revalidateCreditOrder(companyId: number, number: string) {
   revalidatePath(`/companies/${companyId}/credit-orders`);
   revalidatePath(`/companies/${companyId}/credit-orders/${encodeURIComponent(number)}`);
   revalidatePath(`/companies/${companyId}`);
+}
+
+function detailRedirect(companyId: number, number: string, actorCompanyUserId: number, view: string, errorMessage: string | null, successMessage: string) {
+  const params = new URLSearchParams({ actor: String(actorCompanyUserId) });
+  if (view !== "overview") params.set("view", view);
+  if (errorMessage) params.set("error", errorMessage);
+  else params.set("notice", successMessage);
+  redirect(`/companies/${companyId}/credit-orders/${encodeURIComponent(number)}?${params.toString()}`);
 }
 
 async function runAction(
@@ -40,6 +53,7 @@ async function runAction(
   const companyId = requiredPositiveInt(formData, "companyId");
   const actorCompanyUserId = requiredPositiveInt(formData, "actorCompanyUserId");
   const number = requiredString(formData, "number");
+  const view = returnView(formData);
   let errorMessage: string | null = null;
 
   if (requireConfirmation) {
@@ -61,10 +75,7 @@ async function runAction(
     }
   }
 
-  const params = new URLSearchParams({ actor: String(actorCompanyUserId) });
-  if (errorMessage) params.set("error", errorMessage);
-  else params.set("notice", successMessage);
-  redirect(`/companies/${companyId}/credit-orders/${encodeURIComponent(number)}?${params.toString()}`);
+  detailRedirect(companyId, number, actorCompanyUserId, view, errorMessage, successMessage);
 }
 
 export async function approveCreditOrderAction(formData: FormData) {
@@ -87,6 +98,7 @@ export async function addCreditOrderCommentAction(formData: FormData) {
   const companyId = requiredPositiveInt(formData, "companyId");
   const actorCompanyUserId = requiredPositiveInt(formData, "actorCompanyUserId");
   const number = requiredString(formData, "number");
+  const view = returnView(formData, "conversation");
   let errorMessage: string | null = null;
 
   try {
@@ -101,8 +113,5 @@ export async function addCreditOrderCommentAction(formData: FormData) {
     errorMessage = graphQLErrorMessage(error);
   }
 
-  const params = new URLSearchParams({ actor: String(actorCompanyUserId) });
-  if (errorMessage) params.set("error", errorMessage);
-  else params.set("notice", "Comment added.");
-  redirect(`/companies/${companyId}/credit-orders/${encodeURIComponent(number)}?${params.toString()}`);
+  detailRedirect(companyId, number, actorCompanyUserId, view, errorMessage, "Comment added.");
 }
