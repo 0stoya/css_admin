@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CompanyFlatImportPanels } from "@/components/flat-company-imports";
 import { getCompany } from "@/lib/graphql/companies";
@@ -15,8 +14,10 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
   } catch (error) {
     return (
       <div className="stack">
-        <div><Link className="back-link" href="/companies">← Companies</Link></div>
-        <section className="card stack"><div><p className="eyebrow">Backend request failed</p><h1>Data portability unavailable</h1></div><div className="error">{graphQLErrorMessage(error)}</div></section>
+        <section className="card stack">
+          <div><p className="eyebrow">Backend request failed</p><h1>Import / export unavailable</h1></div>
+          <div className="error">{graphQLErrorMessage(error)}</div>
+        </section>
       </div>
     );
   }
@@ -24,8 +25,17 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
   if (!company.reference?.trim()) {
     return (
       <div className="stack section-gap">
-        <div className="breadcrumbs"><Link href="/companies">Companies</Link><span aria-hidden="true">/</span><Link href={`/companies/${company.company_id}`}>{company.name}</Link><span aria-hidden="true">/</span><span>Import / export</span></div>
-        <section className="card stack"><div><p className="eyebrow">Company reference required</p><h1>Import / export unavailable</h1></div><div className="error">Flat CSV imports use company_ref as their safety/routing key. Add a company reference before using these imports.</div></section>
+        <header className="page-header">
+          <div>
+            <p className="eyebrow">Data portability</p>
+            <h1>Import / export</h1>
+            <p className="muted">Move company users, roles and product restrictions through guarded CSV workflows.</p>
+          </div>
+        </header>
+        <section className="card stack">
+          <div><p className="eyebrow">Company reference required</p><h2>CSV workflows are unavailable</h2></div>
+          <div className="error">Flat CSV imports use company_ref as their safety and routing key. Add a company reference before using Import / export.</div>
+        </section>
       </div>
     );
   }
@@ -33,12 +43,12 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
   const companyRef = company.reference.trim();
   return (
     <div className="stack section-gap">
-      <div className="breadcrumbs">
-        <Link href="/companies">Companies</Link><span aria-hidden="true">/</span>
-        <Link href={`/companies/${company.company_id}`}>{company.name}</Link><span aria-hidden="true">/</span><span>Import / export</span>
-      </div>
       <header className="page-header">
-        <div><p className="eyebrow">{companyRef} · Company {company.company_id}</p><h1>Import / export</h1><p className="muted">Four focused CSV imports. Every row must carry company_ref {companyRef}; preview is mandatory before Fluid-authorized writes.</p></div>
+        <div>
+          <p className="eyebrow">Data portability</p>
+          <h1>Import / export</h1>
+          <p className="muted">Download current data, prepare a CSV and preview every change before anything is applied to this company.</p>
+        </div>
       </header>
       <CompanyFlatImportPanels companyId={companyId} companyRef={companyRef} />
     </div>
