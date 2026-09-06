@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useId, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   bulkCompanyProductsImportAction,
   bulkCompanyStructureImportAction,
@@ -265,16 +266,35 @@ function BulkImportPanel({
   );
 }
 
+const tabs: Array<{ id: BulkImportView; label: string }> = [
+  { id: "structure", label: "Company structure" },
+  { id: "users", label: "Users" },
+  { id: "roles", label: "Roles & permissions" },
+  { id: "role-products", label: "Role products" },
+  { id: "company-products", label: "Company products" },
+];
+
+function isBulkImportView(value: string | null): value is BulkImportView {
+  return value !== null && tabs.some((tab) => tab.id === value);
+}
+
 export function BulkImportWorkspace() {
-  const [view, setView] = useState<BulkImportView>("structure");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const view: BulkImportView = isBulkImportView(requestedView) ? requestedView : "structure";
   const base = "/api/bulk-import";
-  const tabs: Array<{ id: BulkImportView; label: string }> = [
-    { id: "structure", label: "Company structure" },
-    { id: "users", label: "Users" },
-    { id: "roles", label: "Roles & permissions" },
-    { id: "role-products", label: "Role products" },
-    { id: "company-products", label: "Company products" },
-  ];
+
+  function selectView(nextView: BulkImportView) {
+    if (nextView === view) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextView === "structure") params.delete("view");
+    else params.set("view", nextView);
+
+    const query = params.toString();
+    router.push(query ? `/bulk-import?${query}` : "/bulk-import", { scroll: false });
+  }
 
   return (
     <div className={styles.workspace}>
@@ -286,7 +306,7 @@ export function BulkImportWorkspace() {
             type="button"
             role="tab"
             aria-selected={view === tab.id}
-            onClick={() => setView(tab.id)}
+            onClick={() => selectView(tab.id)}
           >
             {tab.label}
           </button>
