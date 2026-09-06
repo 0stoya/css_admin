@@ -8,23 +8,25 @@ export type CatalogProductPickerItem = {
   name: string;
 };
 
-function normalize(value: string) {
-  return value.trim().toLocaleLowerCase("en");
-}
-
-export function CatalogProductPicker({
-  products,
-  selectedProductIds = [],
-  preselectAll = false,
-  fieldName = "allowedProductIds",
-  label = "Products",
-}: {
+type CatalogProductPickerProps = {
   products: CatalogProductPickerItem[];
   selectedProductIds?: number[];
   preselectAll?: boolean;
   fieldName?: string;
   label?: string;
-}) {
+};
+
+function normalize(value: string) {
+  return value.trim().toLocaleLowerCase("en");
+}
+
+function CatalogProductPickerState({
+  products,
+  selectedProductIds = [],
+  preselectAll = false,
+  fieldName = "allowedProductIds",
+  label = "Products",
+}: CatalogProductPickerProps) {
   const searchId = useId();
   const allIds = useMemo(() => products.map((product) => product.id), [products]);
   const [selected, setSelected] = useState(() => new Set(preselectAll ? allIds : selectedProductIds));
@@ -95,4 +97,14 @@ export function CatalogProductPicker({
       </div>
     </div>
   );
+}
+
+export function CatalogProductPicker(props: CatalogProductPickerProps) {
+  const resetKey = [
+    props.preselectAll ? "all" : "explicit",
+    props.products.map((product) => product.id).join(","),
+    (props.selectedProductIds ?? []).join(","),
+  ].join("|");
+
+  return <CatalogProductPickerState key={resetKey} {...props} />;
 }

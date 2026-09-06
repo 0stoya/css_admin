@@ -7,6 +7,8 @@ import "./users-roles-polish.css";
 import "./sidebar.css";
 import "./control-surfaces.css";
 import "./company-overview.css";
+import "./catalogue-workspace.css";
+import "./catalogue-workspace-polish.css";
 
 export const metadata: Metadata = {
   title: {

@@ -9,6 +9,8 @@ import {
 } from "@/lib/graphql/catalog-policy";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 
+type RoleControl = "products" | "categories";
+
 function catalogPath(companyId: number) {
   return `/companies/${companyId}/catalog`;
 }
@@ -72,6 +74,7 @@ async function runMutation(
   notice: string,
   work: () => Promise<unknown>,
   roleId?: number,
+  roleControl?: RoleControl,
 ) {
   let errorMessage: string | null = null;
 
@@ -83,7 +86,11 @@ async function runMutation(
   }
 
   const params = new URLSearchParams();
-  if (roleId) params.set("roleId", String(roleId));
+  if (roleId) {
+    params.set("view", "roles");
+    params.set("roleId", String(roleId));
+    if (roleControl) params.set("roleControl", roleControl);
+  }
   if (errorMessage) params.set("error", errorMessage);
   else params.set("notice", notice);
   redirect(`${catalogPath(companyId)}?${params.toString()}`);
@@ -114,7 +121,7 @@ export async function saveRoleCategoriesAction(formData: FormData) {
 
   return runMutation(companyId, "Role catalogue categories saved.", async () => {
     await saveRoleCatalogCategories(companyId, roleId, categoryIds);
-  }, roleId);
+  }, roleId, "categories");
 }
 
 export async function saveRoleProductsAction(formData: FormData) {
@@ -134,5 +141,5 @@ export async function saveRoleProductsAction(formData: FormData) {
 
     const allowedProductIds = positiveIntEntries(formData, "allowedProductIds");
     await saveRoleCatalogProducts(companyId, roleId, allowedProductIds, false, []);
-  }, roleId);
+  }, roleId, "products");
 }
