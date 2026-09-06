@@ -5,6 +5,7 @@ export type CompanySummary = {
   reference: string | null;
   name: string;
   sales_representative_id: number | null;
+  parent_company_id: number | null;
 };
 
 export type CompanyList = {
@@ -29,6 +30,7 @@ const COMPANY_LIST_QUERY = /* GraphQL */ `
         reference
         name
         sales_representative_id
+        parent_company_id
       }
       page_info {
         page_size
@@ -46,6 +48,7 @@ const COMPANY_DETAIL_QUERY = /* GraphQL */ `
       reference
       name
       sales_representative_id
+      parent_company_id
     }
   }
 `;
@@ -56,6 +59,19 @@ export async function getCompanies(currentPage = 1, pageSize = 100) {
     { currentPage, pageSize },
   );
   return data.css_admin_companies;
+}
+
+export async function getAllCompanies(pageSize = 100) {
+  const firstPage = await getCompanies(1, pageSize);
+  if (firstPage.page_info.total_pages <= 1) return firstPage.items;
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.page_info.total_pages - 1 }, (_, index) =>
+      getCompanies(index + 2, pageSize),
+    ),
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
 }
 
 export async function getCompany(companyId: number) {
