@@ -160,6 +160,26 @@ export async function updateCompanySettings(input: UpdateCompanySettingsInput) {
   return data.cssAdminUpdateCompany;
 }
 
+export async function updateCompanyParent(companyId: number, parentCompanyId: number | null) {
+  const current = await getCompanySettings(companyId);
+  if (current.customer_group_id === null) {
+    throw new Error(
+      `Company ${current.reference || `#${companyId}`} has no customer group, so its parent cannot be changed without risking unrelated company settings.`,
+    );
+  }
+
+  return updateCompanySettings({
+    company_id: current.company_id,
+    vat_tax_id: current.vat_tax_id ?? "",
+    customer_group_id: current.customer_group_id,
+    parent_company_id: parentCompanyId,
+    comment: current.comment ?? "",
+    description: current.description ?? "",
+    homepage_content: current.homepage_content ?? "",
+    show_company_landing_page: current.show_company_landing_page,
+  });
+}
+
 export async function deleteCompany(companyId: number, confirmReference: string) {
   const data = await graphqlRequest<
     DeleteCompanyData,

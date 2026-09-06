@@ -9,6 +9,7 @@ import {
 } from "@/app/(admin)/companies/[id]/import-export/flat-actions";
 import {
   bulkCompanyProductsImportAction,
+  bulkCompanyStructureImportAction,
   bulkRoleProductsImportAction,
   bulkRolesImportAction,
   bulkUsersImportAction,
@@ -34,6 +35,8 @@ type PanelProps = {
   exampleHref: string;
   companyId?: number;
   showCreateMissingRoles?: boolean;
+  groupResultsByCompany?: boolean;
+  applyConfirmation?: string;
   help: string;
 };
 
@@ -43,12 +46,54 @@ function statusBadge(status: ImportRowStatus) {
   return "badge-neutral";
 }
 
-function ImportResult({ state }: { state: FlatCompanyImportState }) {
-  if (!state.rows.length) return null;
+function ResultCounts({ state }: { state: FlatCompanyImportState }) {
   const counts = state.rows.reduce<Record<ImportRowStatus, number>>(
     (result, row) => ({ ...result, [row.status]: result[row.status] + 1 }),
     { Created: 0, Updated: 0, Skipped: 0, Error: 0 },
   );
+
+  return (
+    <div className="stat-grid import-stats">
+      {(Object.keys(counts) as ImportRowStatus[]).map((status) => (
+        <div className="stat-card" key={status}>
+          <span className="stat-value">{counts[status]}</span>
+          <span className="stat-label">{status}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ImportResult({ state, groupByCompany = true }: { state: FlatCompanyImportState; groupByCompany?: boolean }) {
+  if (!state.rows.length) return null;
+
+  if (!groupByCompany) {
+    return (
+      <div className="stack">
+        <ResultCounts state={state} />
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Row</th><th>Company</th><th>Relationship</th><th>Result</th><th>Message</th></tr></thead>
+            <tbody>
+              {state.rows.map((row, index) => (
+                <tr key={`${row.row}-${row.item}-${index}`}>
+                  <td>{row.row}</td>
+                  <td>
+                    <strong>{row.company_ref || "Unknown"}</strong>
+                    {row.company_name ? <><br /><span className="muted small-text">{row.company_name}</span></> : null}
+                  </td>
+                  <td>{row.item || "—"}</td>
+                  <td><span className={`badge ${statusBadge(row.status)}`}>{row.status}</span></td>
+                  <td>{row.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   const groups = new Map<string, typeof state.rows>();
   state.rows.forEach((row) => {
     const key = row.company_ref || "Unknown company";
@@ -59,14 +104,7 @@ function ImportResult({ state }: { state: FlatCompanyImportState }) {
 
   return (
     <div className="stack">
-      <div className="stat-grid import-stats">
-        {(Object.keys(counts) as ImportRowStatus[]).map((status) => (
-          <div className="stat-card" key={status}>
-            <span className="stat-value">{counts[status]}</span>
-            <span className="stat-label">{status}</span>
-          </div>
-        ))}
-      </div>
+      <ResultCounts state={state} />
       {[...groups.entries()].map(([companyRef, rows]) => (
         <section className="stack" key={companyRef}>
           <div>
@@ -103,6 +141,8 @@ function FlatImportPanel({
   exampleHref,
   companyId,
   showCreateMissingRoles = false,
+  groupResultsByCompany = true,
+  applyConfirmation,
   help,
 }: PanelProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -143,17 +183,25 @@ function FlatImportPanel({
       </form>
 
       {state.error ? <div className="error">{state.error}</div> : null}
-      <ImportResult state={state} />
+      <ImportResult state={state} groupByCompany={groupResultsByCompany} />
 
       {state.phase === "preview" ? (
-        <form action={formAction} className="button-row">
+        <form action={formAction} className="stack">
           {companyId ? <input name="companyId" type="hidden" value={companyId} /> : null}
           <input name="intent" type="hidden" value="apply" />
           <input name="sourceCsv" type="hidden" value={state.sourceCsv} />
           <input name="createMissingRoles" type="hidden" value={state.create_missing_roles ? "true" : "false"} />
-          <button className="button" type="submit" disabled={pending || errors > 0 || actionable === 0}>
-            {pending ? "Applying…" : errors ? `Resolve ${errors} error${errors === 1 ? "" : "s"}` : `Apply ${actionable} change${actionable === 1 ? "" : "s"}`}
-          </button>
+          {applyConfirmation ? (
+            <label className="check-field">
+              <input name="confirmApply" type="checkbox" value="true" required />
+              <span><strong>Confirm changes</strong><small className="muted">{applyConfirmation}</small></span>
+            </label>
+          ) : null}
+          <div className="button-row">
+            <button className="button" type="submit" disabled={pending || errors > 0 || actionable === 0}>
+              {pending ? "Applying…" : errors ? `Resolve ${errors} error${errors === 1 ? "" : "s"}` : `Apply ${actionable} change${actionable === 1 ? "" : "s"}`}
+            </button>
+          </div>
         </form>
       ) : state.phase === "applied" ? <div className="notice">Import finished. Results above reflect the apply attempt.</div> : null}
     </section>
@@ -213,6 +261,17 @@ export function BulkFlatImportPanels() {
   const base = "/api/bulk-import";
   return (
     <>
+      <FlatImportPanel
+        eyebrow="Company hierarchy"
+        title="Company structure"
+        description="Maintain parent and child company relationships across large company groups using references rather than Magento IDs."
+        action={bulkCompanyStructureImportAction}
+        exportHref={`${base}/exports/company-structure`}
+        exampleHref={`${base}/examples/company-structure`}
+        groupResultsByCompany={false}
+        applyConfirmation="I have reviewed the proposed parent/child relationships and understand that applying them will reorganize the company hierarchy."
+        help="Columns: company_reference, parent_reference. Leave parent_reference blank to make a company a root. Unknown references, duplicate company rows, self-parenting and hierarchy cycles are blocked before Apply. Only parent_company_id is changed; all other company settings are re-read and preserved."
+      />
       <FlatImportPanel
         eyebrow="Multi-company users"
         title="Users"

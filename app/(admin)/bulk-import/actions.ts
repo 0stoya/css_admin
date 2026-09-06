@@ -12,6 +12,10 @@ import {
   previewRoleProductsCsv,
   previewRolesPermissionsCsv,
 } from "@/lib/flat-company-imports";
+import {
+  applyCompanyStructureCsv,
+  previewCompanyStructureCsv,
+} from "@/lib/company-structure-import";
 import type { FlatCompanyImportState } from "@/lib/import-export-types";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -63,4 +67,17 @@ export async function bulkRoleProductsImportAction(previous: FlatCompanyImportSt
 
 export async function bulkCompanyProductsImportAction(previous: FlatCompanyImportState, formData: FormData) {
   return runBulkImport(previous, formData, (source, apply) => apply ? applyCompanyProductsCsv(source) : previewCompanyProductsCsv(source));
+}
+
+export async function bulkCompanyStructureImportAction(previous: FlatCompanyImportState, formData: FormData) {
+  const intent = String(formData.get("intent") ?? "preview") === "apply" ? "apply" : "preview";
+  if (intent === "apply" && formData.get("confirmApply") !== "true") {
+    return {
+      ...previous,
+      phase: "error",
+      error: "Confirm that you reviewed the proposed company hierarchy before applying structure changes.",
+    } satisfies FlatCompanyImportState;
+  }
+
+  return runBulkImport(previous, formData, (source, apply) => apply ? applyCompanyStructureCsv(source) : previewCompanyStructureCsv(source));
 }
