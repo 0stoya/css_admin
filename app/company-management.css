@@ -160,8 +160,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.permission-protected { white-space: nowrap; }
-.permission-branch-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.35rem; white-space: nowrap; }
+.permission-protected { grid-column: 4; white-space: nowrap; }
+.permission-branch-actions { grid-column: 5; display: flex; align-items: center; justify-content: flex-end; gap: 0.35rem; white-space: nowrap; }
 .permission-branch-count {
   min-width: 2.8rem;
   padding: 0.2rem 0.42rem;
@@ -190,7 +190,7 @@
   .role-edit-body { width: min(660px, 82vw); }
   .permission-row { grid-template-columns: 28px 20px minmax(130px, 1fr) auto; }
   .permission-branch-actions { grid-column: 3 / -1; justify-content: flex-start; padding-bottom: 0.25rem; }
-  .permission-protected { justify-self: end; }
+  .permission-protected { grid-column: 4; justify-self: end; }
 }
 
 @media (max-width: 640px) {
