@@ -12,6 +12,15 @@ import {
   type SavePurchaseControlRuleInput,
 } from "@/lib/graphql/purchase-controls";
 
+type PurchaseControlsView = "templates" | "assignments" | "allowances" | "history";
+
+type ReturnState = {
+  view: PurchaseControlsView;
+  templateId?: number | null;
+  roleId?: number | null;
+  createOnError?: boolean;
+};
+
 function purchaseControlsPath(companyId: number) {
   return `/companies/${companyId}/purchase-controls`;
 }
@@ -73,7 +82,27 @@ function parseRules(raw: string): SavePurchaseControlRuleInput[] {
   });
 }
 
-async function runMutation(companyId: number, notice: string, work: () => Promise<unknown>) {
+function buildReturnParams(
+  notice: string,
+  errorMessage: string | null,
+  state: ReturnState,
+) {
+  const params = new URLSearchParams();
+  params.set("view", state.view);
+  if (state.templateId) params.set("templateId", String(state.templateId));
+  if (state.roleId) params.set("roleId", String(state.roleId));
+  if (errorMessage && state.createOnError) params.set("create", "1");
+  if (errorMessage) params.set("error", errorMessage);
+  else params.set("notice", notice);
+  return params;
+}
+
+async function runMutation(
+  companyId: number,
+  notice: string,
+  work: () => Promise<unknown>,
+  returnState: ReturnState,
+) {
   let errorMessage: string | null = null;
 
   try {
@@ -83,9 +112,7 @@ async function runMutation(companyId: number, notice: string, work: () => Promis
     errorMessage = graphQLErrorMessage(error);
   }
 
-  const params = new URLSearchParams();
-  if (errorMessage) params.set("error", errorMessage);
-  else params.set("notice", notice);
+  const params = buildReturnParams(notice, errorMessage, returnState);
   redirect(`${purchaseControlsPath(companyId)}?${params.toString()}`);
 }
 
@@ -95,13 +122,22 @@ export async function savePurchaseControlTemplateAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const rules = parseRules(String(formData.get("rules") ?? ""));
 
-  return runMutation(companyId, templateId ? "Purchase-control template updated." : "Purchase-control template created.", async () => {
-    await savePurchaseControlTemplate(companyId, {
-      ...(templateId ? { template_id: templateId } : {}),
-      name,
-      rules,
-    });
-  });
+  return runMutation(
+    companyId,
+    templateId ? "Purchase-control template updated." : "Purchase-control template created.",
+    async () => {
+      await savePurchaseControlTemplate(companyId, {
+        ...(templateId ? { template_id: templateId } : {}),
+        name,
+        rules,
+      });
+    },
+    {
+      view: "templates",
+      templateId,
+      createOnError: templateId === null,
+    },
+  );
 }
 
 export async function assignPurchaseControlTemplateAction(formData: FormData) {
@@ -112,10 +148,13 @@ export async function assignPurchaseControlTemplateAction(formData: FormData) {
 
   return runMutation(
     companyId,
-    templateId ? "Purchase-control template assigned to role." : "Purchase-control template unassigned from role.",
+    templateId
+      ? "Purchase-control template assigned to role."
+      : "Purchase-control template unassigned from role.",
     async () => {
       await assignPurchaseControlTemplate(companyId, roleId, templateId, applyToUsers);
     },
+    { view: "assignments", roleId },
   );
 }
 
@@ -124,10 +163,19 @@ export async function applyPurchaseControlTemplateAction(formData: FormData) {
   const templateId = requiredInt(formData, "templateId");
   const confirmed = formData.get("confirmApply") === "yes";
 
-  return runMutation(companyId, "Purchase-control template applied to eligible users.", async () => {
-    if (!confirmed) throw new Error("Confirm that the template should overwrite eligible users before applying it.");
-    await applyPurchaseControlTemplate(companyId, templateId);
-  });
+  return runMutation(
+    companyId,
+    "Purchase-control template applied to eligible users.",
+    async () => {
+      if (!confirmed) {
+        throw new Error(
+          "Confirm that the template should overwrite eligible users before applying it.",
+        );
+      }
+      await applyPurchaseControlTemplate(companyId, templateId);
+    },
+    { view: "templates", templateId },
+  );
 }
 
 export async function resetPurchaseControlCountersAction(formData: FormData) {
@@ -135,10 +183,19 @@ export async function resetPurchaseControlCountersAction(formData: FormData) {
   const templateId = requiredInt(formData, "templateId");
   const confirmed = formData.get("confirmReset") === "yes";
 
-  return runMutation(companyId, "Purchase-control counters reset.", async () => {
-    if (!confirmed) throw new Error("Confirm that consumed purchase-control counters should be reset before continuing.");
-    await resetPurchaseControlCounters(companyId, templateId);
-  });
+  return runMutation(
+    companyId,
+    "Purchase-control counters reset.",
+    async () => {
+      if (!confirmed) {
+        throw new Error(
+          "Confirm that consumed purchase-control counters should be reset before continuing.",
+        );
+      }
+      await resetPurchaseControlCounters(companyId, templateId);
+    },
+    { view: "templates", templateId },
+  );
 }
 
 export async function deletePurchaseControlTemplateAction(formData: FormData) {
@@ -146,7 +203,12 @@ export async function deletePurchaseControlTemplateAction(formData: FormData) {
   const templateId = requiredInt(formData, "templateId");
   const confirmName = String(formData.get("confirmName") ?? "").trim();
 
-  return runMutation(companyId, "Purchase-control template deleted.", async () => {
-    await deletePurchaseControlTemplate(companyId, templateId, confirmName);
-  });
+  return runMutation(
+    companyId,
+    "Purchase-control template deleted.",
+    async () => {
+      await deletePurchaseControlTemplate(companyId, templateId, confirmName);
+    },
+    { view: "templates", templateId },
+  );
 }
