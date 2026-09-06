@@ -1,5 +1,4 @@
-import { getMagentoConfig } from "@/lib/config";
-import { getAdminToken } from "@/lib/session";
+import { graphqlRequest } from "@/lib/graphql/client";
 
 export type CompanyCatalogProductSearchItem = {
   product_id: number;
@@ -17,12 +16,37 @@ export type CompanyCatalogProductSearchResult = {
   };
 };
 
-export class CompanyCatalogProductSearchError extends Error {
-  constructor(message: string, public readonly status?: number) {
-    super(message);
-    this.name = "CompanyCatalogProductSearchError";
+type CompanyCatalogProductsData = {
+  css_admin_company_catalog_products: CompanyCatalogProductSearchResult;
+};
+
+const COMPANY_CATALOG_PRODUCTS_QUERY = /* GraphQL */ `
+  query AdminCompanyCatalogProducts(
+    $companyId: Int!
+    $currentPage: Int!
+    $pageSize: Int!
+    $search: String
+  ) {
+    css_admin_company_catalog_products(
+      company_id: $companyId
+      currentPage: $currentPage
+      pageSize: $pageSize
+      search: $search
+    ) {
+      total_count
+      items {
+        product_id
+        sku
+        name
+      }
+      page_info {
+        page_size
+        current_page
+        total_pages
+      }
+    }
   }
-}
+`;
 
 export async function getCompanyCatalogProducts(
   companyId: number,
@@ -30,41 +54,15 @@ export async function getCompanyCatalogProducts(
   pageSize = 50,
   search?: string,
 ): Promise<CompanyCatalogProductSearchResult> {
-  const token = await getAdminToken();
-  if (!token) {
-    throw new CompanyCatalogProductSearchError("Admin authentication is required.", 401);
-  }
-
-  const { baseUrl } = getMagentoConfig();
-  const params = new URLSearchParams({
-    currentPage: String(currentPage),
-    pageSize: String(pageSize),
+  const data = await graphqlRequest<
+    CompanyCatalogProductsData,
+    { companyId: number; currentPage: number; pageSize: number; search?: string }
+  >(COMPANY_CATALOG_PRODUCTS_QUERY, {
+    companyId,
+    currentPage,
+    pageSize,
+    ...(search?.trim() ? { search: search.trim() } : {}),
   });
-  if (search?.trim()) params.set("search", search.trim());
 
-  const response = await fetch(
-    `${baseUrl}/rest/V1/css/admin/companies/${companyId}/catalog-products?${params.toString()}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    },
-  );
-
-  const body = (await response.json().catch(() => null)) as
-    | CompanyCatalogProductSearchResult
-    | { message?: string }
-    | null;
-
-  if (!response.ok) {
-    const message = body && "message" in body && body.message
-      ? body.message
-      : `Magento REST returned HTTP ${response.status}.`;
-    throw new CompanyCatalogProductSearchError(message, response.status);
-  }
-
-  if (!body || !("items" in body) || !("page_info" in body)) {
-    throw new CompanyCatalogProductSearchError("Magento REST returned an invalid product-search response.");
-  }
-
-  return body;
+  return data.css_admin_company_catalog_products;
 }
