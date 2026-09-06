@@ -40,14 +40,6 @@ const sectionNavigation: SidebarSectionNavigation[] = [
       { href: "/bulk-import#company-products", label: "Company product restrictions" },
     ],
   },
-  {
-    parentHref: "/ogl",
-    heading: "OGL administration",
-    items: [
-      { href: "/ogl#registry", label: "Company registry" },
-      { href: "/ogl#rep-mappings", label: "Rep-code mappings" },
-    ],
-  },
 ];
 
 export default async function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
