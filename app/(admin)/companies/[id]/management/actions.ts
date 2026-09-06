@@ -70,7 +70,16 @@ function approvalType(formData: FormData) {
   return value;
 }
 
-async function runMutation(companyId: number, notice: string, work: () => Promise<unknown>) {
+function returnView(formData: FormData) {
+  return String(formData.get("returnView") ?? "").trim() === "roles" ? "roles" : "users";
+}
+
+async function runMutation(
+  companyId: number,
+  view: "users" | "roles",
+  notice: string,
+  work: () => Promise<unknown>,
+) {
   let errorMessage: string | null = null;
 
   try {
@@ -81,6 +90,7 @@ async function runMutation(companyId: number, notice: string, work: () => Promis
   }
 
   const params = new URLSearchParams();
+  if (view === "roles") params.set("view", "roles");
   if (errorMessage) params.set("error", errorMessage);
   else params.set("notice", notice);
   redirect(`${managementPath(companyId)}?${params.toString()}`);
@@ -89,7 +99,7 @@ async function runMutation(companyId: number, notice: string, work: () => Promis
 export async function addCompanyUserAction(formData: FormData) {
   const companyId = requiredInt(formData, "companyId");
 
-  return runMutation(companyId, "Company user added.", async () => {
+  return runMutation(companyId, returnView(formData), "Company user added.", async () => {
     await addCompanyUser(companyId, {
       customer_id: requiredInt(formData, "customerId"),
       role_id: requiredInt(formData, "roleId"),
@@ -103,7 +113,7 @@ export async function addCompanyUserAction(formData: FormData) {
 export async function updateCompanyUserAction(formData: FormData) {
   const companyId = requiredInt(formData, "companyId");
 
-  return runMutation(companyId, "Company user updated.", async () => {
+  return runMutation(companyId, returnView(formData), "Company user updated.", async () => {
     await updateCompanyUser(companyId, {
       user_id: requiredInt(formData, "userId"),
       role_id: requiredInt(formData, "roleId"),
@@ -120,7 +130,7 @@ export async function removeCompanyUserAction(formData: FormData) {
   const expectedEmail = requiredString(formData, "expectedEmail");
   const confirmEmail = requiredString(formData, "confirmEmail");
 
-  return runMutation(companyId, "Company user removed.", async () => {
+  return runMutation(companyId, returnView(formData), "Company user removed.", async () => {
     if (confirmEmail !== expectedEmail) {
       throw new Error("Type the user's exact email address to confirm removal.");
     }
@@ -133,7 +143,7 @@ export async function saveCompanyRoleAction(formData: FormData) {
   const roleId = nullableInt(formData, "roleId") ?? undefined;
   const roleName = requiredString(formData, "name");
 
-  return runMutation(companyId, roleId ? "Company role updated." : "Company role created.", async () => {
+  return runMutation(companyId, returnView(formData), roleId ? "Company role updated." : "Company role created.", async () => {
     await saveCompanyRole(companyId, {
       role_id: roleId,
       name: roleName,
@@ -149,7 +159,7 @@ export async function deleteCompanyRoleAction(formData: FormData) {
   const expectedName = requiredString(formData, "expectedName");
   const confirmName = requiredString(formData, "confirmName");
 
-  return runMutation(companyId, "Company role deleted.", async () => {
+  return runMutation(companyId, returnView(formData), "Company role deleted.", async () => {
     if (confirmName !== expectedName) {
       throw new Error("Type the exact role name to confirm deletion.");
     }
