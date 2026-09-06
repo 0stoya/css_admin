@@ -1,59 +1,45 @@
 # Production serving runbook
 
-This runbook covers the first production-serving baseline for CSS Admin.
+This runbook covers the first production-serving baseline for CSS Admin on `oneflow-prod-01`.
 
 ## Production boundary
 
 - Public origin: `https://admin.csscdn.co.uk`
 - Dedicated Unix account: `css_admin`
-- Repository/runtime directory: `/srv/css-admin/repository`
+- Runtime account home / PM2 state: `/srv/css-admin`
+- Repository/runtime directory: `/srv/css/css_admin`
 - Next.js listener: `127.0.0.1:3067`
 - Process manager: PM2, one forked process
 - Public HTTP/TLS boundary: nginx only
-- Production secrets: `/srv/css-admin/repository/.env.production`, never committed
+- ACME webroot: `/var/www/css-acme`
+- Production secrets: `/srv/css/css_admin/.env.production`, never committed
 
-The port and filesystem path are deployment conventions for this service. Verify that `3067` is free before first start. The PM2 definition allows a temporary port override through `CSS_ADMIN_PORT`, but nginx and the accepted production deployment must agree on the same loopback port.
+The production host was inspected on 6 Sep 2026: Node 24.19.0, Yarn 1.22.22, PM2 7.0.3 and nginx 1.24.0 are installed, nginx is active, `nginx -t` passes, DNS for `admin.csscdn.co.uk` resolves to the host, and TCP port 3067 is free.
 
-## 1. Inspect the host first
+## 1. Create the runtime account and hand off the checkout
 
-Run these before changing the server:
-
-```bash
-node --version
-yarn --version
-pm2 --version
-nginx -v
-id css_admin || true
-sudo ss -lntp | grep ':3067' || true
-```
-
-Requirements:
-
-- Node.js must satisfy `package.json` (`>=22`).
-- `3067` must not already be in use.
-- nginx must already be installed and managed by systemd.
-
-If PM2 is not installed for the system Node installation, install it with the host's normal Node package-management policy before continuing.
-
-## 2. Create the runtime account and application directory
-
-On a new host:
+Create the dedicated account without creating a second application checkout:
 
 ```bash
 sudo adduser --system --group --home /srv/css-admin --shell /bin/bash css_admin
-sudo install -d -o css_admin -g css_admin -m 0750 /srv/css-admin/repository
+sudo chown -R css_admin:css_admin /srv/css/css_admin
 ```
 
-Clone or deploy the repository into `/srv/css-admin/repository` and keep the working tree owned by `css_admin:css_admin` for this first baseline.
+Keep `/srv/css` itself owned by root. The application working tree under `/srv/css/css_admin` is owned by `css_admin:css_admin` so that the runtime account can install dependencies, build `.next`, update the checkout and run PM2 without root.
 
-## 3. Production environment
+## 2. Production environment
 
-Create the production environment file as the runtime user and restrict it to that account:
+Next.js loads `.env.local` in production as well as development, and `.env.local` has higher precedence than `.env.production`. Do not leave a stale `.env.local` beside the production file.
+
+If the current `.env.local` already contains the accepted production Magento endpoints, migrate it without printing its contents:
 
 ```bash
-sudo install -o css_admin -g css_admin -m 0600 /dev/null /srv/css-admin/repository/.env.production
-sudoedit /srv/css-admin/repository/.env.production
+sudo -u css_admin cp /srv/css/css_admin/.env.local /srv/css/css_admin/.env.production
+sudo chmod 0600 /srv/css/css_admin/.env.production
+sudo rm /srv/css/css_admin/.env.local
 ```
+
+Otherwise create `/srv/css/css_admin/.env.production` directly and then remove `.env.local` after the production values are confirmed.
 
 At minimum configure:
 
@@ -64,13 +50,16 @@ MAGENTO_STORE_CODE=<store-code>
 
 Optional Magento endpoint overrides may be added when required by the environment. Do not place Magento credentials or tokens in `ecosystem.config.cjs`.
 
-## 4. Install, validate and build
+## 3. Check out the production-serving PR and build
 
-Run as the runtime account:
+Before merge/runtime acceptance, validate the exact PR branch on the host:
 
 ```bash
 sudo -iu css_admin bash -lc '
-  cd /srv/css-admin/repository &&
+  cd /srv/css/css_admin &&
+  git fetch origin &&
+  git checkout chore/production-serving-pm2-nginx &&
+  git reset --hard origin/chore/production-serving-pm2-nginx &&
   yarn install --frozen-lockfile &&
   yarn lint &&
   yarn typecheck &&
@@ -80,13 +69,13 @@ sudo -iu css_admin bash -lc '
 
 Do not use `next dev` in production.
 
-## 5. Start with PM2
+## 4. Start with PM2
 
 The checked-in `ecosystem.config.cjs` starts one production Next.js process bound only to `127.0.0.1:3067`.
 
 ```bash
 sudo -iu css_admin bash -lc '
-  cd /srv/css-admin/repository &&
+  cd /srv/css/css_admin &&
   pm2 start ecosystem.config.cjs --env production &&
   pm2 save &&
   pm2 status
@@ -131,7 +120,7 @@ sudo -iu css_admin pm2 logs css-admin --lines 200
 sudo -iu css_admin pm2 describe css-admin
 ```
 
-For bounded PM2 log retention, install the standard PM2 log-rotation module for the runtime account and configure a conservative baseline:
+For bounded PM2 log retention:
 
 ```bash
 sudo -iu css_admin pm2 install pm2-logrotate
@@ -141,31 +130,67 @@ sudo -iu css_admin pm2 set pm2-logrotate:compress true
 sudo -iu css_admin pm2 save
 ```
 
-## 6. Install the nginx site
+## 5. Obtain the TLS certificate
 
-The repository contains the final TLS server block at:
+The host uses Certbot with the shared webroot `/var/www/css-acme`. The final checked-in nginx site references a per-host certificate at `/etc/letsencrypt/live/admin.csscdn.co.uk/`.
 
-`deploy/nginx/admin.csscdn.co.uk.conf`
+Because the certificate does not exist on first deployment, install a temporary HTTP-only site first:
 
-It assumes the standard Certbot certificate paths:
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name admin.csscdn.co.uk;
 
-- `/etc/letsencrypt/live/admin.csscdn.co.uk/fullchain.pem`
-- `/etc/letsencrypt/live/admin.csscdn.co.uk/privkey.pem`
+    access_log /var/log/nginx/css-admin-access.log;
+    error_log /var/log/nginx/css-admin-error.log;
 
-If this host uses a different certificate manager, adjust only the certificate paths/options to match the host's accepted TLS setup. Do not enable the final TLS vhost until a valid certificate exists.
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/css-acme;
+        default_type text/plain;
+        try_files $uri =404;
+    }
 
-Install and enable the site:
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+```
+
+Save it as `/etc/nginx/sites-available/admin.csscdn.co.uk`, enable it, validate nginx and reload:
 
 ```bash
-sudo cp /srv/css-admin/repository/deploy/nginx/admin.csscdn.co.uk.conf \
-  /etc/nginx/sites-available/admin.csscdn.co.uk
-sudo ln -sfn /etc/nginx/sites-available/admin.csscdn.co.uk \
-  /etc/nginx/sites-enabled/admin.csscdn.co.uk
+sudo ln -sfn /etc/nginx/sites-available/admin.csscdn.co.uk /etc/nginx/sites-enabled/admin.csscdn.co.uk
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-The proxy forwards the canonical Host and `X-Forwarded-*` headers required for application redirects/origin handling, limits uploads to 10 MiB, and allows up to 120 seconds for normal proxied requests such as larger CSV operations.
+Then request the certificate through the same webroot used by `app.csscdn.co.uk`:
+
+```bash
+sudo certbot certonly --webroot -w /var/www/css-acme -d admin.csscdn.co.uk
+```
+
+Confirm the certificate exists before installing the final TLS vhost:
+
+```bash
+sudo certbot certificates
+sudo test -r /etc/letsencrypt/live/admin.csscdn.co.uk/fullchain.pem
+sudo test -r /etc/letsencrypt/live/admin.csscdn.co.uk/privkey.pem
+```
+
+## 6. Install the final nginx site
+
+Install the checked-in site after the certificate has been issued:
+
+```bash
+sudo cp /srv/css/css_admin/deploy/nginx/admin.csscdn.co.uk.conf /etc/nginx/sites-available/admin.csscdn.co.uk
+sudo ln -sfn /etc/nginx/sites-available/admin.csscdn.co.uk /etc/nginx/sites-enabled/admin.csscdn.co.uk
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+The site mirrors the accepted CSS host conventions: shared ACME webroot, dedicated access/error logs, HTTP-to-HTTPS redirect, Let's Encrypt TLS files, explicit forwarded HTTPS host/proto/port headers and a loopback-only upstream. The Admin request-body ceiling is 10 MiB and proxy read/send timeouts are 120 seconds to accommodate CSV workflows.
 
 ## 7. Public-origin smoke tests
 
@@ -229,14 +254,25 @@ curl -fsSI https://admin.csscdn.co.uk/login
 
 No manual `pm2 start` should be required after reboot.
 
-## 10. Release update procedure
+## 10. Merge and normal release update
 
-For this first baseline, use an explicit maintenance deployment rather than rebuilding `.next` underneath a running process:
+Do not merge the production-serving PR until the host acceptance checks above are green. After merge, return the deployment checkout to `main`:
+
+```bash
+sudo -iu css_admin bash -lc '
+  cd /srv/css/css_admin &&
+  git fetch origin &&
+  git checkout main &&
+  git reset --hard origin/main
+'
+```
+
+For later releases, use an explicit maintenance deployment rather than rebuilding `.next` underneath a running process:
 
 ```bash
 sudo -iu css_admin pm2 stop css-admin
 sudo -iu css_admin bash -lc '
-  cd /srv/css-admin/repository &&
+  cd /srv/css/css_admin &&
   git fetch origin &&
   git checkout main &&
   git pull --ff-only &&
