@@ -70,5 +70,14 @@ export async function bulkCompanyProductsImportAction(previous: FlatCompanyImpor
 }
 
 export async function bulkCompanyStructureImportAction(previous: FlatCompanyImportState, formData: FormData) {
+  const intent = String(formData.get("intent") ?? "preview") === "apply" ? "apply" : "preview";
+  if (intent === "apply" && formData.get("confirmApply") !== "true") {
+    return {
+      ...previous,
+      phase: "error",
+      error: "Confirm that you reviewed the proposed company hierarchy before applying structure changes.",
+    } satisfies FlatCompanyImportState;
+  }
+
   return runBulkImport(previous, formData, (source, apply) => apply ? applyCompanyStructureCsv(source) : previewCompanyStructureCsv(source));
 }
