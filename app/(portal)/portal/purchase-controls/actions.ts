@@ -94,17 +94,25 @@ export async function assignPortalPurchaseControlTemplateAction(formData: FormDa
 
 export async function applyPortalPurchaseControlTemplateAction(formData: FormData) {
   const templateId = requiredInt(formData, "templateId");
+  const confirmed = formData.get("confirmApply") === "yes";
   return runMutation(
     "Purchase-control template applied to eligible users.",
-    () => applyCompanyPortalPurchaseControlTemplate(templateId),
+    async () => {
+      if (!confirmed) throw new Error("Confirm that the template should overwrite eligible users before applying it.");
+      await applyCompanyPortalPurchaseControlTemplate(templateId);
+    },
   );
 }
 
 export async function resetPortalPurchaseControlCountersAction(formData: FormData) {
   const templateId = requiredInt(formData, "templateId");
+  const confirmed = formData.get("confirmReset") === "yes";
   return runMutation(
     "Purchase-control counters reset.",
-    () => resetCompanyPortalPurchaseControlCounters(templateId),
+    async () => {
+      if (!confirmed) throw new Error("Confirm that consumed purchase-control counters should be reset before continuing.");
+      await resetCompanyPortalPurchaseControlCounters(templateId);
+    },
   );
 }
 

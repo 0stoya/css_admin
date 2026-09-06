@@ -103,8 +103,18 @@ export default async function CompanyPortalPurchaseControlsPage({
               <details className="mutation-panel"><summary>Manage template</summary>
                 <form className="compact-form" action={savePortalPurchaseControlTemplateAction}><input type="hidden" name="templateId" value={template.template_id} /><div className="field"><label htmlFor={`templateName-${template.template_id}`}>Template name</label><input id={`templateName-${template.template_id}`} name="name" required defaultValue={template.name} /></div><div className="field"><label htmlFor={`templateRules-${template.template_id}`}>Rules</label><textarea id={`templateRules-${template.template_id}`} name="rules" rows={Math.max(4, template.rules.length + 1)} defaultValue={formatRules(template.rules)} /></div><button className="button" type="submit">Save template</button></form>
                 <div className="grid">
-                  <form className="compact-form" action={applyPortalPurchaseControlTemplateAction}><input type="hidden" name="templateId" value={template.template_id} /><p className="muted">Overwrite eligible users in assigned roles with these rules.</p><button className="button" type="submit">Apply to users</button></form>
-                  <form className="compact-form" action={resetPortalPurchaseControlCountersAction}><input type="hidden" name="templateId" value={template.template_id} /><p className="muted">Reset consumed counters for users governed by this template.</p><button className="button" type="submit">Reset counters</button></form>
+                  <form className="compact-form" action={applyPortalPurchaseControlTemplateAction}>
+                    <input type="hidden" name="templateId" value={template.template_id} />
+                    <p className="muted">Overwrite eligible users in assigned roles with these rules.</p>
+                    <label className="check-field"><input type="checkbox" name="confirmApply" value="yes" required /><span><strong>Confirm overwrite</strong><span className="muted small-text">Required before applying this template to users.</span></span></label>
+                    <button className="button" type="submit">Apply to users</button>
+                  </form>
+                  <form className="compact-form" action={resetPortalPurchaseControlCountersAction}>
+                    <input type="hidden" name="templateId" value={template.template_id} />
+                    <p className="muted">Reset consumed counters for users governed by this template.</p>
+                    <label className="check-field"><input type="checkbox" name="confirmReset" value="yes" required /><span><strong>Confirm reset</strong><span className="muted small-text">Required before clearing consumed counters.</span></span></label>
+                    <button className="button" type="submit">Reset counters</button>
+                  </form>
                 </div>
                 <form className="danger-zone" action={deletePortalPurchaseControlTemplateAction}><input type="hidden" name="templateId" value={template.template_id} /><div className="field"><label htmlFor={`deleteTemplate-${template.template_id}`}>Type {template.name} to delete this unassigned template</label><input id={`deleteTemplate-${template.template_id}`} name="confirmName" autoComplete="off" required /></div><button className="button button-danger" type="submit">Delete template</button></form>
               </details>
