@@ -33,6 +33,10 @@ function oglPath(cref?: string) {
   return `/ogl?${params.toString()}`;
 }
 
+function oglMappingsPath() {
+  return "/ogl?view=mappings";
+}
+
 async function runMutation(target: string, work: () => Promise<string>) {
   let destination = target;
   try {
@@ -92,7 +96,7 @@ export async function saveOglRepMappingAction(formData: FormData) {
   const repCode = requiredString(formData, "repCode");
   const adminUserId = requiredPositiveInt(formData, "adminUserId");
 
-  return runMutation("/ogl", async () => {
+  return runMutation(oglMappingsPath(), async () => {
     const result = await saveOglRepMapping(repCode, adminUserId);
     return `Saved rep mapping ${result.rep_code} → admin #${result.admin_user_id}; ${result.affected_company_count} imported companies updated.`;
   });
@@ -102,7 +106,7 @@ export async function deleteOglRepMappingAction(formData: FormData) {
   const repCode = requiredString(formData, "repCode");
   const confirmRepCode = requiredString(formData, "confirmRepCode");
 
-  return runMutation("/ogl", async () => {
+  return runMutation(oglMappingsPath(), async () => {
     const result = await deleteOglRepMapping(repCode, confirmRepCode);
     return `Deleted rep mapping ${result.rep_code}; ${result.affected_company_count} company assignments cleared.`;
   });
