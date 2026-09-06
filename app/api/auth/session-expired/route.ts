@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { clearSession } from "@/lib/session";
 
-export async function GET(request: Request) {
+export async function GET() {
   await clearSession();
-
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("reason", "expired");
-
-  return NextResponse.redirect(loginUrl, 303);
+  return new NextResponse(null, {
+    status: 303,
+    headers: { Location: "/login?reason=expired" },
+  });
 }
