@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   PurchaseProductPicker,
   type PurchaseProductPickerItem,
@@ -40,6 +41,12 @@ function serialize(rows: DraftRule[]) {
     .join("\n");
 }
 
+function companyIdFromPath(pathname: string) {
+  const match = pathname.match(/^\/companies\/(\d+)(?:\/|$)/);
+  const value = match ? Number(match[1]) : 0;
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
 function PlusIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -61,10 +68,12 @@ export function PurchaseRuleEditor({
   initialRules = [],
   label = "Rules",
 }: {
-  companyId: number;
+  companyId?: number;
   initialRules?: PurchaseRuleEditorValue[];
   label?: string;
 }) {
+  const pathname = usePathname();
+  const resolvedCompanyId = companyId ?? companyIdFromPath(pathname);
   const editorId = useId().replaceAll(":", "");
   const [nextKey, setNextKey] = useState(initialRules.length + 1);
   const [rows, setRows] = useState<DraftRule[]>(() =>
@@ -122,6 +131,7 @@ export function PurchaseRuleEditor({
           className="button button-secondary button-compact icon-button-label"
           type="button"
           aria-expanded={pickerOpen}
+          disabled={!resolvedCompanyId}
           onClick={() => setPickerOpen((current) => !current)}
         >
           <PlusIcon />
@@ -129,9 +139,9 @@ export function PurchaseRuleEditor({
         </button>
       </div>
 
-      {pickerOpen ? (
+      {pickerOpen && resolvedCompanyId ? (
         <PurchaseProductPicker
-          companyId={companyId}
+          companyId={resolvedCompanyId}
           excludedSkus={rows.map((row) => row.sku)}
           onAdd={addProducts}
         />
