@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { graphQLErrorMessage } from "@/lib/graphql/client";
+import {
+  graphQLErrorMessage,
+  GraphQLRequestError,
+} from "@/lib/graphql/client";
+import { customerGraphqlRequest } from "@/lib/graphql/customer-client";
 import {
   saveCompanyPortalCatalogPolicy,
   saveCompanyPortalRoleCatalogCategories,
@@ -10,6 +14,47 @@ import {
 } from "@/lib/graphql/company-portal-catalog";
 
 const CATALOG_PATH = "/portal/catalog";
+
+type CategoryStateNode = {
+  id: number;
+  children?: CategoryStateNode[];
+};
+
+type PortalRoleCategoryStateData = {
+  css_company_role_catalog_policy: {
+    has_saved_categories: boolean;
+    category_tree: CategoryStateNode[];
+  };
+};
+
+const ROLE_CATEGORY_STATE_QUERY = /* GraphQL */ `
+  query CompanyPortalRoleCategoryState($roleId: Int!) {
+    css_company_role_catalog_policy(role_id: $roleId, page: 1) {
+      has_saved_categories
+      category_tree {
+        id
+        children {
+          id
+          children {
+            id
+            children {
+              id
+              children {
+                id
+                children {
+                  id
+                  children {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
 function requiredInt(formData: FormData, key: string) {
   const raw = String(formData.get(key) ?? "").trim();
@@ -35,6 +80,56 @@ function positiveIntEntries(formData: FormData, key: string) {
 
 function stringList(raw: string) {
   return Array.from(new Set(raw.split(/[\n,]+/).map((value) => value.trim()).filter(Boolean)));
+}
+
+function categoryStateIds(nodes: CategoryStateNode[]): number[] {
+  return Array.from(
+    new Set(
+      nodes
+        .flatMap((node) => [node.id, ...categoryStateIds(node.children ?? [])])
+        .filter((id) => id > 0),
+    ),
+  );
+}
+
+function isSelectedCategoryProductError(error: unknown) {
+  const message = error instanceof GraphQLRequestError
+    ? error.message
+    : error instanceof Error
+      ? error.message
+      : "";
+
+  return message
+    .toLocaleLowerCase("en")
+    .includes("not available for the selected categories");
+}
+
+async function saveExplicitPortalRoleProductsWithCompatibility(
+  roleId: number,
+  allowedProductIds: number[],
+) {
+  try {
+    await saveCompanyPortalRoleCatalogProducts(roleId, allowedProductIds, false);
+    return;
+  } catch (error) {
+    if (!isSelectedCategoryProductError(error)) throw error;
+
+    const data = await customerGraphqlRequest<
+      PortalRoleCategoryStateData,
+      { roleId: number }
+    >(ROLE_CATEGORY_STATE_QUERY, { roleId });
+
+    const state = data.css_company_role_catalog_policy;
+    if (state.has_saved_categories) throw error;
+
+    const categoryIds = categoryStateIds(state.category_tree);
+    if (!categoryIds.length) throw error;
+
+    // Missing role-category state means no additional category restriction in Magento.
+    // Persist that equivalent state only for this legacy edge, then retry the product write.
+    await saveCompanyPortalRoleCatalogCategories(roleId, categoryIds);
+    await saveCompanyPortalRoleCatalogProducts(roleId, allowedProductIds, false);
+  }
 }
 
 async function runMutation(notice: string, work: () => Promise<unknown>, roleId?: number) {
@@ -88,10 +183,9 @@ export async function savePortalRoleProductsAction(formData: FormData) {
       return;
     }
     if (mode !== "explicit") throw new Error("productMode must be all or explicit.");
-    await saveCompanyPortalRoleCatalogProducts(
+    await saveExplicitPortalRoleProductsWithCompatibility(
       roleId,
       positiveIntEntries(formData, "allowedProductIds"),
-      false,
     );
   }, roleId);
 }
