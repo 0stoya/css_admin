@@ -17,7 +17,7 @@
   --css-warning: #9a6700;
   --css-warning-soft: #fff9d9;
   --font-primary: "Roboto", "Segoe UI", Arial, sans-serif;
-  --font-secondary: "Roboto Slab", Georgia, serif;
+  --font-secondary: "Ubuntu", Georgia, serif;
   font-family: var(--font-primary);
   background: var(--css-accent);
   color: var(--css-text);
