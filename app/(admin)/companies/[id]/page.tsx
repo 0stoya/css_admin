@@ -1,55 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CompanyStructureCard } from "@/components/company-structure-card";
-import { buildCompanyStructure } from "@/lib/company-structure";
+import {
+  buildCompanyStructure,
+  countStructureCompanies,
+  findCompanyStructureContext,
+} from "@/lib/company-structure";
 import { getAllCompanies, getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { getCompanyManagement } from "@/lib/graphql/company-management";
 import { getCompanyPricingStatus } from "@/lib/graphql/company-pricing";
 
-const managementAreas = [
-  {
-    key: "management",
-    label: "Company management",
-    description: "Users, roles and Fluid company ACL resources.",
-    href: (companyId: number) => `/companies/${companyId}/management`,
-  },
-  {
-    key: "catalog",
-    label: "Catalogue policy",
-    description: "Company and role catalogue visibility.",
-    href: (companyId: number) => `/companies/${companyId}/catalog`,
-  },
-  {
-    key: "purchase-controls",
-    label: "Purchase controls",
-    description: "Role templates, limits and assignments.",
-    href: (companyId: number) => `/companies/${companyId}/purchase-controls`,
-  },
-  {
-    key: "payment",
-    label: "Payment configuration",
-    description: "Company-specific payment-method configuration.",
-    href: (companyId: number) => `/companies/${companyId}/payment`,
-  },
-  {
-    key: "credit",
-    label: "Company credit",
-    description: "Read-only credit limit, usage and remaining balance.",
-    href: (companyId: number) => `/companies/${companyId}/credit`,
-  },
-  {
-    key: "credit-orders",
-    label: "Credit orders",
-    description: "Administrative credit-order queues and lifecycle.",
-    href: (companyId: number) => `/companies/${companyId}/credit-orders`,
-  },
-] as const;
-
 async function loadCompany(companyId: number) {
-  const [companyResult, pricingResult, structureResult] = await Promise.allSettled([
+  const [companyResult, pricingResult, structureResult, managementResult] = await Promise.allSettled([
     getCompany(companyId),
     getCompanyPricingStatus(companyId),
     getAllCompanies(),
+    getCompanyManagement(companyId),
   ]);
 
   if (companyResult.status === "rejected") {
@@ -59,6 +26,7 @@ async function loadCompany(companyId: number) {
       pricingError: null,
       structure: null,
       structureError: null,
+      management: null,
       error: graphQLErrorMessage(companyResult.reason),
     };
   }
@@ -69,8 +37,22 @@ async function loadCompany(companyId: number) {
     pricingError: pricingResult.status === "rejected" ? graphQLErrorMessage(pricingResult.reason) : null,
     structure: structureResult.status === "fulfilled" ? buildCompanyStructure(structureResult.value) : null,
     structureError: structureResult.status === "rejected" ? graphQLErrorMessage(structureResult.reason) : null,
+    management: managementResult.status === "fulfilled" ? managementResult.value : null,
     error: null,
   };
+}
+
+function formatTimestamp(value: string | null) {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -81,7 +63,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const { company, pricing, pricingError, structure, structureError, error } = await loadCompany(companyId);
+  const {
+    company,
+    pricing,
+    pricingError,
+    structure,
+    structureError,
+    management,
+    error,
+  } = await loadCompany(companyId);
 
   if (!company) {
     return (
@@ -98,120 +88,155 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     );
   }
 
-  const pricingSource = pricing?.has_custom_prices ? "OGL company-specific pricing" : "Magento pricing";
+  const structureContext = structure
+    ? findCompanyStructureContext(structure, company.company_id)
+    : null;
+  const visibleStructureCount = structureContext
+    ? countStructureCompanies(structureContext.root)
+    : null;
+  const parentNode = structureContext && structureContext.path.length > 1
+    ? structureContext.path[structureContext.path.length - 2]
+    : null;
+  const isIndependent = Boolean(
+    structureContext
+    && visibleStructureCount === 1
+    && structureContext.root.company.parent_company_id === null,
+  );
+  const isGroupHead = Boolean(
+    structureContext
+    && visibleStructureCount !== null
+    && visibleStructureCount > 1
+    && structureContext.root.company.company_id === company.company_id
+    && structureContext.root.company.parent_company_id === null,
+  );
+  const structurePosition = !structureContext
+    ? "Unavailable"
+    : isIndependent
+      ? "Independent"
+      : isGroupHead
+        ? "Group head"
+        : parentNode
+          ? `Child of ${parentNode.company.reference || parentNode.company.name}`
+          : "Highest visible branch";
+
+  const pricingSource = pricing?.has_custom_prices ? "OGL custom pricing" : "Magento pricing";
+  const reference = company.reference || `Company ${company.company_id}`;
 
   return (
-    <div className="stack section-gap">
-      <div><Link className="back-link" href="/companies">← Companies</Link></div>
+    <div className="stack company-overview">
+      <div className="company-overview-heading-row">
+        <Link className="back-link" href="/companies">← Companies</Link>
+      </div>
 
-      <header className="page-header">
+      <header className="page-header company-overview-header">
         <div>
-          <p className="eyebrow">{company.reference || `Company ${company.company_id}`}</p>
-          <h1>{company.name}</h1>
-          <p className="muted">Company detail, structure and management entry points. Each management surface remains backend-authorized.</p>
+          <p className="eyebrow">{reference}</p>
+          <h1>Company overview</h1>
+          <p className="muted">Account status, company structure and integration health for {company.name}.</p>
         </div>
       </header>
 
-      <section className="card">
-        <h2>Company detail</h2>
-        <dl className="detail-list">
-          <dt>Reference</dt><dd>{company.reference || "—"}</dd>
-          <dt>Company ID</dt><dd>{company.company_id}</dd>
-          <dt>Sales representative ID</dt><dd>{company.sales_representative_id ?? "Unassigned"}</dd>
-        </dl>
-      </section>
+      <div className="company-overview-stats" aria-label="Company summary">
+        <article className="company-overview-stat">
+          <span className="company-overview-stat-value">{reference}</span>
+          <span className="company-overview-stat-label">Company reference</span>
+          <span className="company-overview-stat-meta">Magento company #{company.company_id}</span>
+        </article>
+        <article className="company-overview-stat">
+          <span className="company-overview-stat-value">{management ? management.users.length : "—"}</span>
+          <span className="company-overview-stat-label">Company users</span>
+          <span className="company-overview-stat-meta">{management ? "Fluid membership" : "Access restricted"}</span>
+        </article>
+        <article className="company-overview-stat">
+          <span className="company-overview-stat-value">{management ? management.roles.length : "—"}</span>
+          <span className="company-overview-stat-label">Roles</span>
+          <span className="company-overview-stat-meta">{management ? "Company access roles" : "Access restricted"}</span>
+        </article>
+        <article className="company-overview-stat">
+          <span className="company-overview-stat-value">{visibleStructureCount ?? "—"}</span>
+          <span className="company-overview-stat-label">Visible structure</span>
+          <span className="company-overview-stat-meta">{structurePosition}</span>
+        </article>
+      </div>
 
-      {structure ? (
-        <CompanyStructureCard roots={structure} companyId={company.company_id} />
-      ) : (
-        <section className="card stack">
-          <div>
-            <p className="eyebrow">Company structure</p>
-            <h2>Structure unavailable</h2>
-            <p className="muted">The company remains usable; its parent/child structure could not be loaded in the current admin scope.</p>
-          </div>
-          {structureError ? <div className="error">{structureError}</div> : null}
-        </section>
-      )}
-
-      <section className="card stack">
-        <div>
-          <h2>Company settings & lifecycle</h2>
-          <p className="muted">Review OGL-owned company data, maintain Magento-local settings and use the guarded exact-reference delete flow.</p>
-        </div>
-        <Link className="button button-link" href={`/companies/${company.company_id}/settings`}>
-          Open company settings
-        </Link>
-      </section>
-
-      <section className="card stack">
-        <div>
-          <h2>Import / export</h2>
-          <p className="muted">Export or preview company users, roles and product restrictions before applying Fluid-authorized changes.</p>
-        </div>
-        <Link className="button button-link" href={`/companies/${company.company_id}/import-export`}>
-          Open import / export
-        </Link>
-      </section>
-
-      {pricing ? (
-        <section className="card stack">
-          <div className="card-heading-row">
-            <div>
-              <p className="eyebrow">Pricing</p>
-              <h2>{pricingSource}</h2>
-              <p className="muted">
-                {pricing.has_custom_prices
-                  ? `${pricing.custom_price_count} custom price row${pricing.custom_price_count === 1 ? "" : "s"}; custom prices ${pricing.status_message}.`
-                  : `No OGL custom prices are currently available; ${pricing.status_message}.`}
-              </p>
-            </div>
-            <div className={`badge ${pricing.has_custom_prices ? "badge-ok" : "badge-neutral"}`}>
-              {pricing.has_custom_prices ? "Custom pricing" : "Magento fallback"}
-            </div>
-          </div>
-          <dl className="detail-list">
-            <dt>Company active</dt><dd>{pricing.company_active ? "Yes" : "No"}</dd>
-            <dt>OGL sync</dt><dd>{pricing.sync_enabled ? "Enabled" : "Disabled"}</dd>
-            <dt>Import status</dt><dd>{pricing.import_status}</dd>
-          </dl>
-          <Link className="button button-link" href={`/companies/${company.company_id}/pricing`}>
-            View pricing status & custom prices
-          </Link>
-        </section>
-      ) : (
-        <section className="card stack">
-          <div>
-            <p className="eyebrow">Pricing</p>
-            <h2>Pricing status unavailable</h2>
-            <p className="muted">Pricing access is independent from the company overview and may be restricted for scoped administrators.</p>
-          </div>
-          {pricingError ? <div className="error">{pricingError}</div> : null}
-          <Link className="button button-link" href={`/companies/${company.company_id}/pricing`}>
-            Open pricing status
-          </Link>
-        </section>
-      )}
-
-      <section className="stack">
-        <div>
-          <h2>Management areas</h2>
-          <p className="muted">Open an area to use its backend-authorized surface. Scoped administrators may receive a restricted state from Fluid rather than a hidden or inferred permission.</p>
-        </div>
-        <div className="grid">
-          {managementAreas.map((area) => (
-            <article className="card stack" key={area.key}>
+      <div className="company-overview-grid">
+        <div className="company-overview-main">
+          {structure ? (
+            <CompanyStructureCard roots={structure} companyId={company.company_id} />
+          ) : (
+            <section className="card stack">
               <div>
-                <h3>{area.label}</h3>
-                <p className="muted">{area.description}</p>
+                <p className="eyebrow">Company structure</p>
+                <h2>Structure unavailable</h2>
+                <p className="muted">The company remains usable; its parent/child structure could not be loaded in the current admin scope.</p>
               </div>
-              <Link className="button button-link" href={area.href(company.company_id)}>
-                Open {area.label.toLowerCase()}
-              </Link>
-            </article>
-          ))}
+              {structureError ? (
+                <details className="overview-error-detail">
+                  <summary>Technical details</summary>
+                  <div className="error">{structureError}</div>
+                </details>
+              ) : null}
+            </section>
+          )}
         </div>
-      </section>
+
+        <aside className="company-overview-rail" aria-label="Company status">
+          <section className="card stack company-overview-panel">
+            <div>
+              <p className="eyebrow">Company record</p>
+              <h2>Account details</h2>
+            </div>
+            <dl className="company-overview-detail-list">
+              <div><dt>Reference</dt><dd>{company.reference || "—"}</dd></div>
+              <div><dt>Magento company ID</dt><dd>{company.company_id}</dd></div>
+              <div><dt>Sales representative</dt><dd>{company.sales_representative_id ?? "Unassigned"}</dd></div>
+              <div><dt>Structure</dt><dd>{structurePosition}</dd></div>
+              {parentNode ? (
+                <div><dt>Parent company</dt><dd><Link href={`/companies/${parentNode.company.company_id}`}>{parentNode.company.reference || parentNode.company.name}</Link></dd></div>
+              ) : null}
+            </dl>
+          </section>
+
+          <section className="card stack company-overview-panel">
+            <div className="company-overview-panel-heading">
+              <div>
+                <p className="eyebrow">Pricing & OGL</p>
+                <h2>Integration status</h2>
+              </div>
+              {pricing ? (
+                <span className={`badge ${pricing.has_custom_prices ? "badge-ok" : "badge-neutral"}`}>
+                  {pricing.has_custom_prices ? "Custom pricing" : "Magento fallback"}
+                </span>
+              ) : null}
+            </div>
+
+            {pricing ? (
+              <>
+                <p className="muted small-text">{pricingSource}. {pricing.status_message}</p>
+                <dl className="company-overview-detail-list">
+                  <div><dt>Company active</dt><dd><span className={`badge ${pricing.company_active ? "badge-ok" : "badge-restricted"}`}>{pricing.company_active ? "Yes" : "No"}</span></dd></div>
+                  <div><dt>OGL sync</dt><dd><span className={`badge ${pricing.sync_enabled ? "badge-ok" : "badge-neutral"}`}>{pricing.sync_enabled ? "Enabled" : "Disabled"}</span></dd></div>
+                  <div><dt>Import status</dt><dd>{pricing.import_status}</dd></div>
+                  <div><dt>Custom price rows</dt><dd>{pricing.custom_price_count}</dd></div>
+                  <div><dt>Last imported</dt><dd>{formatTimestamp(pricing.last_imported_at)}</dd></div>
+                </dl>
+                <Link className="company-overview-text-link" href={`/companies/${company.company_id}/pricing`}>View pricing details →</Link>
+              </>
+            ) : (
+              <>
+                <p className="muted">Pricing status is unavailable in the current admin scope. The rest of the company overview remains usable.</p>
+                {pricingError ? (
+                  <details className="overview-error-detail">
+                    <summary>Technical details</summary>
+                    <div className="error">{pricingError}</div>
+                  </details>
+                ) : null}
+                <Link className="company-overview-text-link" href={`/companies/${company.company_id}/pricing`}>Open pricing status →</Link>
+              </>
+            )}
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }
