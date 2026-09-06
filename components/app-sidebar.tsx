@@ -81,11 +81,6 @@ export function AppSidebar({
   return (
     <aside className="app-sidebar" aria-label={`${productLabel} navigation`}>
       <div className="app-sidebar-inner">
-        <div className="sidebar-heading">
-          <span className="sidebar-kicker">CSS Commerce</span>
-          <strong>{productLabel}</strong>
-        </div>
-
         <nav className="sidebar-nav" aria-label="Primary navigation">
           {navigation.map((item) => {
             const active = isActive(pathname, item);

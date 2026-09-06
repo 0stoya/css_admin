@@ -1,10 +1,10 @@
 # CSS Admin roadmap
 
-Last updated: 2026-09-05
+Last updated: 2026-09-06
 
 ## Goal
 
-Build the functional Fluid/Magento management application against backend-authoritative GraphQL contracts first, then complete a dedicated reusable UI/UX refinement pass.
+Build the Fluid/Magento management application against backend-authoritative GraphQL contracts, refine it into a coherent Admin workspace, then harden the production serving boundary before moving on to the separate Customer app.
 
 The frontend must not reproduce Magento/Fluid authorization, company scope, catalogue eligibility, purchase-control validation, pricing rules or credit-order business rules. Those remain backend-authoritative.
 
@@ -20,7 +20,7 @@ yarn build
 
 followed by a live runtime check against the deployed Fluid GraphQL backend.
 
-GitHub Actions are not the current acceptance authority for this project.
+GitHub Actions are useful signal, but the real Magento/Fluid environment remains the acceptance authority for this project.
 
 ## Product rules
 
@@ -64,6 +64,12 @@ Company users must never be treated as fake Magento admins and must never call `
 
 Company-user navigation and actions must be derived from Fluid-returned membership/capability/ACL state. A company administrator or selected role-authorized company user sees only the company-owned functions Fluid authorizes.
 
+### Magento integration is GraphQL-only
+
+Admin-to-Magento application integration must use the accepted GraphQL surface. Do not introduce new REST/Web API calls as shortcuts for Admin workflows.
+
+If a legitimate screen exposes a missing capability, extend the Fluid GraphQL contract and validate it on Magento rather than creating a second integration path.
+
 ## Completed Admin core
 
 ### Foundation through company/commercial management — PRs #1-#11
@@ -79,9 +85,9 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] payment configuration.
 - [x] read-only company credit.
 - [x] read-only company pricing visibility.
-- [x] Fluid PRs #57-#60 runtime accepted where applicable.
+- [x] Fluid compatibility work runtime accepted where applicable.
 
-### Admin credit orders — PR #12
+### Admin credit orders — PR #12 and later refinements
 
 - [x] queue/list/filter/search.
 - [x] detail, comments and lifecycle history.
@@ -89,6 +95,7 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] approve/reject/cancel/place rendered only from backend `can_*` flags.
 - [x] terminal order correctly renders no lifecycle actions even for an approver-capable actor.
 - [x] `approved_pending_payment` remains customer-owned; Admin does not bypass/resume it.
+- [x] frozen quote items are exposed through GraphQL and shown on the order detail.
 - [x] merged and runtime accepted.
 
 ### Session expiry hardening — PR #13
@@ -99,7 +106,7 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] ordinary ACL/authorization errors do not log the user out.
 - [x] merged and runtime accepted.
 
-### Company-user authentication — PR #14 + core-completion login polish
+### Company-user authentication — PR #14 + login polish
 
 - [x] Staff and Company user authentication use their respective Magento token endpoints.
 - [x] separate HttpOnly sessions and route boundaries.
@@ -117,7 +124,6 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] company administrator protection remains Fluid-authoritative.
 - [x] assignable/manageable resources remain Fluid-authoritative.
 - [x] lint/typecheck/build and live write journey accepted.
-- [x] merged (`ae4a3fa631c667c75f215c88c49bbfab484c6d62`).
 
 ### Portal catalogue and purchase controls — PR #16
 
@@ -126,7 +132,7 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] selected-company customer context remains Fluid-authoritative.
 - [x] customer users cannot call staff `css_admin_*` operations.
 
-### Import/export and multi-company bulk operations — PRs #17-#19
+### Import/export and multi-company bulk operations — PRs #17-#19 and later UI refinements
 
 - [x] company-user CSV import/export with mandatory preview before apply.
 - [x] Created / Updated / Skipped / Error reporting.
@@ -137,83 +143,125 @@ Company-user navigation and actions must be derived from Fluid-returned membersh
 - [x] company product-restriction CSV.
 - [x] `company_ref` is a safety lock on single-company imports.
 - [x] Unlimited Admin bulk workflow routes multi-company rows by `company_ref`.
+- [x] company hierarchy bulk import uses references rather than Magento IDs.
 - [x] controls continue through Fluid dry-run/apply per company.
 - [x] current/example CSV downloads are available for every supported import type.
+- [x] company and bulk import workspaces use focused tabs and preserve preview state while switching views.
 
-### Export-only authoritative/operational data
+## UI/UX refinement — completed Admin workspace pass
 
-Useful additional export surfaces may later include:
+The broad Admin UI/UX refinement pass is complete through OGL administration.
 
-- company credit;
-- read-only pricing/import state;
-- credit orders;
-- purchase-control history.
+Accepted patterns now include:
 
-These are not blockers for UI/UX refinement. Do **not** introduce matching imports for pricing, credit or operational history. Those remain backend/OGL authoritative.
+- [x] branded login with automatic Staff vs Company-user routing.
+- [x] responsive application shell and contextual company header.
+- [x] persistent sidebar navigation with company-management sub-navigation.
+- [x] URL-connected Bulk Import sub-navigation and workspace tabs.
+- [x] company hierarchy/group presentation.
+- [x] company overview workspace.
+- [x] Users & roles workspace with searchable users and hierarchical permission picker.
+- [x] Catalogue policy workspace with independent Product and Category restrictions.
+- [x] Purchase controls workspace with catalogue-backed SKU selection.
+- [x] Payment configuration workspace.
+- [x] Company credit workspace.
+- [x] Credit orders queue/detail workspace with Overview / Conversation / History.
+- [x] Pricing workspace.
+- [x] company Import / export workspace.
+- [x] Company settings / lifecycle workspace.
+- [x] multi-company Bulk Import workspace.
+- [x] OGL administration workspace.
+- [x] consistent buttons, badges, forms, empty/error states, CSV picker and destructive confirmation patterns.
+- [x] large selectors use searchable/paged or bounded workspaces rather than uncontrolled long pages.
+- [x] UI changes preserve backend-authoritative Fluid ACL and validation behavior.
 
-OGL registry/company creation remains outside generic import flows.
+Presentation can still receive small follow-up polish, but there is no remaining major Admin workspace redesign blocking production serving.
 
-## Core-completion pass
+## Remaining regression/hardening checks
 
-After portal expansion and import/export, before broad UI polish:
+These remain validation work rather than a new UI phase:
 
-- [x] verify all staff and company-user navigation targets implemented surfaces.
-- [ ] normalize loading/error/empty states through the live regression spot checks.
-- [ ] verify unrestricted vs scoped Magento-admin behavior across all staff routes.
-- [ ] verify company-user role/capability boundaries across all portal routes.
-- [x] verify destructive confirmations consistently protect important writes.
-- [x] remove obsolete availability probes.
-- [ ] run final lint/typecheck/build and live regression walk-through.
+- [ ] normalize any remaining loading/error/empty-state edge cases found by live regression.
+- [ ] verify unrestricted vs scoped Magento-admin behavior across all Staff routes.
+- [ ] verify company-user role/capability boundaries across all Portal routes.
+- [ ] run a final full `yarn lint`, `yarn typecheck`, `yarn build` and live regression walk-through after production process/proxy setup.
+- [ ] verify session expiry/logout, disabled/reset users and restart behavior through the final public HTTPS boundary.
 
-The static core audit removed the old company-management availability probe, made optional pricing failure independent from the company overview, and added explicit confirmations before purchase-template overwrite/counter-reset operations in both Staff and Company Portal surfaces.
+The executable runtime matrix remains documented in [`docs/core-regression-checklist.md`](docs/core-regression-checklist.md).
 
-The executable runtime matrix is documented in [`docs/core-regression-checklist.md`](docs/core-regression-checklist.md).
+## Next phase — production serving: PM2 + nginx
 
-The core-completion pass should stay narrow: fix functional inconsistencies and regressions, but defer broad layout, component styling and interaction redesign to the UI/UX phase.
+**This is the next implementation slice.**
 
-## UI/UX refinement — next major phase
+Goal: run `css_admin` as a production Next.js service behind nginx with a predictable process lifecycle and no direct public Node listener.
 
-The UI pass should establish reusable patterns that can later inform the Customer app:
+### PM2 / application process
 
-- responsive application shell and navigation hierarchy;
-- capability-aware navigation states;
-- tables, filtering, sorting and pagination;
-- consistent forms, buttons, badges and feedback;
-- file import/export and dry-run review patterns;
-- confirmation dialogs and destructive-action patterns;
-- richer Magento admin selectors for OGL rep mapping/override;
-- SKU/product selectors for catalogue and purchase controls;
-- company user/role management layout;
-- payment, credit, pricing and credit-order presentation;
-- lifecycle history presentation instead of raw JSON where useful;
-- accessibility, keyboard and focus behavior.
+- [ ] decide and document the dedicated Unix service account that owns the runtime process and deployed files.
+- [ ] build with the production environment and run the Next.js production server, not `next dev`.
+- [ ] bind the Next.js listener to loopback only on the reserved Admin port.
+- [ ] add a checked-in PM2 ecosystem/process definition with explicit working directory, environment and process name.
+- [ ] use a single application instance initially unless measured load justifies clustering.
+- [ ] configure PM2 startup integration so the app returns after reboot.
+- [ ] save the PM2 process list only after the production definition is accepted.
+- [ ] verify clean start, stop, reload/restart and host reboot behavior.
+- [ ] document logs, log retention/rotation and the commands operators should use to inspect the process.
+- [ ] avoid storing Magento/Admin secrets inside the PM2 config committed to Git.
 
-The rule remains: **improve interaction and presentation, never duplicate Fluid validation or ACL logic in the browser**.
+### nginx / public HTTPS boundary
+
+- [ ] add the production server block for the Admin hostname.
+- [ ] terminate HTTPS at nginx and redirect HTTP to HTTPS.
+- [ ] proxy only to the loopback Next.js listener.
+- [ ] preserve the correct host/proto forwarding headers required by auth, redirects and CSRF/origin checks.
+- [ ] set sensible proxy/body/timeouts for normal Admin requests and CSV imports without allowing unnecessarily large uploads.
+- [ ] add baseline security headers appropriate for the application and verify they do not break Next.js assets/auth.
+- [ ] ensure static Next.js assets and application routes behave correctly through the proxy.
+- [ ] verify login/logout/session expiry through the canonical public origin.
+- [ ] verify no Node/PM2 port is reachable directly from the public network.
+
+### Acceptance gate for the production-serving slice
+
+- [ ] `yarn lint` passes.
+- [ ] `yarn typecheck` passes.
+- [ ] `yarn build` passes.
+- [ ] PM2 reports the expected production process healthy after restart.
+- [ ] nginx configuration test passes before reload.
+- [ ] canonical HTTPS login works for Staff and Company users.
+- [ ] representative company-management GraphQL reads/writes work through nginx.
+- [ ] CSV preview/apply works through nginx.
+- [ ] reboot restores nginx + PM2 service without manual intervention.
+- [ ] logs and operator runbook are documented.
+
+Do not add another application-facing API layer during this phase. nginx is the HTTP boundary; Magento integration remains GraphQL-only.
 
 ## Backend compatibility rule
 
 If a legitimate screen exposes a missing capability or contract defect, fix it in `0stoya/Fluid` and validate it on Magento rather than adding a frontend authorization workaround.
 
-Accepted examples:
+Recent accepted examples include:
 
-- Fluid PR #57 — admin role-product catalogue boundary.
-- Fluid PR #58 — OGL-aware company deletion.
-- Fluid PR #59 — active Magento payment methods only.
-- Fluid PR #60 — read-only Admin OGL pricing visibility.
+- admin role-product restrictions remaining independent from role categories;
+- GraphQL-only company-catalogue product search for purchase controls;
+- role/product search respecting the company product boundary;
+- frozen credit-order quote items exposed to the Admin detail view;
+- OGL-aware company deletion, active payment-method filtering and read-only OGL pricing visibility.
 
-## After the management baseline
+## After the production Admin baseline
 
-When the Admin/company-management baseline and reusable UI system are stable:
+Once PM2/nginx deployment, restart behavior and the final regression pass are green:
 
-1. build the separate Customer app against the accepted customer GraphQL surface;
-2. build the Kiosk app later as its own product/repository;
-3. extract shared frontend packages only when actual duplication justifies them.
+1. treat the current Admin app as the production management baseline;
+2. build the separate Customer app against the accepted customer GraphQL surface;
+3. build the Kiosk app later as its own product/repository;
+4. extract shared frontend packages only when actual duplication justifies them.
 
 ## Resume point for next chat
 
-Start in **`0stoya/css_admin`** with the live **core regression checklist**:
+Start in **`0stoya/css_admin`** with the **PM2 + nginx production-serving slice**:
 
-1. run `yarn lint`, `yarn typecheck`, and `yarn build`;
-2. execute `docs/core-regression-checklist.md` against unrestricted Staff, scoped Staff, and representative Company-user roles;
-3. fix only genuine functional inconsistencies; move presentation-only findings to the UI/UX backlog;
-4. once green, begin the dedicated UI/UX refinement phase.
+1. inspect the current server/runtime user, installed Node/Yarn/PM2/nginx versions and the reserved local port;
+2. define the production `yarn build` + Next.js start command and loopback binding;
+3. add the PM2 process definition and verify restart/reboot persistence;
+4. add the nginx HTTPS reverse-proxy boundary for the canonical Admin hostname;
+5. run the production acceptance gate and then the full Admin regression checklist through HTTPS.
