@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   companyProductsFlatImportAction,
   companyRoleProductsFlatImportAction,
@@ -15,6 +15,7 @@ import {
   bulkUsersImportAction,
 } from "@/app/(admin)/bulk-import/actions";
 import type { FlatCompanyImportState, ImportRowStatus } from "@/lib/import-export-types";
+import styles from "@/components/company-import-export-workspace.module.css";
 
 const initialState: FlatCompanyImportState = {
   phase: "idle",
@@ -39,7 +40,10 @@ type PanelProps = {
   groupResultsByCompany?: boolean;
   applyConfirmation?: string;
   help: string;
+  workspace?: boolean;
 };
+
+type CompanyImportView = "users" | "roles" | "role-products" | "company-products";
 
 function statusBadge(status: ImportRowStatus) {
   if (status === "Created") return "badge-ok";
@@ -133,6 +137,28 @@ function ImportResult({ state, groupByCompany = true }: { state: FlatCompanyImpo
   );
 }
 
+function ImportSteps({ state }: { state: FlatCompanyImportState }) {
+  const previewReady = state.phase === "preview" || state.phase === "applied";
+  const applied = state.phase === "applied";
+
+  return (
+    <div className={styles.steps} aria-label="Import steps">
+      <div className={`${styles.step} ${previewReady ? styles.stepDone : styles.stepActive}`}>
+        <span className={styles.stepNumber}>1</span>
+        <span className={styles.stepText}><strong>Choose CSV</strong><span>Select the file to validate</span></span>
+      </div>
+      <div className={`${styles.step} ${previewReady ? (applied ? styles.stepDone : styles.stepActive) : ""}`}>
+        <span className={styles.stepNumber}>2</span>
+        <span className={styles.stepText}><strong>Preview</strong><span>Review every proposed change</span></span>
+      </div>
+      <div className={`${styles.step} ${applied ? styles.stepDone : previewReady ? styles.stepActive : ""}`}>
+        <span className={styles.stepNumber}>3</span>
+        <span className={styles.stepText}><strong>Apply</strong><span>Write only after a clean preview</span></span>
+      </div>
+    </div>
+  );
+}
+
 function FlatImportPanel({
   id,
   title,
@@ -146,14 +172,20 @@ function FlatImportPanel({
   groupResultsByCompany = true,
   applyConfirmation,
   help,
+  workspace = false,
 }: PanelProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const errors = state.rows.filter((row) => row.status === "Error").length;
   const actionable = state.rows.filter((row) => row.status === "Created" || row.status === "Updated").length;
+  const rootClass = workspace ? `card ${styles.panel}` : "card stack import-panel";
+  const headingClass = workspace ? styles.panelHeader : "card-heading-row";
+  const downloadClass = workspace ? styles.downloads : "button-row";
+  const uploadClass = workspace ? styles.uploadForm : "stack";
+  const applyClass = workspace ? styles.applyArea : "stack";
 
   return (
-    <section className="card stack import-panel" id={id}>
-      <div className="card-heading-row">
+    <section className={rootClass} id={id}>
+      <div className={headingClass}>
         <div>
           <p className="eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
@@ -162,17 +194,22 @@ function FlatImportPanel({
         <span className="badge badge-neutral">CSV</span>
       </div>
 
-      <div className="button-row">
+      <div className={downloadClass}>
         <a className="button button-secondary button-link" href={exportHref}>Download current CSV</a>
         <a className="button button-secondary button-link" href={exampleHref}>Download example CSV</a>
       </div>
 
-      <form action={formAction} className="stack">
+      {workspace ? <ImportSteps state={state} /> : null}
+
+      <form action={formAction} className={uploadClass}>
         {companyId ? <input name="companyId" type="hidden" value={companyId} /> : null}
         <input name="intent" type="hidden" value="preview" />
-        <div className="field">
-          <label>CSV file</label>
-          <input name="file" type="file" accept=".csv,text/csv" required />
+        <div className={workspace ? styles.uploadGrid : undefined}>
+          <div className="field">
+            <label>CSV file</label>
+            <input name="file" type="file" accept=".csv,text/csv" required />
+          </div>
+          <button className="button" type="submit" disabled={pending}>{pending ? "Checking…" : "Preview CSV"}</button>
         </div>
         {showCreateMissingRoles ? (
           <label className="check-field">
@@ -180,15 +217,21 @@ function FlatImportPanel({
             <span><strong>Create missing roles</strong><small className="muted">Missing role names are errors unless this is enabled. Existing protected roles are never changed.</small></span>
           </label>
         ) : null}
-        <p className="muted small-text">{help}</p>
-        <div><button className="button" type="submit" disabled={pending}>{pending ? "Checking…" : "Preview CSV"}</button></div>
+        <p className={workspace ? styles.help : "muted small-text"}>{help}</p>
       </form>
 
       {state.error ? <div className="error">{state.error}</div> : null}
+
+      {workspace && state.rows.length ? (
+        <div className={styles.previewHeader}>
+          <h3>{state.phase === "applied" ? "Apply results" : "Preview results"}</h3>
+          <span className={styles.previewSummary}>{state.rows.length} row{state.rows.length === 1 ? "" : "s"} checked</span>
+        </div>
+      ) : null}
       <ImportResult state={state} groupByCompany={groupResultsByCompany} />
 
       {state.phase === "preview" ? (
-        <form action={formAction} className="stack">
+        <form action={formAction} className={applyClass}>
           {companyId ? <input name="companyId" type="hidden" value={companyId} /> : null}
           <input name="intent" type="hidden" value="apply" />
           <input name="sourceCsv" type="hidden" value={state.sourceCsv} />
@@ -199,6 +242,7 @@ function FlatImportPanel({
               <span><strong>Confirm changes</strong><small className="muted">{applyConfirmation}</small></span>
             </label>
           ) : null}
+          {workspace ? <p className={styles.help}>Preview is mandatory. Apply is disabled while any row has an error or when the file contains no changes.</p> : null}
           <div className="button-row">
             <button className="button" type="submit" disabled={pending || errors > 0 || actionable === 0}>
               {pending ? "Applying…" : errors ? `Resolve ${errors} error${errors === 1 ? "" : "s"}` : `Apply ${actionable} change${actionable === 1 ? "" : "s"}`}
@@ -211,51 +255,97 @@ function FlatImportPanel({
 }
 
 export function CompanyFlatImportPanels({ companyId, companyRef }: { companyId: number; companyRef: string }) {
+  const [view, setView] = useState<CompanyImportView>("users");
   const base = `/api/companies/${companyId}`;
+  const tabs: Array<{ id: CompanyImportView; label: string }> = [
+    { id: "users", label: "Users" },
+    { id: "roles", label: "Roles & permissions" },
+    { id: "role-products", label: "Role products" },
+    { id: "company-products", label: "Company products" },
+  ];
+
   return (
-    <>
-      <FlatImportPanel
-        eyebrow="Company users"
-        title="Users"
-        description={`Link existing Magento customers to ${companyRef} by email and assign one company role.`}
-        action={companyUsersFlatImportAction}
-        companyId={companyId}
-        exportHref={`${base}/exports/users-flat`}
-        exampleHref={`${base}/examples/users-flat`}
-        help="Columns: first_name, last_name, email, role, company_ref. Names are informational; Magento customer data is not overwritten. Existing user manager/approval settings are preserved."
-      />
-      <FlatImportPanel
-        eyebrow="Company roles"
-        title="Roles & permissions"
-        description="One row per role, with one 1/0 column for every assignable Fluid permission in the live resource tree."
-        action={companyRolesFlatImportAction}
-        companyId={companyId}
-        exportHref={`${base}/exports/roles`}
-        exampleHref={`${base}/examples/roles`}
-        showCreateMissingRoles
-        help="Columns start user_role, company_ref, sort_order. Permission columns use full tree paths. Protected/non-assignable resources such as All are not writable and are preserved."
-      />
-      <FlatImportPanel
-        eyebrow="Role catalogue"
-        title="Role product restrictions"
-        description="Replace the allowed product SKUs only for the roles named in the file."
-        action={companyRoleProductsFlatImportAction}
-        companyId={companyId}
-        exportHref={`${base}/exports/role-products`}
-        exampleHref={`${base}/examples/role-products`}
-        help="Columns: sku, user_role_name, company_ref. Use * as the only SKU for a role to allow all products; use a blank SKU row for an explicit empty allowlist. Roles absent from the CSV are untouched."
-      />
-      <FlatImportPanel
-        eyebrow="Company catalogue"
-        title="Company product restrictions"
-        description="Replace the company-level product SKU allowlist without changing category controls or other company settings."
-        action={companyProductsFlatImportAction}
-        companyId={companyId}
-        exportHref={`${base}/exports/company-products`}
-        exampleHref={`${base}/examples/company-products`}
-        help="Columns: sku, company_ref. Use * as the only SKU to disable the company product restriction; a blank SKU enables restriction with an empty allowlist."
-      />
-    </>
+    <div className={styles.workspace}>
+      <nav className={styles.tabs} aria-label="Import and export datasets">
+        {tabs.map((tab) => (
+          <button
+            className={`${styles.tab} ${view === tab.id ? styles.tabActive : ""}`}
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={view === tab.id}
+            onClick={() => setView(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      <div className={styles.contextCard}>
+        <div className={styles.contextText}>
+          <strong>Company-scoped CSV workspace</strong>
+          <span>Every imported row must resolve back to this company. A mismatched company_ref is blocked during preview.</span>
+        </div>
+        <span className={styles.referenceBadge}>company_ref {companyRef}</span>
+      </div>
+
+      <div hidden={view !== "users"}>
+        <FlatImportPanel
+          eyebrow="Company users"
+          title="Users"
+          description={`Link existing Magento customers to ${companyRef} by email and assign one company role.`}
+          action={companyUsersFlatImportAction}
+          companyId={companyId}
+          exportHref={`${base}/exports/users-flat`}
+          exampleHref={`${base}/examples/users-flat`}
+          help="Columns: first_name, last_name, email, role, company_ref. Names are informational; Magento customer data is not overwritten. Existing user manager/approval settings are preserved."
+          workspace
+        />
+      </div>
+
+      <div hidden={view !== "roles"}>
+        <FlatImportPanel
+          eyebrow="Company roles"
+          title="Roles & permissions"
+          description="One row per role, with one 1/0 column for every assignable Fluid permission in the live resource tree."
+          action={companyRolesFlatImportAction}
+          companyId={companyId}
+          exportHref={`${base}/exports/roles`}
+          exampleHref={`${base}/examples/roles`}
+          showCreateMissingRoles
+          help="Columns start user_role, company_ref, sort_order. Permission columns use full tree paths. Protected/non-assignable resources such as All are not writable and are preserved."
+          workspace
+        />
+      </div>
+
+      <div hidden={view !== "role-products"}>
+        <FlatImportPanel
+          eyebrow="Role catalogue"
+          title="Role product restrictions"
+          description="Replace the allowed product SKUs only for the roles named in the file."
+          action={companyRoleProductsFlatImportAction}
+          companyId={companyId}
+          exportHref={`${base}/exports/role-products`}
+          exampleHref={`${base}/examples/role-products`}
+          help="Columns: sku, user_role_name, company_ref. Use * as the only SKU for a role to allow all products; use a blank SKU row for an explicit empty allowlist. Roles absent from the CSV are untouched."
+          workspace
+        />
+      </div>
+
+      <div hidden={view !== "company-products"}>
+        <FlatImportPanel
+          eyebrow="Company catalogue"
+          title="Company product restrictions"
+          description="Replace the company-level product SKU allowlist without changing category controls or other company settings."
+          action={companyProductsFlatImportAction}
+          companyId={companyId}
+          exportHref={`${base}/exports/company-products`}
+          exampleHref={`${base}/examples/company-products`}
+          help="Columns: sku, company_ref. Use * as the only SKU to disable the company product restriction; a blank SKU enables restriction with an empty allowlist."
+          workspace
+        />
+      </div>
+    </div>
   );
 }
 
