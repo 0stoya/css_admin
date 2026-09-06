@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getCompanyPrices, getCompanyPricingStatus } from "@/lib/graphql/company-pricing";
+import styles from "@/components/company-pricing-workspace.module.css";
 
 const PAGE_SIZE = 20;
 
@@ -15,6 +16,17 @@ function formatAmount(value: number, currency: string) {
   } catch {
     return `${value.toFixed(2)} ${currency}`;
   }
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Never";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+function formatStatus(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function pageHref(companyId: number, page: number, search: string) {
@@ -65,7 +77,6 @@ export default async function CompanyPricingPage({
   if (!company || !status || !prices) {
     return (
       <div className="stack">
-        <div><Link className="back-link" href={`/companies/${companyId}`}>← Company detail</Link></div>
         <section className="card stack">
           <div>
             <p className="eyebrow">Backend request failed</p>
@@ -77,108 +88,139 @@ export default async function CompanyPricingPage({
     );
   }
 
-  const pricingSource = status.has_custom_prices ? "OGL company-specific pricing" : "Magento pricing";
   const hasPreviousPage = prices.page_info.current_page > 1;
   const hasNextPage = prices.page_info.current_page < prices.page_info.total_pages;
+  const pricingSource = status.has_custom_prices ? "OGL custom pricing" : "Magento pricing";
+  const sourceDescription = status.has_custom_prices
+    ? `${status.custom_price_count} company-specific price row${status.custom_price_count === 1 ? "" : "s"} currently override Magento catalogue pricing.`
+    : "No company-specific OGL price rows are active, so Magento catalogue pricing remains in effect.";
+  const safeProgress = Math.min(100, Math.max(0, status.import_percentage));
 
   return (
-    <div className="stack section-gap">
-      <div className="breadcrumbs">
-        <Link href="/companies">Companies</Link><span aria-hidden="true">/</span>
-        <Link href={`/companies/${company.company_id}`}>{company.name}</Link><span aria-hidden="true">/</span>
-        <span>Pricing</span>
-      </div>
-
+    <div className={styles.workspace}>
       <header className="page-header">
         <div>
-          <p className="eyebrow">Company {company.company_id}</p>
+          <p className="eyebrow">Company pricing</p>
           <h1>Pricing</h1>
-          <p className="muted">Read-only OGL pricing visibility for {company.name}. Pricing rules remain backend-authoritative.</p>
+          <p className="muted">Company-specific OGL prices and import health returned directly by Fluid.</p>
         </div>
+        <span className={`badge ${status.has_custom_prices ? "badge-ok" : "badge-neutral"} ${styles.headerBadge}`}>
+          {pricingSource}
+        </span>
       </header>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-value">{pricingSource}</span>
-          <span className="stat-label">Current pricing source</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{status.custom_price_count}</span>
-          <span className="stat-label">Custom price rows</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{status.import_status}</span>
-          <span className="stat-label">Import status</span>
-        </div>
-      </div>
-
-      <section className="card stack">
-        <div className="card-heading-row">
+      <section className={`card ${styles.summaryCard}`}>
+        <div className={styles.summaryHeading}>
           <div>
-            <h2>Pricing status</h2>
-            <p className="muted">This mirrors the OGL pricing state already used by Magento.</p>
+            <p className="eyebrow">Pricing source</p>
+            <h2>{pricingSource}</h2>
+            <p className="muted">{sourceDescription}</p>
           </div>
-          <div className={`badge ${status.has_custom_prices ? "badge-ok" : "badge-neutral"}`}>
-            {status.has_custom_prices ? "Custom pricing available" : "Magento fallback"}
+          <span className={`badge ${status.sync_enabled ? "badge-ok" : "badge-neutral"}`}>
+            OGL sync {status.sync_enabled ? "enabled" : "disabled"}
+          </span>
+        </div>
+
+        <div className={styles.metricGrid}>
+          <div className={styles.metric}>
+            <span>Company reference</span>
+            <strong>{status.cref || "—"}</strong>
+          </div>
+          <div className={styles.metric}>
+            <span>Custom price rows</span>
+            <strong>{status.custom_price_count}</strong>
+          </div>
+          <div className={styles.metric}>
+            <span>Last imported</span>
+            <strong>{formatDate(status.last_imported_at)}</strong>
+          </div>
+          <div className={styles.metric}>
+            <span>Currency</span>
+            <strong>{status.currency}</strong>
           </div>
         </div>
 
-        <dl className="detail-list">
-          <dt>CREF</dt><dd>{status.cref || "—"}</dd>
-          <dt>Company active</dt><dd>{status.company_active ? "Yes" : "No"}</dd>
-          <dt>OGL sync enabled</dt><dd>{status.sync_enabled ? "Yes" : "No"}</dd>
-          <dt>Import progress</dt><dd>{status.import_percentage}%</dd>
-          <dt>Custom prices</dt><dd>{status.status_message}</dd>
-          <dt>Last imported</dt><dd>{status.last_imported_at || "—"}</dd>
-          <dt>Currency</dt><dd>{status.currency}</dd>
-        </dl>
+        <div className={styles.progressBlock}>
+          <div className={styles.progressHeading}>
+            <span>Import status · {formatStatus(status.import_status)}</span>
+            <strong>{status.import_percentage}%</strong>
+          </div>
+          <div className={styles.progressTrack} aria-hidden="true">
+            <div className={styles.progressFill} style={{ width: `${safeProgress}%` }} />
+          </div>
+          <p className={styles.statusMessage}>
+            {status.status_message} · Company {status.company_active ? "active" : "inactive"}
+          </p>
+        </div>
       </section>
 
-      <section className="card stack">
-        <div>
-          <p className="eyebrow">Imported OGL prices</p>
-          <h2>Company-specific prices</h2>
-          <p className="muted">Search by SKU. Values and tier breaks are read directly from the accepted Fluid pricing contract.</p>
+      <section className={`card ${styles.priceCard}`}>
+        <div className={styles.priceHeader}>
+          <div className={styles.priceHeaderText}>
+            <p className="eyebrow">Imported OGL prices</p>
+            <h2>Company-specific prices</h2>
+            <p className="muted">Search the imported company price rows by SKU. Tier breaks are shown exactly as Fluid returns them.</p>
+          </div>
+          <span className="badge badge-neutral">
+            {prices.total_count} row{prices.total_count === 1 ? "" : "s"}
+          </span>
         </div>
 
-        <form method="get">
+        <form className={styles.searchBar} method="get">
           <label>
-            Search SKU
-            <input name="q" defaultValue={search} placeholder="SKU" />
+            Find a price
+            <input name="q" defaultValue={search} placeholder="Search SKU" />
           </label>
           <button type="submit">Search</button>
         </form>
 
         {prices.items.length === 0 ? (
-          <p className="muted">
-            {search ? "No company-specific prices matched this SKU search." : "No company-specific OGL prices are currently available for this company."}
-          </p>
+          <div className={styles.emptyState}>
+            <h2>{search ? "No matching price" : "No OGL custom prices"}</h2>
+            <p className="muted">
+              {search
+                ? `No imported company price matched “${search}”.`
+                : "Fluid returned no company-specific OGL price rows for this company. Magento pricing remains authoritative."}
+            </p>
+          </div>
         ) : (
-          <div className="table-wrap">
-            <table>
+          <div className={styles.tableWrap}>
+            <table className={styles.priceTable}>
               <thead>
                 <tr>
-                  <th>SKU</th>
                   <th>Product</th>
-                  <th>Price</th>
-                  <th>Tier prices</th>
+                  <th>SKU</th>
+                  <th>Company price</th>
+                  <th>Tier pricing</th>
                 </tr>
               </thead>
               <tbody>
                 {prices.items.map((item) => (
                   <tr key={item.sku}>
-                    <td>{item.sku}</td>
                     <td>
-                      {item.product_name || "Magento product unavailable"}
-                      {item.product_id ? <><br /><span className="muted">Product ID {item.product_id}</span></> : null}
+                      <div className={styles.productCell}>
+                        <strong>{item.product_name || "Magento product unavailable"}</strong>
+                        {item.product_id ? (
+                          <span className="muted">Product #{item.product_id}</span>
+                        ) : (
+                          <span className={styles.missingProduct}>Imported row retained without a current Magento product</span>
+                        )}
+                      </div>
                     </td>
-                    <td>{formatAmount(item.price, status.currency)}</td>
+                    <td><span className={styles.sku}>{item.sku}</span></td>
+                    <td><span className={styles.priceValue}>{formatAmount(item.price, status.currency)}</span></td>
                     <td>
-                      {item.tier_prices.length === 0
-                        ? "—"
-                        : item.tier_prices
-                            .map((tier) => `${tier.quantity}+ @ ${formatAmount(tier.price, status.currency)}`)
-                            .join(", ")}
+                      {item.tier_prices.length === 0 ? (
+                        <span className="muted">No tier breaks</span>
+                      ) : (
+                        <div className={styles.tierList}>
+                          {item.tier_prices.map((tier, index) => (
+                            <span className={styles.tierBadge} key={`${item.sku}-${tier.quantity}-${index}`}>
+                              {tier.quantity}+ · {formatAmount(tier.price, status.currency)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -187,18 +229,19 @@ export default async function CompanyPricingPage({
           </div>
         )}
 
-        <div className="card-heading-row">
+        <div className={styles.pagination}>
           <p className="muted">
-            {prices.total_count} row{prices.total_count === 1 ? "" : "s"} · Page {prices.page_info.current_page} of {Math.max(prices.page_info.total_pages, 1)}
+            Page {prices.page_info.current_page} of {Math.max(prices.page_info.total_pages, 1)}
+            {search ? ` · Filtered by “${search}”` : ""}
           </p>
-          <div>
+          <div className={styles.paginationActions}>
             {hasPreviousPage ? (
-              <Link className="button button-link" href={pageHref(companyId, prices.page_info.current_page - 1, search)}>
+              <Link className="button button-secondary button-link" href={pageHref(companyId, prices.page_info.current_page - 1, search)}>
                 Previous
               </Link>
-            ) : null}{" "}
+            ) : null}
             {hasNextPage ? (
-              <Link className="button button-link" href={pageHref(companyId, prices.page_info.current_page + 1, search)}>
+              <Link className="button button-secondary button-link" href={pageHref(companyId, prices.page_info.current_page + 1, search)}>
                 Next
               </Link>
             ) : null}
@@ -206,14 +249,9 @@ export default async function CompanyPricingPage({
         </div>
       </section>
 
-      <section className="card stack">
-        <div>
-          <h2>Read-only pricing</h2>
-          <p className="muted">
-            This Admin surface does not create, edit, delete or upload prices. OGL/company-specific pricing remains authoritative where present; otherwise Magento pricing applies.
-          </p>
-        </div>
-      </section>
+      <p className={styles.readOnlyNote}>
+        Pricing is read-only in this Admin portal. OGL/company-specific prices remain authoritative where present; otherwise Magento pricing applies.
+      </p>
     </div>
   );
 }
