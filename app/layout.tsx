@@ -3,8 +3,11 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CSS Admin",
-  description: "Headless admin application for Fluid / CSS Commerce",
+  title: {
+    default: "CSS Commerce",
+    template: "%s | CSS Commerce",
+  },
+  description: "CSS Commerce management application",
   robots: {
     index: false,
     follow: false,
