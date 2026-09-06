@@ -14,19 +14,19 @@ export default async function CompanyScopedLayout({
 
   if (!Number.isInteger(companyId) || companyId <= 0) return children;
 
-  try {
-    const company = await getCompany(companyId);
-    return (
-      <CompanyHeaderContext
-        companyId={company.company_id}
-        name={company.name}
-        reference={company.reference}
-      >
-        {children}
-      </CompanyHeaderContext>
-    );
-  } catch {
+  const company = await getCompany(companyId).catch(() => null);
+  if (!company) {
     // The requested page remains responsible for its own unavailable/not-found state.
     return children;
   }
+
+  return (
+    <CompanyHeaderContext
+      companyId={company.company_id}
+      name={company.name}
+      reference={company.reference}
+    >
+      {children}
+    </CompanyHeaderContext>
+  );
 }
