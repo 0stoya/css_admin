@@ -9,6 +9,7 @@ import {
 } from "@/app/(admin)/companies/[id]/import-export/flat-actions";
 import {
   bulkCompanyProductsImportAction,
+  bulkCompanyStructureImportAction,
   bulkRoleProductsImportAction,
   bulkRolesImportAction,
   bulkUsersImportAction,
@@ -213,6 +214,15 @@ export function BulkFlatImportPanels() {
   const base = "/api/bulk-import";
   return (
     <>
+      <FlatImportPanel
+        eyebrow="Company hierarchy"
+        title="Company structure"
+        description="Maintain parent and child company relationships across large company groups using references rather than Magento IDs."
+        action={bulkCompanyStructureImportAction}
+        exportHref={`${base}/exports/company-structure`}
+        exampleHref={`${base}/examples/company-structure`}
+        help="Columns: company_reference, parent_reference. Leave parent_reference blank to make a company a root. Unknown references, duplicate company rows, self-parenting and hierarchy cycles are blocked before Apply. Only parent_company_id is changed; all other company settings are re-read and preserved."
+      />
       <FlatImportPanel
         eyebrow="Multi-company users"
         title="Users"
