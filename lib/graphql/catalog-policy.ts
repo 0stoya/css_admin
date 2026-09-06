@@ -78,6 +78,30 @@ export type SaveCompanyCatalogPolicyInput = {
   allowed_product_skus: string[];
 };
 
+function categoryTreeIds(nodes: RoleCatalogCategoryNode[]): number[] {
+  return Array.from(
+    new Set(
+      nodes
+        .flatMap((node) => [node.id, ...categoryTreeIds(node.children ?? [])])
+        .filter((id) => id > 0),
+    ),
+  );
+}
+
+/**
+ * Magento treats a missing saved role-category selection as no extra category restriction.
+ * Keep that persistence detail from blocking the independent role-product controls in the UI.
+ */
+export function normalizeRoleCatalogPolicy(policy: RoleCatalogPolicy): RoleCatalogPolicy {
+  if (policy.has_saved_categories) return policy;
+
+  return {
+    ...policy,
+    selected_category_ids: categoryTreeIds(policy.category_tree),
+    has_saved_categories: true,
+  };
+}
+
 const COMPANY_CATALOG_POLICY_QUERY = /* GraphQL */ `
   query AdminCompanyCatalogPolicy($companyId: Int!) {
     css_admin_company_catalog_policy(company_id: $companyId) {
@@ -234,7 +258,7 @@ export async function getRoleCatalogPolicy(
     RoleCatalogPolicyData,
     { companyId: number; roleId: number; page: number; search?: string }
   >(ROLE_CATALOG_POLICY_QUERY, { companyId, roleId, page, search });
-  return data.css_admin_role_catalog_policy;
+  return normalizeRoleCatalogPolicy(data.css_admin_role_catalog_policy);
 }
 
 export async function saveCompanyCatalogPolicy(input: SaveCompanyCatalogPolicyInput) {
