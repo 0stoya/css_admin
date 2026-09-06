@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCompany } from "@/lib/graphql/companies";
+import { CompanyStructureCard } from "@/components/company-structure-card";
+import { buildCompanyStructure } from "@/lib/company-structure";
+import { getAllCompanies, getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getCompanyPricingStatus } from "@/lib/graphql/company-pricing";
 
@@ -44,9 +46,10 @@ const managementAreas = [
 ] as const;
 
 async function loadCompany(companyId: number) {
-  const [companyResult, pricingResult] = await Promise.allSettled([
+  const [companyResult, pricingResult, structureResult] = await Promise.allSettled([
     getCompany(companyId),
     getCompanyPricingStatus(companyId),
+    getAllCompanies(),
   ]);
 
   if (companyResult.status === "rejected") {
@@ -54,6 +57,8 @@ async function loadCompany(companyId: number) {
       company: null,
       pricing: null,
       pricingError: null,
+      structure: null,
+      structureError: null,
       error: graphQLErrorMessage(companyResult.reason),
     };
   }
@@ -62,6 +67,8 @@ async function loadCompany(companyId: number) {
     company: companyResult.value,
     pricing: pricingResult.status === "fulfilled" ? pricingResult.value : null,
     pricingError: pricingResult.status === "rejected" ? graphQLErrorMessage(pricingResult.reason) : null,
+    structure: structureResult.status === "fulfilled" ? buildCompanyStructure(structureResult.value) : null,
+    structureError: structureResult.status === "rejected" ? graphQLErrorMessage(structureResult.reason) : null,
     error: null,
   };
 }
@@ -74,7 +81,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const { company, pricing, pricingError, error } = await loadCompany(companyId);
+  const { company, pricing, pricingError, structure, structureError, error } = await loadCompany(companyId);
 
   if (!company) {
     return (
@@ -94,14 +101,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const pricingSource = pricing?.has_custom_prices ? "OGL company-specific pricing" : "Magento pricing";
 
   return (
-    <div className="stack">
+    <div className="stack section-gap">
       <div><Link className="back-link" href="/companies">← Companies</Link></div>
 
       <header className="page-header">
         <div>
-          <p className="eyebrow">Company {company.company_id}</p>
+          <p className="eyebrow">{company.reference || `Company ${company.company_id}`}</p>
           <h1>{company.name}</h1>
-          <p className="muted">Company detail and management entry points. Each management surface remains backend-authorized.</p>
+          <p className="muted">Company detail, structure and management entry points. Each management surface remains backend-authorized.</p>
         </div>
       </header>
 
@@ -113,6 +120,19 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           <dt>Sales representative ID</dt><dd>{company.sales_representative_id ?? "Unassigned"}</dd>
         </dl>
       </section>
+
+      {structure ? (
+        <CompanyStructureCard roots={structure} companyId={company.company_id} />
+      ) : (
+        <section className="card stack">
+          <div>
+            <p className="eyebrow">Company structure</p>
+            <h2>Structure unavailable</h2>
+            <p className="muted">The company remains usable; its parent/child structure could not be loaded in the current admin scope.</p>
+          </div>
+          {structureError ? <div className="error">{structureError}</div> : null}
+        </section>
+      )}
 
       <section className="card stack">
         <div>
