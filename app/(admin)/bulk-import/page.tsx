@@ -7,10 +7,10 @@ export default function BulkImportPage() {
         <div>
           <p className="eyebrow">Unlimited Admin workflow</p>
           <h1>Bulk import / export</h1>
-          <p className="muted">Use the same company_ref-keyed CSV formats across several companies. Preview groups results by company before apply.</p>
+          <p className="muted">Use reference-keyed CSV files to maintain company structure, users, roles and product controls across several companies. Preview every change before apply.</p>
         </div>
       </header>
-      <div className="notice notice-preview">This surface is intended for Unlimited Admin operations. Magento/Fluid authorization remains authoritative for every company read, dry run and write; a restricted administrator cannot bypass backend ACLs through bulk import.</div>
+      <div className="notice notice-preview">This surface is intended for Unlimited Admin operations. Magento/Fluid authorization remains authoritative for every company read, validation and write; a restricted administrator cannot bypass backend ACLs through bulk import.</div>
       <BulkFlatImportPanels />
     </div>
   );
