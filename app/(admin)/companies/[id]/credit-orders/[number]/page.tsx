@@ -4,6 +4,7 @@ import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getCompany } from "@/lib/graphql/companies";
 import { getCompanyManagement, type CompanyAdminUser } from "@/lib/graphql/company-management";
 import { getAdminCreditOrder } from "@/lib/graphql/admin-credit-orders";
+import styles from "@/components/credit-orders-workspace.module.css";
 import {
   addCreditOrderCommentAction,
   approveCreditOrderAction,
@@ -12,9 +13,15 @@ import {
   rejectCreditOrderAction,
 } from "../actions";
 
+type DetailView = "overview" | "conversation" | "history";
+
 function parsePositiveInt(value?: string) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseView(value?: string): DetailView {
+  return value === "conversation" || value === "history" ? value : "overview";
 }
 
 function label(value: string | null) {
@@ -25,9 +32,41 @@ function formatTotal(value: number) {
   return new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
+function formatQuantity(value: number) {
+  return new Intl.NumberFormat("en-GB", { maximumFractionDigits: 3 }).format(value);
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
 function userLabel(user: CompanyAdminUser) {
   const name = `${user.firstname} ${user.lastname}`.trim();
   return `${name || user.email} (${user.email})`;
+}
+
+function statusClass(status: string) {
+  if (status === "pending") return `${styles.statusBadge} ${styles.statusPending}`;
+  if (status === "approval_required") return `${styles.statusBadge} ${styles.statusApproval}`;
+  if (["approved", "approved_pending_payment", "order_in_progress"].includes(status)) {
+    return `${styles.statusBadge} ${styles.statusApproved}`;
+  }
+  if (status === "order_placed") return `${styles.statusBadge} ${styles.statusComplete}`;
+  if (["order_failed", "rejected", "canceled"].includes(status)) {
+    return `${styles.statusBadge} ${styles.statusDanger}`;
+  }
+  return styles.statusBadge;
+}
+
+function detailHref(companyId: number, number: string, actor: number | null, view: DetailView) {
+  const params = new URLSearchParams();
+  if (actor) params.set("actor", String(actor));
+  if (view !== "overview") params.set("view", view);
+  const query = params.toString();
+  return `/companies/${companyId}/credit-orders/${encodeURIComponent(number)}${query ? `?${query}` : ""}`;
 }
 
 async function load(companyId: number, number: string, actor: number | null) {
@@ -43,8 +82,25 @@ async function load(companyId: number, number: string, actor: number | null) {
   }
 }
 
-function HiddenContext({ companyId, number, actor }: { companyId: number; number: string; actor: number }) {
-  return <><input type="hidden" name="companyId" value={companyId} /><input type="hidden" name="number" value={number} /><input type="hidden" name="actorCompanyUserId" value={actor} /></>;
+function HiddenContext({
+  companyId,
+  number,
+  actor,
+  returnView,
+}: {
+  companyId: number;
+  number: string;
+  actor: number;
+  returnView: DetailView;
+}) {
+  return (
+    <>
+      <input type="hidden" name="companyId" value={companyId} />
+      <input type="hidden" name="number" value={number} />
+      <input type="hidden" name="actorCompanyUserId" value={actor} />
+      <input type="hidden" name="returnView" value={returnView} />
+    </>
+  );
 }
 
 export default async function AdminCreditOrderDetailPage({
@@ -52,13 +108,15 @@ export default async function AdminCreditOrderDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string; number: string }>;
-  searchParams: Promise<{ actor?: string; notice?: string; error?: string }>;
+  searchParams: Promise<{ actor?: string; view?: string; notice?: string; error?: string }>;
 }) {
   const route = await params;
   const query = await searchParams;
   const companyId = Number(route.id);
   if (!Number.isInteger(companyId) || companyId <= 0 || !route.number) notFound();
+
   const actor = parsePositiveInt(query.actor);
+  const view = parseView(query.view);
   const { company, management, order, error } = await load(companyId, route.number, actor);
 
   if (!company || !management || !order) {
@@ -67,43 +125,219 @@ export default async function AdminCreditOrderDetailPage({
 
   const selectedActor = actor ? management.users.find((user) => user.user_id === actor) ?? null : null;
   const actorById = new Map(management.users.map((user) => [user.user_id, user]));
-  const actorText = (userId: number | null) => userId ? (actorById.get(userId) ? userLabel(actorById.get(userId)!) : `Company user ${userId}`) : "System / unknown";
+  const actorText = (userId: number | null) => userId
+    ? (actorById.get(userId) ? userLabel(actorById.get(userId)!) : `Company user ${userId}`)
+    : "System / unknown";
+  const creatorName = `${order.creator.firstname ?? ""} ${order.creator.lastname ?? ""}`.trim();
+  const creatorText = creatorName || order.creator.email || actorText(order.creator.company_user_id);
   const actions = order.actions;
+  const orderItems = order.items ?? [];
+  const queueParams = new URLSearchParams();
+  if (actor) queueParams.set("actor", String(actor));
+  const queueQuery = queueParams.toString();
 
   return (
-    <div className="stack section-gap">
-      <div className="breadcrumbs"><Link href="/companies">Companies</Link><span>/</span><Link href={`/companies/${companyId}`}>{company.name}</Link><span>/</span><Link href={`/companies/${companyId}/credit-orders`}>Credit orders</Link><span>/</span><span>{order.number}</span></div>
+    <div className={styles.page}>
+      <header className={styles.detailHeader}>
+        <div><Link className={styles.backLink} href={`/companies/${companyId}/credit-orders${queueQuery ? `?${queueQuery}` : ""}`}>← Credit orders</Link></div>
+        <div className={styles.detailHeaderTop}>
+          <div>
+            <p className="eyebrow">Credit order #{order.credit_order_id}</p>
+            <h1>{order.number}</h1>
+            <p className="muted">Review the order, conversation and Fluid lifecycle without leaving the company workspace.</p>
+          </div>
+          <span className={statusClass(order.status)}>{label(order.status)}</span>
+        </div>
+      </header>
 
-      <header className="page-header"><div><p className="eyebrow">Credit order {order.credit_order_id}</p><h1>{order.number}</h1><p className="muted">Fluid-authorized administrative view and lifecycle controls.</p></div><div className="badge badge-neutral">{label(order.status)}</div></header>
       {query.notice ? <div className="success">{query.notice}</div> : null}
       {query.error ? <div className="error">{query.error}</div> : null}
 
-      <section className="card stack">
-        <h2>Order state</h2>
-        <dl className="detail-list"><dt>Status</dt><dd>{label(order.status)}</dd><dt>Creator</dt><dd>{order.creator.email || actorText(order.creator.company_user_id)}</dd><dt>Grand total</dt><dd>{formatTotal(order.grand_total)}</dd><dt>Purchase order number</dt><dd>{order.purchase_order_number || "—"}</dd><dt>Shipping method</dt><dd>{order.shipping_method || "—"}</dd><dt>Payment method</dt><dd>{order.payment_method || "—"}</dd><dt>Auto approved</dt><dd>{order.auto_approved ? "Yes" : "No"}</dd><dt>Approved by</dt><dd>{order.approved_by.length ? order.approved_by.map(actorText).join(", ") : "—"}</dd><dt>Sales order</dt><dd>{order.order_number || "—"}</dd><dt>Created</dt><dd>{order.created_at || "—"}</dd><dt>Updated</dt><dd>{order.updated_at || "—"}</dd></dl>
-        <p className="muted">The purchase-order number is read-only here because the accepted Magento-admin GraphQL contract does not expose an admin PO-number setter.</p>
+      <section className={styles.hero}>
+        <div className={styles.heroCell}><span className={styles.heroLabel}>Grand total</span><strong className={styles.heroTotal}>{formatTotal(order.grand_total)}</strong></div>
+        <div className={styles.heroCell}><span className={styles.heroLabel}>Creator</span><span className={styles.heroValue}>{creatorText}</span><span className={styles.subtle}>{order.creator.email || `Company user ${order.creator.company_user_id}`}</span></div>
+        <div className={styles.heroCell}><span className={styles.heroLabel}>Purchase order</span><span className={styles.heroValue}>{order.purchase_order_number || "—"}</span></div>
+        <div className={styles.heroCell}><span className={styles.heroLabel}>Sales order</span><span className={styles.heroValue}>{order.order_number || "Not placed"}</span></div>
       </section>
 
-      <section className="card stack">
-        <div><h2>Acting company user</h2><p className="muted">Admin lifecycle mutations require a real company-user actor. Selecting a user only asks Fluid to compute permissions for that actor; it does not bypass authorization.</p></div>
-        <form method="get"><label>Actor<select name="actor" defaultValue={actor ? String(actor) : ""}><option value="">Read only — no actor</option>{management.users.map((user) => <option key={user.user_id} value={user.user_id}>{userLabel(user)}</option>)}</select></label><button type="submit">Use actor</button></form>
-        {selectedActor ? <p className="muted">Selected: {userLabel(selectedActor)} · Approver capability reported by company management: {selectedActor.can_approve_credit_orders ? "Yes" : "No"}.</p> : null}
+      <nav className={styles.tabs} aria-label="Credit order views">
+        <Link className={`${styles.tab} ${view === "overview" ? styles.tabActive : ""}`} href={detailHref(companyId, order.number, actor, "overview")}>Overview</Link>
+        <Link className={`${styles.tab} ${view === "conversation" ? styles.tabActive : ""}`} href={detailHref(companyId, order.number, actor, "conversation")}>Conversation <span className={styles.countBadge}>{order.comments.length}</span></Link>
+        <Link className={`${styles.tab} ${view === "history" ? styles.tabActive : ""}`} href={detailHref(companyId, order.number, actor, "history")}>History <span className={styles.countBadge}>{order.logs.length}</span></Link>
+      </nav>
+
+      <section className={styles.actorPanel}>
+        <div className={styles.actorPanelText}>
+          <strong>{selectedActor ? `Acting as ${userLabel(selectedActor)}` : "Read-only order view"}</strong>
+          <span className="muted">Selecting a company user asks Fluid to resolve that real user&apos;s permissions; it never bypasses authorization.</span>
+        </div>
+        <form method="get" className={styles.actorForm}>
+          <input type="hidden" name="view" value={view} />
+          <label>Acting company user
+            <select name="actor" defaultValue={actor ? String(actor) : ""}>
+              <option value="">Read only — no actor</option>
+              {management.users.map((user) => <option key={user.user_id} value={user.user_id}>{userLabel(user)}</option>)}
+            </select>
+          </label>
+          <button type="submit">Use actor</button>
+        </form>
       </section>
 
-      {actions?.requires_payment_details ? <div className="error">Payment details are required before this credit order can become a sales order. The Admin API deliberately cannot bypass or resume the customer payment-details flow owned by the creator.</div> : null}
+      {view === "overview" ? (
+        <>
+          <div className={styles.contentGrid}>
+            <section className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <div><h2>Order state</h2><p className="muted">Values returned by Fluid for this credit order.</p></div>
+                {order.auto_approved ? <span className={styles.actorBadge}>Auto-approved</span> : null}
+              </div>
+              <div className={styles.detailGrid}>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Status</span><span className={styles.detailValue}>{label(order.status)}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Approved by</span><span className={styles.detailValue}>{order.approved_by.length ? order.approved_by.map(actorText).join(", ") : "—"}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Shipping method</span><span className={styles.detailValue}>{order.shipping_method || "—"}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Payment method</span><span className={styles.detailValue}>{order.payment_method || "—"}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Created</span><span className={styles.detailValue}>{formatDate(order.created_at)}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Updated</span><span className={styles.detailValue}>{formatDate(order.updated_at)}</span></div>
+              </div>
+              {actions?.requires_payment_details ? (
+                <div className={styles.warning}>Payment details are required before this credit order can become a sales order. The Admin API does not bypass the customer payment-details flow.</div>
+              ) : null}
+            </section>
 
-      {actor && actions ? <section className="stack"><div><h2>Authorized actions</h2><p className="muted">Only actions explicitly returned by Fluid for the selected actor are rendered.</p></div><div className="grid">
-        {actions.can_approve ? <form className="card stack" action={approveCreditOrderAction}><HiddenContext companyId={companyId} number={order.number} actor={actor} /><h3>Approve</h3><label>Optional comment<textarea name="comment" rows={3} /></label><button type="submit">Approve credit order</button></form> : null}
-        {actions.can_reject ? <form className="card stack" action={rejectCreditOrderAction}><HiddenContext companyId={companyId} number={order.number} actor={actor} /><h3>Reject</h3><label>Optional comment<textarea name="comment" rows={3} /></label><label>Type {order.number} to confirm<input name="confirmNumber" required /></label><button type="submit">Reject credit order</button></form> : null}
-        {actions.can_cancel ? <form className="card stack" action={cancelCreditOrderAction}><HiddenContext companyId={companyId} number={order.number} actor={actor} /><h3>Cancel</h3><label>Optional comment<textarea name="comment" rows={3} /></label><label>Type {order.number} to confirm<input name="confirmNumber" required /></label><button type="submit">Cancel credit order</button></form> : null}
-        {actions.can_place_order ? <form className="card stack" action={placeCreditOrderAction}><HiddenContext companyId={companyId} number={order.number} actor={actor} /><h3>Place sales order</h3><p className="muted">This creates a Magento sales order when Fluid confirms the order is ready.</p><label>Optional comment<textarea name="comment" rows={3} /></label><label>Type {order.number} to confirm<input name="confirmNumber" required /></label><button type="submit">Place sales order</button></form> : null}
-      </div>{![actions.can_approve, actions.can_reject, actions.can_cancel, actions.can_place_order].some(Boolean) ? <div className="card muted">Fluid reports no lifecycle action for this actor in the current state.</div> : null}</section> : null}
+            <aside className={styles.panel}>
+              <div><h2>Authorized actions</h2><p className="muted">Only actions explicitly returned by Fluid for the selected actor are shown.</p></div>
+              {!actor ? <p className="muted">Select an acting company user above to resolve lifecycle actions.</p> : null}
+              {actor && actions ? (
+                <div className={styles.actionStack}>
+                  {actions.can_approve ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Approve order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={approveCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <button type="submit">Approve credit order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {actions.can_reject ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Reject order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={rejectCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
+                        <button className={styles.dangerButton} type="submit">Reject credit order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {actions.can_cancel ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Cancel order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={cancelCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
+                        <button className={styles.dangerButton} type="submit">Cancel credit order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {actions.can_place_order ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Place sales order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={placeCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <p className="muted">Fluid will create the Magento sales order only when this credit order is ready.</p>
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
+                        <button type="submit">Place sales order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {![actions.can_approve, actions.can_reject, actions.can_cancel, actions.can_place_order].some(Boolean) ? <p className="muted">Fluid reports no lifecycle action for this actor in the current state.</p> : null}
+                </div>
+              ) : null}
+            </aside>
+          </div>
 
-      {actor && actions?.can_add_comment ? <section className="card stack"><div><h2>Add comment</h2><p className="muted">Comments are written using the selected company-user actor and remain part of the Fluid audit/conversation history.</p></div><form className="stack" action={addCreditOrderCommentAction}><HiddenContext companyId={companyId} number={order.number} actor={actor} /><label>Comment<textarea name="comment" rows={4} required /></label><div><button type="submit">Add comment</button></div></form></section> : null}
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <h2>Items ordered</h2>
+                <p className="muted">Frozen quote lines captured by Fluid when the credit order was created.</p>
+              </div>
+              <span className={styles.countBadge}>{orderItems.length}</span>
+            </div>
+            {orderItems.length === 0 ? (
+              <p className="muted">No visible quote items were returned for this credit order.</p>
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Product</th><th>SKU</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr>
+                  </thead>
+                  <tbody>
+                    {orderItems.map((item) => (
+                      <tr key={item.item_id || `${item.sku}-${item.product_id ?? "item"}`}>
+                        <td><strong>{item.name}</strong></td>
+                        <td>{item.sku}</td>
+                        <td>{formatQuantity(item.quantity)}</td>
+                        <td>{formatTotal(item.unit_price)}</td>
+                        <td><strong>{formatTotal(item.row_total)}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="muted">Line totals come from the frozen quote rows. The order grand total can also include shipping, tax or other quote totals.</p>
+          </section>
+        </>
+      ) : null}
 
-      <section className="card stack"><div><h2>Comments</h2><p className="muted">Oldest first, as returned by Fluid.</p></div>{order.comments.length === 0 ? <p className="muted">No comments.</p> : order.comments.map((comment) => <article key={comment.comment_id}><strong>{actorText(comment.creator_company_user_id)}</strong><p>{comment.comment}</p><p className="muted">{comment.created_at || "—"}</p></article>)}</section>
+      {view === "conversation" ? (
+        <section className={styles.panel}>
+          <div className={styles.panelHeader}><div><h2>Conversation</h2><p className="muted">Comments are shown oldest first, exactly as returned by Fluid.</p></div></div>
+          {actor && actions?.can_add_comment ? (
+            <form className={styles.commentForm} action={addCreditOrderCommentAction}>
+              <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="conversation" />
+              <label>Add comment<textarea name="comment" rows={4} required placeholder="Add an audit-safe comment…" /></label>
+              <div><button type="submit">Add comment</button></div>
+            </form>
+          ) : (
+            <p className="muted">{actor ? "Fluid does not allow this actor to add a comment in the current state." : "Select an acting company user to resolve comment permission."}</p>
+          )}
+          {order.comments.length === 0 ? <p className="muted">No comments have been added.</p> : (
+            <div className={styles.timeline}>
+              {order.comments.map((comment) => (
+                <article className={styles.timelineItem} key={comment.comment_id}>
+                  <div className={styles.timelineMeta}>{formatDate(comment.created_at)}</div>
+                  <div className={styles.timelineBody}><strong>{actorText(comment.creator_company_user_id)}</strong><p>{comment.comment}</p></div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
 
-      <section className="card stack"><div><h2>Lifecycle history</h2><p className="muted">Fluid lifecycle log; the Admin app does not infer missing transitions.</p></div>{order.logs.length === 0 ? <p className="muted">No lifecycle log entries.</p> : <div className="table-wrap"><table><thead><tr><th>Time</th><th>Actor</th><th>Activity</th><th>Message</th></tr></thead><tbody>{order.logs.map((log) => <tr key={log.log_id}><td>{log.created_at || "—"}</td><td>{actorText(log.actor_company_user_id)}</td><td>{label(log.activity_type)}</td><td>{log.message || "—"}</td></tr>)}</tbody></table></div>}</section>
+      {view === "history" ? (
+        <section className={styles.panel}>
+          <div><h2>Lifecycle history</h2><p className="muted">Fluid lifecycle entries only; the Admin app does not infer missing transitions.</p></div>
+          {order.logs.length === 0 ? <p className="muted">No lifecycle log entries.</p> : (
+            <div className={styles.timeline}>
+              {order.logs.map((log) => (
+                <article className={styles.timelineItem} key={log.log_id}>
+                  <div className={styles.timelineMeta}>{formatDate(log.created_at)}</div>
+                  <div className={styles.timelineBody}>
+                    <strong>{label(log.activity_type)}</strong>
+                    <span className={styles.subtle}>{actorText(log.actor_company_user_id)}</span>
+                    {log.message ? <p>{log.message}</p> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }

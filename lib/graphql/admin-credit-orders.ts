@@ -32,6 +32,16 @@ export type AdminCreditOrderLog = {
   created_at: string | null;
 };
 
+export type AdminCreditOrderItem = {
+  item_id: number;
+  product_id: number | null;
+  sku: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  row_total: number;
+};
+
 export type AdminCreditOrder = {
   credit_order_id: number;
   number: string;
@@ -51,6 +61,7 @@ export type AdminCreditOrder = {
   actions: AdminCreditOrderActions | null;
   comments: AdminCreditOrderComment[];
   logs: AdminCreditOrderLog[];
+  items?: AdminCreditOrderItem[];
 };
 
 export type AdminCreditOrderSearchResult = {
@@ -78,7 +89,10 @@ export type AdminCreditOrderCommentInput = {
 };
 
 type ListData = { css_admin_credit_orders: AdminCreditOrderSearchResult };
-type DetailData = { css_admin_credit_order: AdminCreditOrder };
+type DetailData = {
+  css_admin_credit_order: AdminCreditOrder;
+  css_admin_credit_order_items: AdminCreditOrderItem[];
+};
 type ActionData = {
   cssAdminApproveCreditOrder?: AdminCreditOrder;
   cssAdminRejectCreditOrder?: AdminCreditOrder;
@@ -169,6 +183,15 @@ const ADMIN_CREDIT_ORDER_QUERY = /* GraphQL */ `
     ) {
       ${DETAIL_ORDER_FIELDS}
     }
+    css_admin_credit_order_items(company_id: $companyId, number: $number) {
+      item_id
+      product_id
+      sku
+      name
+      quantity
+      unit_price
+      row_total
+    }
   }
 `;
 
@@ -246,7 +269,10 @@ export async function getAdminCreditOrder(
     actorCompanyUserId: actorCompanyUserId ?? null,
   });
 
-  return data.css_admin_credit_order;
+  return {
+    ...data.css_admin_credit_order,
+    items: data.css_admin_credit_order_items,
+  };
 }
 
 async function actionMutation(
