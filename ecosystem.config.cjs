@@ -1,3 +1,5 @@
+/* global __dirname, module, process */
+
 const port = process.env.CSS_ADMIN_PORT?.trim() || "3067";
 
 if (!/^\d+$/.test(port)) {
