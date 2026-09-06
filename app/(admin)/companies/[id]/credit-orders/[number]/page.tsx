@@ -32,6 +32,10 @@ function formatTotal(value: number) {
   return new Intl.NumberFormat("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
+function formatQuantity(value: number) {
+  return new Intl.NumberFormat("en-GB", { maximumFractionDigits: 3 }).format(value);
+}
+
 function formatDate(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -127,6 +131,7 @@ export default async function AdminCreditOrderDetailPage({
   const creatorName = `${order.creator.firstname ?? ""} ${order.creator.lastname ?? ""}`.trim();
   const creatorText = creatorName || order.creator.email || actorText(order.creator.company_user_id);
   const actions = order.actions;
+  const orderItems = order.items ?? [];
   const queueParams = new URLSearchParams();
   if (actor) queueParams.set("actor", String(actor));
   const queueQuery = queueParams.toString();
@@ -179,79 +184,114 @@ export default async function AdminCreditOrderDetailPage({
       </section>
 
       {view === "overview" ? (
-        <div className={styles.contentGrid}>
+        <>
+          <div className={styles.contentGrid}>
+            <section className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <div><h2>Order state</h2><p className="muted">Values returned by Fluid for this credit order.</p></div>
+                {order.auto_approved ? <span className={styles.actorBadge}>Auto-approved</span> : null}
+              </div>
+              <div className={styles.detailGrid}>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Status</span><span className={styles.detailValue}>{label(order.status)}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Approved by</span><span className={styles.detailValue}>{order.approved_by.length ? order.approved_by.map(actorText).join(", ") : "—"}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Shipping method</span><span className={styles.detailValue}>{order.shipping_method || "—"}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Payment method</span><span className={styles.detailValue}>{order.payment_method || "—"}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Created</span><span className={styles.detailValue}>{formatDate(order.created_at)}</span></div>
+                <div className={styles.detailItem}><span className={styles.detailLabel}>Updated</span><span className={styles.detailValue}>{formatDate(order.updated_at)}</span></div>
+              </div>
+              {actions?.requires_payment_details ? (
+                <div className={styles.warning}>Payment details are required before this credit order can become a sales order. The Admin API does not bypass the customer payment-details flow.</div>
+              ) : null}
+            </section>
+
+            <aside className={styles.panel}>
+              <div><h2>Authorized actions</h2><p className="muted">Only actions explicitly returned by Fluid for the selected actor are shown.</p></div>
+              {!actor ? <p className="muted">Select an acting company user above to resolve lifecycle actions.</p> : null}
+              {actor && actions ? (
+                <div className={styles.actionStack}>
+                  {actions.can_approve ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Approve order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={approveCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <button type="submit">Approve credit order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {actions.can_reject ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Reject order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={rejectCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
+                        <button className={styles.dangerButton} type="submit">Reject credit order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {actions.can_cancel ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Cancel order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={cancelCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
+                        <button className={styles.dangerButton} type="submit">Cancel credit order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {actions.can_place_order ? (
+                    <details className={styles.actionDisclosure}>
+                      <summary><span>Place sales order</span><span>＋</span></summary>
+                      <form className={styles.actionForm} action={placeCreditOrderAction}>
+                        <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
+                        <p className="muted">Fluid will create the Magento sales order only when this credit order is ready.</p>
+                        <label>Optional comment<textarea name="comment" rows={3} /></label>
+                        <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
+                        <button type="submit">Place sales order</button>
+                      </form>
+                    </details>
+                  ) : null}
+                  {![actions.can_approve, actions.can_reject, actions.can_cancel, actions.can_place_order].some(Boolean) ? <p className="muted">Fluid reports no lifecycle action for this actor in the current state.</p> : null}
+                </div>
+              ) : null}
+            </aside>
+          </div>
+
           <section className={styles.panel}>
             <div className={styles.panelHeader}>
-              <div><h2>Order state</h2><p className="muted">Values returned by Fluid for this credit order.</p></div>
-              {order.auto_approved ? <span className={styles.actorBadge}>Auto-approved</span> : null}
-            </div>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem}><span className={styles.detailLabel}>Status</span><span className={styles.detailValue}>{label(order.status)}</span></div>
-              <div className={styles.detailItem}><span className={styles.detailLabel}>Approved by</span><span className={styles.detailValue}>{order.approved_by.length ? order.approved_by.map(actorText).join(", ") : "—"}</span></div>
-              <div className={styles.detailItem}><span className={styles.detailLabel}>Shipping method</span><span className={styles.detailValue}>{order.shipping_method || "—"}</span></div>
-              <div className={styles.detailItem}><span className={styles.detailLabel}>Payment method</span><span className={styles.detailValue}>{order.payment_method || "—"}</span></div>
-              <div className={styles.detailItem}><span className={styles.detailLabel}>Created</span><span className={styles.detailValue}>{formatDate(order.created_at)}</span></div>
-              <div className={styles.detailItem}><span className={styles.detailLabel}>Updated</span><span className={styles.detailValue}>{formatDate(order.updated_at)}</span></div>
-            </div>
-            {actions?.requires_payment_details ? (
-              <div className={styles.warning}>Payment details are required before this credit order can become a sales order. The Admin API does not bypass the customer payment-details flow.</div>
-            ) : null}
-          </section>
-
-          <aside className={styles.panel}>
-            <div><h2>Authorized actions</h2><p className="muted">Only actions explicitly returned by Fluid for the selected actor are shown.</p></div>
-            {!actor ? <p className="muted">Select an acting company user above to resolve lifecycle actions.</p> : null}
-            {actor && actions ? (
-              <div className={styles.actionStack}>
-                {actions.can_approve ? (
-                  <details className={styles.actionDisclosure}>
-                    <summary><span>Approve order</span><span>＋</span></summary>
-                    <form className={styles.actionForm} action={approveCreditOrderAction}>
-                      <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
-                      <label>Optional comment<textarea name="comment" rows={3} /></label>
-                      <button type="submit">Approve credit order</button>
-                    </form>
-                  </details>
-                ) : null}
-                {actions.can_reject ? (
-                  <details className={styles.actionDisclosure}>
-                    <summary><span>Reject order</span><span>＋</span></summary>
-                    <form className={styles.actionForm} action={rejectCreditOrderAction}>
-                      <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
-                      <label>Optional comment<textarea name="comment" rows={3} /></label>
-                      <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
-                      <button className={styles.dangerButton} type="submit">Reject credit order</button>
-                    </form>
-                  </details>
-                ) : null}
-                {actions.can_cancel ? (
-                  <details className={styles.actionDisclosure}>
-                    <summary><span>Cancel order</span><span>＋</span></summary>
-                    <form className={styles.actionForm} action={cancelCreditOrderAction}>
-                      <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
-                      <label>Optional comment<textarea name="comment" rows={3} /></label>
-                      <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
-                      <button className={styles.dangerButton} type="submit">Cancel credit order</button>
-                    </form>
-                  </details>
-                ) : null}
-                {actions.can_place_order ? (
-                  <details className={styles.actionDisclosure}>
-                    <summary><span>Place sales order</span><span>＋</span></summary>
-                    <form className={styles.actionForm} action={placeCreditOrderAction}>
-                      <HiddenContext companyId={companyId} number={order.number} actor={actor} returnView="overview" />
-                      <p className="muted">Fluid will create the Magento sales order only when this credit order is ready.</p>
-                      <label>Optional comment<textarea name="comment" rows={3} /></label>
-                      <label>Type {order.number} to confirm<input name="confirmNumber" required /></label>
-                      <button type="submit">Place sales order</button>
-                    </form>
-                  </details>
-                ) : null}
-                {![actions.can_approve, actions.can_reject, actions.can_cancel, actions.can_place_order].some(Boolean) ? <p className="muted">Fluid reports no lifecycle action for this actor in the current state.</p> : null}
+              <div>
+                <h2>Items ordered</h2>
+                <p className="muted">Frozen quote lines captured by Fluid when the credit order was created.</p>
               </div>
-            ) : null}
-          </aside>
-        </div>
+              <span className={styles.countBadge}>{orderItems.length}</span>
+            </div>
+            {orderItems.length === 0 ? (
+              <p className="muted">No visible quote items were returned for this credit order.</p>
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Product</th><th>SKU</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr>
+                  </thead>
+                  <tbody>
+                    {orderItems.map((item) => (
+                      <tr key={item.item_id || `${item.sku}-${item.product_id ?? "item"}`}>
+                        <td><strong>{item.name}</strong></td>
+                        <td>{item.sku}</td>
+                        <td>{formatQuantity(item.quantity)}</td>
+                        <td>{formatTotal(item.unit_price)}</td>
+                        <td><strong>{formatTotal(item.row_total)}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="muted">Line totals come from the frozen quote rows. The order grand total can also include shipping, tax or other quote totals.</p>
+          </section>
+        </>
       ) : null}
 
       {view === "conversation" ? (
