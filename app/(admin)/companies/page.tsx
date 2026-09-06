@@ -42,7 +42,7 @@ export default async function CompaniesPage() {
         </div>
         {groupedCompanies ? (
           <div className="company-directory-key">
-            <span className="company-key-crown" aria-hidden="true">♛</span>
+            <span className="company-key-marker" aria-hidden="true" />
             <span><strong>{groupedCompanies}</strong> grouped structure{groupedCompanies === 1 ? "" : "s"}</span>
           </div>
         ) : null}
