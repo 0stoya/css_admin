@@ -1,0 +1,36 @@
+.brand {
+  justify-items: center;
+  text-align: center;
+}
+
+.brand :global(.auth-logo) {
+  width: min(280px, 82%);
+}
+
+.heading {
+  text-align: center;
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.inputWrap .input {
+  padding-left: 2.75rem;
+}
+
+.inputIcon {
+  position: absolute;
+  top: 50%;
+  left: 0.9rem;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: var(--css-muted);
+  pointer-events: none;
+  transition: color 120ms ease;
+}
+
+.inputWrap:focus-within .inputIcon {
+  color: var(--css-primary);
+}
