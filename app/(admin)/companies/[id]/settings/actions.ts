@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
-import { deleteCompany, updateCompanySettings } from "@/lib/graphql/company-settings";
+import {
+  deleteCompany,
+  getCompanySettings,
+  updateCompanySettings,
+} from "@/lib/graphql/company-settings";
 
 function settingsPath(companyId: number) {
   return `/companies/${companyId}/settings`;
@@ -27,22 +31,13 @@ function requiredNonNegativeInt(formData: FormData, key: string) {
   return value;
 }
 
-function nullablePositiveInt(formData: FormData, key: string) {
-  const raw = String(formData.get(key) ?? "").trim();
-  if (!raw) return null;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${key} must be a positive integer when supplied.`);
-  }
-  return value;
-}
-
 function stringValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
 async function redirectMutationResult(
   companyId: number,
+  view: "local" | "danger",
   notice: string,
   work: () => Promise<unknown>,
 ) {
@@ -56,7 +51,7 @@ async function redirectMutationResult(
     errorMessage = graphQLErrorMessage(error);
   }
 
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ view });
   if (errorMessage) params.set("error", errorMessage);
   else params.set("notice", notice);
 
@@ -66,12 +61,14 @@ async function redirectMutationResult(
 export async function updateCompanySettingsAction(formData: FormData) {
   const companyId = requiredPositiveInt(formData, "companyId");
 
-  return redirectMutationResult(companyId, "Company settings updated.", async () => {
+  return redirectMutationResult(companyId, "local", "Company settings updated.", async () => {
+    const current = await getCompanySettings(companyId);
+
     await updateCompanySettings({
       company_id: companyId,
       customer_group_id: requiredNonNegativeInt(formData, "customerGroupId"),
       vat_tax_id: stringValue(formData, "vatTaxId"),
-      parent_company_id: nullablePositiveInt(formData, "parentCompanyId"),
+      parent_company_id: current.parent_company_id,
       comment: stringValue(formData, "comment"),
       description: stringValue(formData, "description"),
       homepage_content: stringValue(formData, "homepageContent"),
@@ -98,7 +95,8 @@ export async function deleteCompanyAction(formData: FormData) {
   }
 
   if (errorMessage) {
-    redirect(`${settingsPath(companyId)}?error=${encodeURIComponent(errorMessage)}`);
+    const params = new URLSearchParams({ view: "danger", error: errorMessage });
+    redirect(`${settingsPath(companyId)}?${params.toString()}`);
   }
 
   redirect("/companies");
