@@ -24,6 +24,7 @@ query AdminCompanySettings($companyId: Int!) {
     description
     homepage_content
     show_company_landing_page
+    locker_collection_enabled
   }
 }
 
@@ -59,8 +60,15 @@ mutation AdminUpdateCompanySettings($input: CssAdminUpdateCompanyInput!) {
     description
     homepage_content
     show_company_landing_page
+    locker_collection_enabled
   }
 }
+
+# Example local-settings input fragment:
+# {
+#   "company_id": 11,
+#   "locker_collection_enabled": true
+# }
 
 mutation AdminDeleteCompany($companyId: Int!, $confirmReference: String!) {
   cssAdminDeleteCompany(company_id: $companyId, confirm_reference: $confirmReference)

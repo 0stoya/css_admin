@@ -22,6 +22,7 @@ export type CompanySettings = {
   description: string | null;
   homepage_content: string | null;
   show_company_landing_page: boolean;
+  locker_collection_enabled: boolean;
 };
 
 export type CompanyCustomerGroup = {
@@ -42,6 +43,7 @@ export type UpdateCompanySettingsInput = {
   description: string;
   homepage_content: string;
   show_company_landing_page: boolean;
+  locker_collection_enabled?: boolean;
 };
 
 type CompanySettingsData = {
@@ -84,6 +86,7 @@ const COMPANY_SETTINGS_QUERY = /* GraphQL */ `
       description
       homepage_content
       show_company_landing_page
+      locker_collection_enabled
     }
   }
 `;
@@ -123,6 +126,7 @@ const UPDATE_COMPANY_SETTINGS_MUTATION = /* GraphQL */ `
       description
       homepage_content
       show_company_landing_page
+      locker_collection_enabled
     }
   }
 `;

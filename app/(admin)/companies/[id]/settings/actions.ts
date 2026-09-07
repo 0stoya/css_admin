@@ -73,6 +73,7 @@ export async function updateCompanySettingsAction(formData: FormData) {
       description: stringValue(formData, "description"),
       homepage_content: stringValue(formData, "homepageContent"),
       show_company_landing_page: formData.get("showCompanyLandingPage") === "on",
+      locker_collection_enabled: formData.get("lockerCollectionEnabled") === "on",
     });
   });
 }
