@@ -79,6 +79,31 @@ The company portal uses a separate Magento customer bearer token. Its catalogue 
 
 Company-user accounts and initial company membership are provisioned through the staff Admin workflow. The portal does not expose `cssAddCompanyUser`; authorized company managers may still maintain existing membership settings through the accepted customer-side update/remove contracts.
 
+## Company finance backend handoff
+
+The Admin company finance screen added in `css_admin` consumes one Magento GraphQL read operation only:
+
+`css_admin_company_financial_summary(company_id: Int!)`
+
+The expected response contract is represented by `lib/graphql/company-finance.ts` and includes:
+
+- `company_id`
+- `cref`
+- `currency`
+- `year`
+- `year_to_date { order_count value }`
+- `last_7_days { order_count value }`
+- `last_30_days { order_count value }`
+- `last_3_months { order_count value }`
+- `last_6_months { order_count value }`
+- `monthly { month order_count value }`
+- `last_order_date`
+- `refreshed_at`
+
+This operation belongs in `0stoya/Fluid`. It must reuse the existing Admin company authorization/scoping path, resolve the Magento company to its OGL CREF from the existing company reference mapping, and read OGL data through Fluid's existing server-side OGL connector/data-access layer.
+
+Do not add a REST endpoint, browser-to-OGL connection, duplicate OGL connector, or frontend business-rule implementation in `css_admin`. The browser/Admin path remains `css_admin -> Magento GraphQL -> Fluid -> OGL`.
+
 The remaining commercial and company-order/credit-order portal areas will become detailed screens as separate focused slices.
 
 ## Authorization rule
