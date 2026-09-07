@@ -266,6 +266,16 @@ export default async function CompanySettingsPage({
                 </div>
 
                 <label className={`check-field ${styles.spanTwo}`}>
+                  <input name="lockerCollectionEnabled" type="checkbox" defaultChecked={company.locker_collection_enabled} />
+                  <span>
+                    <strong>Enable CSS locker collection</strong>
+                    <small className="muted">
+                      Allows this company to use the CSS locker carrier when the trusted kiosk applies the configured locker destination. Default is disabled.
+                    </small>
+                  </span>
+                </label>
+
+                <label className={`check-field ${styles.spanTwo}`}>
                   <input name="showCompanyLandingPage" type="checkbox" defaultChecked={company.show_company_landing_page} />
                   <span>
                     <strong>Show company landing page</strong>
@@ -302,6 +312,7 @@ export default async function CompanySettingsPage({
               <div className={styles.readOnlyGrid}>
                 <div><span>Customer group</span><strong>{customerGroupLabel(company, null)}</strong></div>
                 <div><span>VAT tax ID</span><strong>{company.vat_tax_id || "—"}</strong></div>
+                <div><span>Locker collection</span><strong>{company.locker_collection_enabled ? "Enabled" : "Disabled"}</strong></div>
                 <div><span>Landing page</span><strong>{company.show_company_landing_page ? "Shown" : "Hidden"}</strong></div>
                 <div><span>Comment</span><strong>{company.comment || "—"}</strong></div>
                 <div><span>Description</span><strong>{company.description || "—"}</strong></div>
