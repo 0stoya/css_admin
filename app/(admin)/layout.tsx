@@ -17,6 +17,7 @@ const navigation: NavigationItem[] = [
 
 const companyNavigation: CompanySidebarNavigationItem[] = [
   { segment: "", label: "Overview", exact: true },
+  { segment: "finance", label: "Finance" },
   { segment: "management", label: "Users & roles" },
   { segment: "catalog", label: "Catalogue policy" },
   { segment: "purchase-controls", label: "Purchase controls" },
