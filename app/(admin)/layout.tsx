@@ -19,6 +19,7 @@ const companyNavigation: CompanySidebarNavigationItem[] = [
   { segment: "", label: "Overview", exact: true },
   { segment: "finance", label: "Finance" },
   { segment: "management", label: "Users & roles" },
+  { segment: "employees", label: "Employees" },
   { segment: "catalog", label: "Catalogue policy" },
   { segment: "purchase-controls", label: "Purchase controls" },
   { segment: "payment", label: "Payment configuration" },
