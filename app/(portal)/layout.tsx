@@ -4,6 +4,7 @@ import { AppHeader, type NavigationItem } from "@/components/app-header";
 import { AppHeaderContextProvider } from "@/components/app-header-context";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
+import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
 import { getCompanyToken } from "@/lib/session";
 
 export default async function CompanyPortalLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -11,15 +12,18 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
     redirect("/login");
   }
 
-  let capabilities = null;
-  try {
-    capabilities = await getCompanyPortalAdministration();
-  } catch {
-    // Company selection and capability errors are rendered by the requested page.
-  }
+  const [administrationResult, employeeResult] = await Promise.allSettled([
+    getCompanyPortalAdministration(),
+    getPortalEmployeeConfiguration(),
+  ]);
+  const capabilities = administrationResult.status === "fulfilled" ? administrationResult.value : null;
+  // Employee ACL is independent of Users/Roles administration ACL, so probe the
+  // employee read contract directly rather than hiding the route when css_company_admin is unavailable.
+  const canViewEmployees = employeeResult.status === "fulfilled";
 
   const navigation: NavigationItem[] = [
     { href: "/portal", label: "Company", exact: true },
+    ...(canViewEmployees ? [{ href: "/portal/employees", label: "Employees" }] : []),
     ...(capabilities?.can_manage_catalog_visibility ? [{ href: "/portal/catalog", label: "Catalogue" }] : []),
     ...(capabilities?.can_view_purchase_controls ? [{ href: "/portal/purchase-controls", label: "Purchase controls" }] : []),
   ];

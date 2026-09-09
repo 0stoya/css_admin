@@ -1,0 +1,133 @@
+# css_admin company employee management and reporting operations.
+# Requires Css_Commerce employee phases 1-3.
+
+query AdminCompanyEmployeeConfiguration($companyId: Int!) {
+  css_admin_company_employee_configuration(company_id: $companyId) {
+    company_id
+    uses_employee
+    multi_employee_basket
+  }
+}
+
+query AdminCompanyEmployees($companyId: Int!, $currentPage: Int!, $pageSize: Int!, $search: String, $active: Boolean) {
+  css_admin_company_employees(
+    company_id: $companyId
+    currentPage: $currentPage
+    pageSize: $pageSize
+    search: $search
+    active: $active
+  ) {
+    total_count
+    page_info { page_size current_page total_pages }
+    items {
+      employee_id
+      company_id
+      employee_code
+      first_name
+      last_name
+      full_name
+      department
+      cost_centre
+      manager_company_user_id
+      active
+      created_at
+      updated_at
+    }
+  }
+}
+
+query AdminCompanyEmployeeSpend($companyId: Int!, $employeeId: Int, $from: String, $to: String) {
+  css_admin_company_employee_spend(company_id: $companyId, employee_id: $employeeId, from: $from, to: $to) {
+    company_id
+    employee_id
+    currency
+    metric
+    from
+    to
+    employee_count
+    attributed_order_count
+    product_spend
+    refreshed_at
+    items {
+      employee_id
+      employee_code
+      employee_name
+      department
+      cost_centre
+      active
+      order_count
+      product_spend
+      last_order_date
+    }
+  }
+}
+
+query AdminCompanyEmployeeOrders(
+  $companyId: Int!
+  $employeeId: Int!
+  $currentPage: Int!
+  $pageSize: Int!
+  $from: String
+  $to: String
+) {
+  css_admin_company_employee_orders(
+    company_id: $companyId
+    employee_id: $employeeId
+    currentPage: $currentPage
+    pageSize: $pageSize
+    from: $from
+    to: $to
+  ) {
+    company_id
+    employee_id
+    currency
+    metric
+    from
+    to
+    total_count
+    page_info { page_size current_page total_pages }
+    items { order_id order_number order_date status item_count product_spend }
+  }
+}
+
+mutation AdminSaveCompanyEmployeeConfiguration($companyId: Int!, $input: CssCompanyEmployeeConfigurationInput!) {
+  cssAdminSaveCompanyEmployeeConfiguration(company_id: $companyId, input: $input) {
+    company_id
+    uses_employee
+    multi_employee_basket
+  }
+}
+
+mutation AdminCreateCompanyEmployee($companyId: Int!, $input: CssCompanyEmployeeInput!) {
+  cssAdminCreateCompanyEmployee(company_id: $companyId, input: $input) {
+    employee_id
+    employee_code
+    full_name
+    active
+  }
+}
+
+mutation AdminUpdateCompanyEmployee($companyId: Int!, $employeeId: Int!, $input: CssCompanyEmployeeUpdateInput!) {
+  cssAdminUpdateCompanyEmployee(company_id: $companyId, employee_id: $employeeId, input: $input) {
+    employee_id
+    employee_code
+    full_name
+    active
+  }
+}
+
+mutation AdminDeactivateCompanyEmployee($companyId: Int!, $employeeId: Int!) {
+  cssAdminDeactivateCompanyEmployee(company_id: $companyId, employee_id: $employeeId) {
+    employee_id
+    active
+  }
+}
+
+mutation AdminImportCompanyEmployees($companyId: Int!, $rows: [CssCompanyEmployeeImportRowInput!]!) {
+  cssAdminImportCompanyEmployees(company_id: $companyId, rows: $rows) {
+    created
+    updated
+    failed
+    errors { row message }
+  }
+}
