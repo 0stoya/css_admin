@@ -11,6 +11,7 @@ import "./catalogue-workspace.css";
 import "./catalogue-workspace-polish.css";
 import "./purchase-controls.css";
 import "./purchase-product-picker.css";
+import "./toggle-controls.css";
 
 export const metadata: Metadata = {
   title: {

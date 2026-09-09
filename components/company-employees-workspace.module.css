@@ -5,30 +5,81 @@
 
 .topGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
   gap: 1rem;
+  align-items: start;
 }
 
 .configurationCard,
 .importCard {
   display: grid;
   align-content: start;
-  gap: 1rem;
+  gap: 1.1rem;
+}
+
+.configurationCard form {
+  gap: 0.8rem;
 }
 
 .switchRow,
 .checkboxField {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--css-border);
+  border-radius: 0.75rem;
+  background: #f7fafc;
   cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.switchRow:hover,
+.checkboxField:hover {
+  border-color: #9db4c7;
+  background: #f4f8fb;
+}
+
+.switchRow:focus-within,
+.checkboxField:focus-within {
+  border-color: var(--css-primary);
+  box-shadow: 0 0 0 3px rgb(0 87 168 / 9%);
 }
 
 .switchRow input,
 .checkboxField input {
-  margin-top: 0.2rem;
-  width: 1.05rem;
-  height: 1.05rem;
+  grid-column: 2;
+  grid-row: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 2.8rem;
+  height: 1.55rem;
+  margin: 0;
+  border: 1px solid #a7b7c5;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 27% 50%, #fff 0 0.48rem, transparent 0.52rem),
+    #c8d3dd;
+  box-shadow: inset 0 1px 2px rgb(0 35 72 / 12%);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  flex: none;
+}
+
+.switchRow input:checked,
+.checkboxField input:checked {
+  border-color: var(--css-primary);
+  background:
+    radial-gradient(circle at 73% 50%, #fff 0 0.48rem, transparent 0.52rem),
+    var(--css-primary);
+  box-shadow: inset 0 1px 2px rgb(0 35 72 / 16%);
+}
+
+.switchRow input:focus-visible,
+.checkboxField input:focus-visible {
+  outline: 3px solid rgb(255 221 0 / 78%);
+  outline-offset: 3px;
 }
 
 .switchRow span,
@@ -36,6 +87,12 @@
 .identity,
 .employeeRow > span {
   min-width: 0;
+}
+
+.switchRow span,
+.checkboxField span {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .switchRow span,
@@ -52,6 +109,68 @@
 .employeeRow small {
   color: var(--css-muted);
   font-size: 0.78rem;
+}
+
+.importCard {
+  position: relative;
+}
+
+.importCard::after {
+  content: "CSV";
+  position: absolute;
+  top: 1.1rem;
+  right: 1.1rem;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: #edf2f6;
+  color: #445a70;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+
+.importCard form {
+  gap: 0.85rem;
+}
+
+.importCard :global(.field) {
+  gap: 0.55rem;
+  padding: 0.95rem;
+  border: 1px solid var(--css-border);
+  border-radius: 0.75rem;
+  background: #f7fafc;
+}
+
+.importCard input[type="file"] {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.35rem;
+  border: 1px solid var(--css-border-strong);
+  border-radius: 0.6rem;
+  background: var(--css-surface);
+  color: var(--css-muted);
+}
+
+.importCard input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.62rem 0.82rem;
+  border: 1px solid #9db4c7;
+  border-radius: 0.5rem;
+  background: var(--css-surface);
+  color: var(--css-primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.importCard input[type="file"]::file-selector-button:hover {
+  border-color: var(--css-primary);
+  background: var(--css-primary-soft);
+  color: var(--css-primary-hover);
+}
+
+.importCard .actionRow {
+  padding-top: 0.15rem;
 }
 
 .actionRow {
@@ -151,7 +270,7 @@
 
 .checkboxField {
   align-self: end;
-  min-height: 2.6rem;
+  min-height: 4rem;
 }
 
 .employeeTable,
