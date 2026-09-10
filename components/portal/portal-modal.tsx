@@ -89,6 +89,7 @@ export function PortalModal({
       <dialog
         ref={dialogRef}
         className={styles.dialog}
+        aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         onClick={closeOnBackdrop}

@@ -23,7 +23,7 @@ The existing Staff/Admin UI is the production management baseline and should not
 
 Company Portal navigation remains capability-driven by Fluid. A customer token must never be used for `css_admin_*` operations, and a Magento admin token must never be treated as a company-user session.
 
-See [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) for the full authentication/ownership contract and [`docs/PORTAL_UI_ROADMAP.md`](docs/PORTAL_UI_ROADMAP.md) for the staged customer-facing UI refinement plan.
+See [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) for the full authentication/ownership contract, [`docs/PORTAL_UI_ROADMAP.md`](docs/PORTAL_UI_ROADMAP.md) for the customer-facing UI refinement plan, and [`docs/PORTAL_REGRESSION_CHECKLIST.md`](docs/PORTAL_REGRESSION_CHECKLIST.md) for the live Company Portal acceptance gate.
 
 ## Stack
 
@@ -55,6 +55,8 @@ yarn build
 ```
 
 Then run the relevant live journey against the deployed Fluid GraphQL backend. Backend authorization remains authoritative.
+
+For Company Portal work, run the profile and responsive checks in [`docs/PORTAL_REGRESSION_CHECKLIST.md`](docs/PORTAL_REGRESSION_CHECKLIST.md) before treating the slice as production-accepted.
 
 ## Backend contract
 
