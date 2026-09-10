@@ -61,20 +61,27 @@ Runtime acceptance completed on the deployed environment.
 - [x] customer-facing Catalogue hierarchy and company boundary summary;
 - [x] separate company-wide catalogue policy from role-level visibility;
 - [x] move company, role-category and role-product editing into reusable Portal modals;
+- [x] simplify the page to company boundary -> optional role restriction -> product-access verification;
 - [x] improve category/product restriction summaries and empty states;
 - [x] retain effective-product search/pagination for verification;
 - [x] responsive role/product layouts;
 - [x] Portal-only catalogue stylesheet; no Admin catalogue restyling;
 - [x] retain Fluid-backed catalogue search, validation and authorization boundaries.
 
-Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
+Runtime acceptance completed on the deployed environment.
 
 ### Phase 4 — Purchase controls
 
-- [ ] customer-focused allowance/template overview;
-- [ ] clearer assignments, counters and history;
-- [ ] preserve view-only vs manage capabilities;
-- [ ] keep destructive confirmations and backend validation.
+- [x] customer-focused template and allowance overview;
+- [x] focused Templates / Assignments / Allowances / History workspaces so only one task is visible at a time;
+- [x] Create template, Manage template and Change assignment use reusable Portal modals;
+- [x] clearer role assignment state, current allowances and consumption history;
+- [x] responsive template, allowance and history presentation;
+- [x] preserve view-only vs manage capabilities;
+- [x] keep apply/reset/delete confirmations and backend validation unchanged;
+- [x] Portal-only purchase-control stylesheet; no Admin purchase-control restyling.
+
+Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
 
 ### Phase 5 — Portal-wide polish
 
