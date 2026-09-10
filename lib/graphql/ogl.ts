@@ -1,4 +1,5 @@
 import { graphqlRequest } from "@/lib/graphql/client";
+import { getAdminOglRepProfiles } from "@/lib/graphql/company-presentation";
 
 export type OglCompany = {
   cref: string;
@@ -322,12 +323,34 @@ export async function getOglCompanyPreview(cref: string) {
   return data.css_admin_ogl_company_preview;
 }
 
-export async function getOglRepMappings() {
-  const data = await graphqlRequest<OglMappingsData, Record<string, never>>(
-    OGL_MAPPINGS_QUERY,
-    {},
-  );
-  return data.css_admin_ogl_rep_mappings;
+export async function getOglRepMappings(): Promise<OglRepMapping[]> {
+  try {
+    const data = await graphqlRequest<OglMappingsData, Record<string, never>>(
+      OGL_MAPPINGS_QUERY,
+      {},
+    );
+    return data.css_admin_ogl_rep_mappings;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const missingLegacyField =
+      message.includes("Cannot query field") && message.includes("css_admin_ogl_rep_mappings");
+
+    if (!missingLegacyField) {
+      throw error;
+    }
+
+    const profiles = await getAdminOglRepProfiles();
+    return profiles.map((profile) => ({
+      rep_code: profile.rep_code,
+      admin_user_id: profile.admin_user_id,
+      username: profile.username,
+      firstname: profile.firstname,
+      lastname: profile.lastname,
+      email: profile.mapped_email,
+      active: profile.admin_active,
+      affected_company_count: profile.affected_company_count,
+    }));
+  }
 }
 
 export async function fetchOglCompanies() {
