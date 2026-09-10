@@ -81,15 +81,32 @@ Runtime acceptance completed on the deployed environment.
 - [x] keep apply/reset/delete confirmations and backend validation unchanged;
 - [x] Portal-only purchase-control stylesheet; no Admin purchase-control restyling.
 
-Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
+Runtime acceptance completed on the deployed environment.
 
-### Phase 5 — Portal-wide polish
+### Phase 5 — Portal-wide polish and regression
 
-- [ ] normalize loading/error/empty states;
-- [ ] accessibility and keyboard pass;
-- [ ] mobile navigation regression;
-- [ ] full company-admin / limited-role / no-management-capability regression;
-- [ ] production `yarn lint`, `yarn typecheck`, `yarn build` and live HTTPS journey.
+Implementation:
+
+- [x] add a Portal route-level loading state;
+- [x] add a Portal route-level error boundary with retry and Company overview recovery;
+- [x] add a keyboard-visible skip link and explicit main-content focus target;
+- [x] strengthen keyboard focus treatment across Portal navigation and interactive controls;
+- [x] harden the horizontal tablet/mobile navigation and small-screen header layout;
+- [x] improve modal focus visibility, close-target size, scroll containment and reduced-motion behaviour;
+- [x] keep all polish scoped to `app/(portal)/**` and `components/portal/**` apart from documentation;
+- [x] add a permanent live regression checklist.
+
+Runtime acceptance:
+
+- [ ] execute the Company administrator profile;
+- [ ] execute a limited/view-only Company user profile where available;
+- [ ] execute a Company user without each management capability being exercised;
+- [ ] execute multi-company switching where available;
+- [ ] check desktop, tablet and narrow/mobile navigation and modal journeys;
+- [ ] run production `yarn lint`, `yarn typecheck` and `yarn build`;
+- [ ] confirm representative Staff/Admin routes remain visually and functionally unchanged.
+
+Use [`PORTAL_REGRESSION_CHECKLIST.md`](PORTAL_REGRESSION_CHECKLIST.md) as the acceptance gate for this phase and future Portal UI changes.
 
 ## Non-goals
 

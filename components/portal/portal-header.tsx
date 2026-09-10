@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import styles from "@/components/portal/portal-shell.module.css";

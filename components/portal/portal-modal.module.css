@@ -60,11 +60,12 @@
 }
 
 .rowTrigger {
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 0.3rem;
-  padding: 0.35rem 0;
+  padding: 0.45rem 0.15rem;
   background: transparent;
   color: var(--css-primary);
   font-size: 0.78rem;
@@ -82,13 +83,22 @@
   transform: translateX(2px);
 }
 
+.trigger:focus-visible,
+.closeButton:focus-visible {
+  outline: 3px solid var(--css-secondary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--css-primary);
+}
+
 .dialog {
   width: min(940px, calc(100vw - 2rem));
   max-width: none;
   max-height: min(88vh, 900px);
+  max-height: min(88dvh, 900px);
   margin: auto;
   padding: 0;
   overflow: hidden;
+  overscroll-behavior: contain;
   border: 1px solid #bfd4e3;
   border-radius: 18px;
   background: #fff;
@@ -134,8 +144,8 @@
 }
 
 .closeButton {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
@@ -161,6 +171,8 @@
 .body {
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 1.35rem;
   background: #fff;
 }
@@ -200,7 +212,24 @@
     padding: 1rem;
   }
 
+  .closeButton {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
   .body {
     padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryTrigger,
+  .rowTrigger svg,
+  .closeButton {
+    transition: none;
+  }
+
+  .rowTrigger:hover svg {
+    transform: none;
   }
 }
