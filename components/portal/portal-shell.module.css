@@ -1,0 +1,188 @@
+.shell {
+  min-height: 100vh;
+  background: #f5f7f9;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: rgb(255 255 255 / 97%);
+  border-bottom: 1px solid #dbe4eb;
+  box-shadow: 0 3px 18px rgb(0 35 72 / 5%);
+  backdrop-filter: blur(12px);
+}
+
+.headerInner {
+  width: min(1680px, calc(100% - 2rem));
+  min-height: 72px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.brand {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--css-text);
+  text-decoration: none;
+}
+
+.brandLogo {
+  display: block;
+  width: 175px;
+  height: auto;
+  object-fit: contain;
+}
+
+.brandDivider {
+  width: 1px;
+  height: 28px;
+  background: #c7d3dd;
+}
+
+.brandLabel {
+  font-family: var(--font-secondary);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.signoutForm { margin: 0; }
+
+.signoutButton {
+  appearance: none;
+  border: 1px solid #aabfce;
+  border-radius: 8px;
+  padding: 0.58rem 0.82rem;
+  background: #fff;
+  color: var(--css-primary);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease;
+}
+
+.signoutButton:hover {
+  border-color: var(--css-primary);
+  background: var(--css-primary-soft);
+}
+
+.workspace {
+  min-height: calc(100vh - 72px);
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  top: 72px;
+  align-self: start;
+  height: calc(100vh - 72px);
+  border-right: 1px solid #dbe4eb;
+  background: #fff;
+  padding: 1.25rem 0.8rem;
+}
+
+.sidebarInner {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.sidebarHeading {
+  margin: 0;
+  padding: 0 0.75rem 0.35rem;
+  color: #718397;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.sidebarNav {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.sidebarLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 42px;
+  padding: 0.68rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--css-text);
+  font-size: 0.88rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.sidebarLink:hover {
+  background: #f4f8fb;
+  color: var(--css-primary);
+}
+
+.sidebarMarker {
+  width: 5px;
+  height: 18px;
+  border-radius: 999px;
+  background: transparent;
+  flex: 0 0 auto;
+}
+
+.sidebarLinkActive {
+  border-color: #b9d3e7;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.sidebarLinkActive .sidebarMarker {
+  background: var(--css-secondary);
+  box-shadow: 0 0 0 1px rgb(154 103 0 / 10%);
+}
+
+.content {
+  min-width: 0;
+  width: min(1380px, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
+}
+
+@media (max-width: 900px) {
+  .workspace { grid-template-columns: 1fr; }
+  .sidebar {
+    position: sticky;
+    top: 72px;
+    z-index: 40;
+    width: 100%;
+    height: auto;
+    padding: 0.55rem 1rem;
+    border-right: 0;
+    border-bottom: 1px solid #dbe4eb;
+    overflow-x: auto;
+  }
+  .sidebarInner { display: block; }
+  .sidebarHeading { display: none; }
+  .sidebarNav { display: flex; gap: 0.35rem; width: max-content; }
+  .sidebarLink { min-height: 38px; padding: 0.55rem 0.7rem; white-space: nowrap; }
+  .sidebarMarker { width: 4px; height: 14px; }
+  .content { width: min(1380px, calc(100% - 2rem)); padding-top: 1.5rem; }
+}
+
+@media (max-width: 620px) {
+  .headerInner { width: calc(100% - 1.25rem); min-height: 64px; gap: 0.75rem; }
+  .brandLogo { width: 145px; }
+  .brandDivider { height: 24px; }
+  .brandLabel { font-size: 0.82rem; }
+  .workspace { min-height: calc(100vh - 64px); }
+  .sidebar { top: 64px; padding-inline: 0.625rem; }
+  .content { width: calc(100% - 1.25rem); padding: 1.25rem 0 3rem; }
+  .signoutButton { padding: 0.52rem 0.68rem; font-size: 0.8rem; }
+}

@@ -1,27 +1,41 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { AppHeader, type NavigationItem } from "@/components/app-header";
-import { AppHeaderContextProvider } from "@/components/app-header-context";
-import { AppSidebar } from "@/components/app-sidebar";
+import { PortalHeader } from "@/components/portal/portal-header";
+import {
+  PortalSidebar,
+  type PortalNavigationItem,
+} from "@/components/portal/portal-sidebar";
+import styles from "@/components/portal/portal-shell.module.css";
+import { GraphQLRequestError } from "@/lib/graphql/client";
 import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
 import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
 import { getCompanyToken } from "@/lib/session";
 
 export default async function CompanyPortalLayout({ children }: Readonly<{ children: ReactNode }>) {
   if (!(await getCompanyToken())) {
-    redirect("/login");
+    redirect("/portal/login");
   }
 
   const [administrationResult, employeeResult] = await Promise.allSettled([
     getCompanyPortalAdministration(),
     getPortalEmployeeConfiguration(),
   ]);
+
+  const sessionExpired = [administrationResult, employeeResult].some(
+    (result) => result.status === "rejected"
+      && result.reason instanceof GraphQLRequestError
+      && result.reason.status === 401,
+  );
+  if (sessionExpired) {
+    redirect("/api/auth/session-expired?mode=company");
+  }
+
   const capabilities = administrationResult.status === "fulfilled" ? administrationResult.value : null;
   // Employee ACL is independent of Users/Roles administration ACL, so probe the
   // employee read contract directly rather than hiding the route when css_company_admin is unavailable.
   const canViewEmployees = employeeResult.status === "fulfilled";
 
-  const navigation: NavigationItem[] = [
+  const navigation: PortalNavigationItem[] = [
     { href: "/portal", label: "Company", exact: true },
     { href: "/portal/company-profile", label: "Company profile" },
     ...(canViewEmployees ? [{ href: "/portal/employees", label: "Employees" }] : []),
@@ -30,14 +44,12 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   ];
 
   return (
-    <AppHeaderContextProvider>
-      <div className="shell">
-        <AppHeader homeHref="/portal" productLabel="Company Portal" navigation={navigation} />
-        <div className="app-workspace">
-          <AppSidebar productLabel="Company Portal" navigation={navigation} />
-          <main className="content">{children}</main>
-        </div>
+    <div className={styles.shell}>
+      <PortalHeader />
+      <div className={styles.workspace}>
+        <PortalSidebar navigation={navigation} />
+        <main className={styles.content}>{children}</main>
       </div>
-    </AppHeaderContextProvider>
+    </div>
   );
 }
