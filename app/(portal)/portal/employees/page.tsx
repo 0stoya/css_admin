@@ -15,6 +15,7 @@ import {
   getPortalEmployeeSpend,
 } from "@/lib/graphql/company-portal-employees";
 import type { CompanyEmployee } from "@/lib/graphql/company-employees";
+import { PortalModal } from "@/components/portal/portal-modal";
 import {
   createPortalEmployeeAction,
   deactivatePortalEmployeeAction,
@@ -112,6 +113,51 @@ function EmployeeFields({ users, employee }: { users: CompanyPortalUser[]; emplo
         <span><strong>Active</strong><small>May be assigned to new orders.</small></span>
       </label>
     </div>
+  );
+}
+
+function EmployeeManagementModal({
+  employee,
+  users,
+  canManage,
+  historyHref,
+}: {
+  employee: CompanyEmployee;
+  users: CompanyPortalUser[];
+  canManage: boolean;
+  historyHref: string;
+}) {
+  const name = employeeName(employee);
+  return (
+    <PortalModal
+      variant="row"
+      triggerLabel={canManage ? "Manage" : "Details"}
+      title={name}
+      description={canManage ? "Manage employee details and ordering status." : "Review employee details and order history."}
+    >
+      <div className="stack">
+        <div className={styles.recordHeading}>
+          <div><p className="eyebrow">Employee details</p><h3>{name}</h3></div>
+          <Link className="button button-secondary button-link" href={historyHref}>View order history</Link>
+        </div>
+        {canManage ? (
+          <>
+            <form action={updatePortalEmployeeAction} className="stack">
+              <input type="hidden" name="employeeId" value={employee.employee_id} />
+              <EmployeeFields users={users} employee={employee} />
+              <div><button className="button" type="submit">Save employee</button></div>
+            </form>
+            {employee.active ? (
+              <form action={deactivatePortalEmployeeAction} className={styles.deactivateRow}>
+                <input type="hidden" name="employeeId" value={employee.employee_id} />
+                <div><strong>Deactivate employee</strong><p className="muted small-text">The employee is kept in historical reporting but cannot be assigned to new orders.</p></div>
+                <button className="button button-secondary" type="submit">Deactivate</button>
+              </form>
+            ) : null}
+          </>
+        ) : <p className="muted">Your role has view-only employee access.</p>}
+      </div>
+    </PortalModal>
   );
 }
 
@@ -253,10 +299,17 @@ export default async function PortalEmployeesPage({ searchParams }: { searchPara
         <div className={styles.sectionHeading}>
           <div><p className="eyebrow">People</p><h2>Employee directory</h2><p className="muted">{employees.total_count} employee{employees.total_count === 1 ? "" : "s"} match the current filters.</p></div>
           {permissions.canManage ? (
-            <details className={styles.createPanel}>
-              <summary><span><strong>Add employee</strong><small>Create an ordering beneficiary</small></span><span aria-hidden="true">＋</span></summary>
-              <form action={createPortalEmployeeAction} className={styles.createForm}><EmployeeFields users={managers} /><div><button className="button" type="submit">Create employee</button></div></form>
-            </details>
+            <PortalModal
+              title="Add employee"
+              description="Create an ordering beneficiary for this company."
+              triggerLabel="Add employee"
+              triggerHint="Create an ordering beneficiary"
+            >
+              <form action={createPortalEmployeeAction} className="stack">
+                <EmployeeFields users={managers} />
+                <div><button className="button" type="submit">Create employee</button></div>
+              </form>
+            </PortalModal>
           ) : null}
         </div>
 
@@ -273,29 +326,22 @@ export default async function PortalEmployeesPage({ searchParams }: { searchPara
             const manager = managers.find((user) => user.user_id === employee.manager_company_user_id);
             const employeeSpend = spendByEmployee.get(employee.employee_id);
             return (
-              <details className={styles.employeeRecord} key={employee.employee_id}>
-                <summary className={styles.employeeRow}>
+              <div className={styles.employeeRecord} key={employee.employee_id}>
+                <div className={styles.employeeRow}>
                   <span className={styles.identity}><strong>{employeeName(employee)}</strong><small>{employee.employee_code || `Employee #${employee.employee_id}`}</small></span>
                   <span>{employee.department || "—"}<small>{employee.cost_centre || ""}</small></span>
                   <span>{manager ? userName(manager) : "—"}</span>
                   <span>{employeeSpend?.order_count ?? "—"}</span>
                   <strong>{employeeSpend && spend ? formatMoney(employeeSpend.product_spend, spend.currency) : "—"}</strong>
                   <span><span className={employee.active ? "badge badge-ok" : "badge badge-neutral"}>{employee.active ? "Active" : "Inactive"}</span></span>
-                  <span className={styles.manageLabel}>{permissions.canManage ? "Manage" : "Details"}</span>
-                </summary>
-                <div className={styles.recordBody}>
-                  <div className={styles.recordHeading}>
-                    <div><p className="eyebrow">Employee details</p><h3>{employeeName(employee)}</h3></div>
-                    <Link className="button button-secondary button-link" href={withQuery({ q, status, from, to, page, employee: employee.employee_id })}>View order history</Link>
-                  </div>
-                  {permissions.canManage ? (
-                    <>
-                      <form action={updatePortalEmployeeAction} className="stack"><input type="hidden" name="employeeId" value={employee.employee_id} /><EmployeeFields users={managers} employee={employee} /><div><button className="button" type="submit">Save employee</button></div></form>
-                      {employee.active ? <form action={deactivatePortalEmployeeAction} className={styles.deactivateRow}><input type="hidden" name="employeeId" value={employee.employee_id} /><div><strong>Deactivate employee</strong><p className="muted small-text">The employee is kept in historical reporting but cannot be assigned to new orders.</p></div><button className="button button-secondary" type="submit">Deactivate</button></form> : null}
-                    </>
-                  ) : <p className="muted">Your role has view-only employee access.</p>}
+                  <EmployeeManagementModal
+                    employee={employee}
+                    users={managers}
+                    canManage={permissions.canManage}
+                    historyHref={withQuery({ q, status, from, to, page, employee: employee.employee_id })}
+                  />
                 </div>
-              </details>
+              </div>
             );
           })}
           {!employees.items.length ? <div className={styles.emptyRow}>No employees match the current filters.</div> : null}
