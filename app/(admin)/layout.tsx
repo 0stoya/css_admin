@@ -27,6 +27,7 @@ const companyNavigation: CompanySidebarNavigationItem[] = [
   { segment: "credit-orders", label: "Credit orders" },
   { segment: "pricing", label: "Pricing" },
   { segment: "import-export", label: "Import / export" },
+  { segment: "personalisation", label: "Personalisation" },
   { segment: "settings", label: "Company settings" },
 ];
 
@@ -48,6 +49,7 @@ const sectionNavigation: SidebarSectionNavigation[] = [
     items: [
       { href: "/ogl", label: "Companies" },
       { href: "/ogl?view=mappings", label: "Rep mappings" },
+      { href: "/ogl/rep-profiles", label: "Rep profiles" },
     ],
   },
 ];

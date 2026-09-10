@@ -23,6 +23,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
 
   const navigation: NavigationItem[] = [
     { href: "/portal", label: "Company", exact: true },
+    { href: "/portal/company-profile", label: "Company profile" },
     ...(canViewEmployees ? [{ href: "/portal/employees", label: "Employees" }] : []),
     ...(capabilities?.can_manage_catalog_visibility ? [{ href: "/portal/catalog", label: "Catalogue" }] : []),
     ...(capabilities?.can_view_purchase_controls ? [{ href: "/portal/purchase-controls", label: "Purchase controls" }] : []),
