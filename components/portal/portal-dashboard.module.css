@@ -243,10 +243,27 @@
   margin-top: auto;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.42rem;
   color: var(--css-primary);
   font-size: 0.85rem;
   font-weight: 800;
+}
+
+.actionArrow > span {
+  display: none;
+}
+
+.actionArrow::after {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230057a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='m12 5 7 7-7 7'/%3E%3C/svg%3E");
+  transition: transform 140ms ease;
+}
+
+.actionCard:hover .actionArrow::after {
+  transform: translateX(2px);
 }
 
 .summaryGrid {
@@ -278,33 +295,66 @@
 }
 
 .managementNav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 220px));
+  gap: 0.75rem;
 }
 
 .managementNav a {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.58rem 0.78rem;
+  gap: 0.75rem;
+  min-height: 66px;
+  padding: 0.72rem 0.85rem;
   border: 1px solid #cbdbe6;
-  border-radius: 999px;
+  border-radius: 13px;
   background: #fff;
-  color: var(--css-primary);
-  font-size: 0.84rem;
+  color: var(--css-text);
+  font-size: 0.9rem;
   font-weight: 800;
   text-decoration: none;
+  box-shadow: 0 4px 14px rgb(0 35 72 / 4%);
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, color 140ms ease;
 }
 
-.managementNav span {
+.managementNav a:hover {
+  transform: translateY(-1px);
+  border-color: #9dc2de;
+  color: var(--css-primary);
+  box-shadow: 0 9px 22px rgb(0 35 72 / 7%);
+}
+
+.managementNav a::before {
+  content: "";
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 10px;
+  background-color: var(--css-primary-soft);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+}
+
+.managementNav a[href="#portal-users"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230057a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M22 21v-2a4 4 0 0 0-3-3.87'/%3E%3Cpath d='M16 3.13a4 4 0 0 1 0 7.75'/%3E%3C/svg%3E");
+}
+
+.managementNav a[href="#portal-roles"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230057a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+}
+
+.managementNav a > span {
   display: grid;
-  min-width: 1.45rem;
-  height: 1.45rem;
+  min-width: 1.9rem;
+  height: 1.9rem;
   place-items: center;
+  padding: 0 0.45rem;
   border-radius: 999px;
   background: var(--css-primary-soft);
-  font-size: 0.72rem;
+  color: var(--css-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .managementCard {
@@ -405,4 +455,5 @@
   .actionCard { min-height: 150px; }
   .sectionHeading { align-items: flex-start; flex-direction: column; }
   .switcher { grid-template-columns: 1fr; }
+  .managementNav { grid-template-columns: 1fr; }
 }
