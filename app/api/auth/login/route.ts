@@ -3,17 +3,23 @@ import { requestMagentoAdminToken } from "@/lib/magento/admin-auth";
 import { requestMagentoCustomerToken } from "@/lib/magento/customer-auth";
 import { setAdminToken, setCompanyToken } from "@/lib/session";
 
-function isEmailLogin(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+type LoginMode = "admin" | "company";
+
+function isLoginMode(value: unknown): value is LoginMode {
+  return value === "admin" || value === "company";
 }
 
 export async function POST(request: Request) {
-  let payload: { login?: unknown; username?: unknown; password?: unknown };
+  let payload: { mode?: unknown; login?: unknown; username?: unknown; password?: unknown };
 
   try {
     payload = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid login request." }, { status: 400 });
+  }
+
+  if (!isLoginMode(payload.mode)) {
+    return NextResponse.json({ error: "A valid sign-in type is required." }, { status: 400 });
   }
 
   const rawLogin = typeof payload.login === "string"
@@ -25,11 +31,12 @@ export async function POST(request: Request) {
   const password = typeof payload.password === "string" ? payload.password : "";
 
   if (!login || !password) {
-    return NextResponse.json({ error: "Login and password are required." }, { status: 400 });
+    const identifier = payload.mode === "company" ? "Email and password" : "Login and password";
+    return NextResponse.json({ error: `${identifier} are required.` }, { status: 400 });
   }
 
   try {
-    if (isEmailLogin(login)) {
+    if (payload.mode === "company") {
       const token = await requestMagentoCustomerToken(login, password);
       await setCompanyToken(token);
       return NextResponse.json({ ok: true, destination: "/portal" });

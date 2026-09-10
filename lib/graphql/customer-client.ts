@@ -13,7 +13,7 @@ export async function customerGraphqlRequest<TData, TVariables extends Record<st
 ) {
   const token = await getCompanyToken();
   if (!token) {
-    throw new GraphQLRequestError("Company-user authentication is required.", [], 401);
+    throw new GraphQLRequestError("Company-user authentication is required.", [], 401, "company");
   }
 
   const { graphqlUrl, storeCode } = getMagentoConfig();
@@ -29,15 +29,20 @@ export async function customerGraphqlRequest<TData, TVariables extends Record<st
   });
 
   if (!response.ok) {
-    throw new GraphQLRequestError(`Magento GraphQL returned HTTP ${response.status}.`, [], response.status);
+    throw new GraphQLRequestError(
+      `Magento GraphQL returned HTTP ${response.status}.`,
+      [],
+      response.status,
+      "company",
+    );
   }
 
   const body = (await response.json()) as GraphQLResponse<TData>;
   if (body.errors?.length) {
-    throw new GraphQLRequestError(body.errors[0]?.message || "GraphQL request failed.", body.errors);
+    throw new GraphQLRequestError(body.errors[0]?.message || "GraphQL request failed.", body.errors, undefined, "company");
   }
   if (!body.data) {
-    throw new GraphQLRequestError("Magento GraphQL returned no data.");
+    throw new GraphQLRequestError("Magento GraphQL returned no data.", [], undefined, "company");
   }
 
   return body.data;

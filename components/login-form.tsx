@@ -58,6 +58,7 @@ export function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mode: "admin",
           login: form.get("login"),
           password: form.get("password"),
         }),

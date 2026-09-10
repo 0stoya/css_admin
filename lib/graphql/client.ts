@@ -10,6 +10,8 @@ export type GraphQLErrorItem = {
   };
 };
 
+export type GraphQLSessionKind = "admin" | "company";
+
 type GraphQLResponse<TData> = {
   data?: TData;
   errors?: GraphQLErrorItem[];
@@ -20,6 +22,7 @@ export class GraphQLRequestError extends Error {
     message: string,
     public readonly errors: GraphQLErrorItem[] = [],
     public readonly status?: number,
+    public readonly sessionKind: GraphQLSessionKind = "admin",
   ) {
     super(message);
     this.name = "GraphQLRequestError";
@@ -81,7 +84,7 @@ export async function graphqlPartialRequest<TData, TVariables extends Record<str
 export function graphQLErrorMessage(error: unknown) {
   if (error instanceof GraphQLRequestError) {
     if (error.status === 401) {
-      redirect("/api/auth/session-expired");
+      redirect(error.sessionKind === "company" ? "/api/auth/session-expired?mode=company" : "/api/auth/session-expired");
     }
 
     const category = error.errors[0]?.extensions?.category;
