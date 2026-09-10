@@ -2,14 +2,16 @@
 
 Headless CSS Commerce application for the Fluid / Magento backend.
 
-The repository now contains **two deliberately separate authenticated UI surfaces**:
+The repository contains two deliberately separate authenticated UI surfaces behind one sign-in screen:
 
 | Principal | Sign-in | Credential | Session | Route area | GraphQL authority |
 | --- | --- | --- | --- | --- | --- |
 | Chelmsford staff / Magento administrator | `/login` | Magento admin username + password | `css_admin_token` | `app/(admin)` -> `/companies`, `/ogl`, `/bulk-import` | `css_admin_*` operations |
-| Company user | `/portal/login` | Magento customer email + password | `css_company_token` | `app/(portal)` -> `/portal` | customer/company operations |
+| Company user | `/login` | Magento customer email + password | `css_company_token` | `app/(portal)` -> `/portal` | customer/company operations |
 
-Authentication mode is explicit. The application no longer decides the principal by checking whether a login identifier looks like an email address.
+The sign-in UI is intentionally neutral. Email-shaped identifiers use Magento customer authentication and non-email usernames use Magento administrator authentication. The authenticated sessions, route boundaries and GraphQL clients remain separate after sign-in.
+
+`/portal/login` is retained only as a compatibility redirect to `/login`.
 
 ## UI boundary
 
@@ -17,7 +19,7 @@ The existing Staff/Admin UI is the production management baseline and should not
 
 - Staff shell: `components/app-header.tsx`, `components/app-sidebar.tsx`, `app/(admin)/**`
 - Company Portal shell: `components/portal/**`, `app/(portal)/**`
-- Company Portal login: `app/(portal-auth)/portal/login/**`
+- Shared sign-in screen: `app/login/**`, `components/login-form.tsx`, `components/login-page.module.css`
 
 Company Portal navigation remains capability-driven by Fluid. A customer token must never be used for `css_admin_*` operations, and a Magento admin token must never be treated as a company-user session.
 
@@ -39,8 +41,8 @@ No Apollo/client cache layer is included.
 2. Set the Magento base URL and store code.
 3. Run `yarn install`.
 4. Run `yarn dev`.
-5. For Staff/Admin testing, open `/login` and sign in with a Magento administrator username.
-6. For Company Portal testing, open `/portal/login` and sign in with a Magento customer email address assigned to a Fluid company.
+5. Open `/login`.
+6. Sign in with either a Magento customer email address assigned to a Fluid company or a Magento administrator username.
 
 ## Validation
 

@@ -19,31 +19,40 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="auth-wrap">
-      <section className="auth-card">
-        <div className={`auth-brand ${styles.brand}`}>
+    <main className={styles.page}>
+      <section className={styles.card}>
+        <div className={styles.brandPanel}>
           <Image
-            className="auth-logo"
+            className={styles.logo}
             src="/css-logo.png"
-            alt="CSS Commerce"
+            alt="Chelmsford Safety Supplies"
             width={2222}
             height={514}
-            sizes="280px"
+            sizes="260px"
             priority
           />
-          <span className="auth-product">Management portal</span>
-        </div>
-
-        <div className={`auth-heading ${styles.heading}`}>
-          <h1>Sign in</h1>
-        </div>
-
-        {reason === "expired" ? (
-          <div className="error" role="status">
-            Your session expired. Sign in again to continue.
+          <div className={styles.brandCopy}>
+            <span className={styles.productLabel}>CSS Commerce</span>
+            <h1>Welcome to your account</h1>
+            <p>Sign in to manage your account, company services and the controls available to you.</p>
           </div>
-        ) : null}
-        <LoginForm />
+        </div>
+
+        <div className={styles.formPanel}>
+          <div className={styles.formHeading}>
+            <p className="eyebrow">Account access</p>
+            <h2>Sign in</h2>
+            <p>Use your email address or username and password.</p>
+          </div>
+
+          {reason === "expired" ? (
+            <div className={styles.error} role="status">
+              Your session expired. Sign in again to continue.
+            </div>
+          ) : null}
+
+          <LoginForm />
+        </div>
       </section>
     </main>
   );
