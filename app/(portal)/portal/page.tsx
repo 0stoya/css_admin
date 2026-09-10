@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CompanyPermissionPicker } from "@/components/company-permission-picker";
+import styles from "@/components/portal/portal-dashboard.module.css";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
   getCompanyPortalAdministration,
@@ -8,6 +9,7 @@ import {
   type CompanyPortalContext,
   type CompanyPortalUser,
 } from "@/lib/graphql/company-portal";
+import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
 import {
   deletePortalRoleAction,
   removePortalUserAction,
@@ -19,23 +21,31 @@ import {
 async function loadPortal() {
   let context: CompanyPortalContext | null = null;
   let administration: CompanyPortalAdministration | null = null;
+  let canViewEmployees = false;
   let error: string | null = null;
 
   try {
     context = await getCompanyPortalContext();
   } catch (requestError) {
-    return { context, administration, error: graphQLErrorMessage(requestError) };
+    return { context, administration, canViewEmployees, error: graphQLErrorMessage(requestError) };
   }
 
   if (context.selected_company_id !== null) {
-    try {
-      administration = await getCompanyPortalAdministration();
-    } catch (requestError) {
-      error = graphQLErrorMessage(requestError);
+    const [administrationResult, employeeResult] = await Promise.allSettled([
+      getCompanyPortalAdministration(),
+      getPortalEmployeeConfiguration(),
+    ]);
+
+    if (administrationResult.status === "fulfilled") {
+      administration = administrationResult.value;
+    } else {
+      error = graphQLErrorMessage(administrationResult.reason);
     }
+
+    canViewEmployees = employeeResult.status === "fulfilled";
   }
 
-  return { context, administration, error };
+  return { context, administration, canViewEmployees, error };
 }
 
 function userName(user: Pick<CompanyPortalUser, "firstname" | "lastname">) {
@@ -70,13 +80,13 @@ export default async function CompanyPortalPage({
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const params = await searchParams;
-  const { context, administration, error } = await loadPortal();
+  const { context, administration, canViewEmployees, error } = await loadPortal();
   const message = params.error || error;
 
   if (!context) {
     return (
-      <section className="card stack">
-        <div><p className="eyebrow">Company portal</p><h1>Company context unavailable</h1></div>
+      <section className={styles.emptyState}>
+        <div><p className="eyebrow">Company portal</p><h2>Company account unavailable</h2></div>
         {message ? <div className="error">{message}</div> : null}
       </section>
     );
@@ -86,85 +96,193 @@ export default async function CompanyPortalPage({
   const usersById = new Map(administration?.users.map((user) => [user.user_id, user]) ?? []);
   const resourcePaths = administration ? resourcePathMap(administration) : new Map<string, string>();
 
-  return (
-    <div className="stack section-gap">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">{selected?.reference || "Company user"}</p>
-          <h1>Company management</h1>
-          <p className="muted">Manage the selected company within the exact capabilities returned by Fluid.</p>
-        </div>
-      </header>
-
-      {params.success ? <div className="notice" role="status">{params.success}</div> : null}
-      {message ? <div className="error" role="alert">{message}</div> : null}
-
-      <section className="card stack">
-        <div className="card-heading-row">
-          <div>
-            <p className="eyebrow">Company context</p>
-            <h2>{selected?.name || "Select a company"}</h2>
-            <p className="muted">{selected ? `${selected.reference || "No reference"} · Company ${selected.company_id}` : "No company is currently selected."}</p>
+  if (!selected) {
+    return (
+      <div className={styles.dashboard}>
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.kicker}>Company portal</span>
+            <h1>Select your company</h1>
+            <p className={styles.heroLead}>Choose the company account you want to manage.</p>
           </div>
-          {selected ? <span className={`badge ${selected.active ? "badge-ok" : "badge-neutral"}`}>{selected.active ? "Active" : "Inactive"}</span> : null}
+          <div className={styles.heroContext}>
+            {context.companies.length ? (
+              <form className={styles.switcher} action={selectPortalCompanyAction}>
+                <select name="companyId" aria-label="Company">
+                  {context.companies.map((company) => (
+                    <option key={company.company_id} value={company.company_id}>
+                      {company.name || `Company ${company.company_id}`}{company.reference ? ` (${company.reference})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button type="submit">Continue</button>
+              </form>
+            ) : <p className="muted">This account is not assigned to a company.</p>}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const quickActions = [
+    {
+      href: "/portal/company-profile",
+      eyebrow: "Account",
+      title: "Company profile",
+      description: "View company contact information and your Chelmsford account representative.",
+    },
+    ...(canViewEmployees ? [{
+      href: "/portal/employees",
+      eyebrow: "People",
+      title: "Employees",
+      description: "Maintain employee records and the company data available to your team.",
+    }] : []),
+    ...(administration?.can_manage_catalog_visibility ? [{
+      href: "/portal/catalog",
+      eyebrow: "Products",
+      title: "Catalogue",
+      description: "Control which products and categories are available to your company and roles.",
+    }] : []),
+    ...(administration?.can_view_purchase_controls ? [{
+      href: "/portal/purchase-controls",
+      eyebrow: "Purchasing",
+      title: "Purchase controls",
+      description: administration.can_manage_purchase_controls
+        ? "Manage allowances, templates, assignments and purchase counters."
+        : "View your company purchase controls, allowances and history.",
+    }] : []),
+  ];
+
+  const accessItems = administration ? [
+    ["View company users", administration.can_view_users],
+    ["Manage company users", administration.can_manage_users],
+    ["View roles", administration.can_view_roles],
+    ["Manage roles", administration.can_manage_roles],
+    ["Manage catalogue", administration.can_manage_catalog_visibility],
+    ["View purchase controls", administration.can_view_purchase_controls],
+    ["Manage purchase controls", administration.can_manage_purchase_controls],
+  ] as const : [];
+
+  return (
+    <div className={styles.dashboard}>
+      <section className={styles.hero}>
+        <div className={styles.heroCopy}>
+          <span className={styles.kicker}>{selected.reference || "Your company"}</span>
+          <h1>{selected.name || "Your company account"}</h1>
+          <p className={styles.heroLead}>Your company services, people and purchasing controls in one place.</p>
         </div>
 
-        {context.companies.length ? (
-          <form className="inline-form" action={selectPortalCompanyAction}>
-            <div className="field grow">
-              <label htmlFor="companyId">Company</label>
-              <select id="companyId" name="companyId" defaultValue={context.selected_company_id ?? undefined}>
+        <div className={styles.heroContext}>
+          <div className={styles.contextTop}>
+            <div className={styles.contextLabel}>
+              <span>Current company</span>
+              <strong>{selected.name || `Company ${selected.company_id}`}</strong>
+            </div>
+            <span className={`${styles.status}${selected.active ? "" : ` ${styles.statusInactive}`}`}>
+              {selected.active ? "Active" : "Inactive"}
+            </span>
+          </div>
+
+          {context.companies.length > 1 ? (
+            <form className={styles.switcher} action={selectPortalCompanyAction}>
+              <select name="companyId" defaultValue={context.selected_company_id ?? undefined} aria-label="Switch company">
                 {context.companies.map((company) => (
                   <option key={company.company_id} value={company.company_id}>
                     {company.name || `Company ${company.company_id}`}{company.reference ? ` (${company.reference})` : ""}{!company.active ? " — inactive" : ""}
                   </option>
                 ))}
               </select>
+              <button type="submit">Switch</button>
+            </form>
+          ) : (
+            <div className={styles.contextLabel}>
+              <span>Account reference</span>
+              <strong>{selected.reference || "—"}</strong>
             </div>
-            <button className="button" type="submit">Use company</button>
-          </form>
-        ) : <div className="error">This Magento customer is not assigned to a Fluid company.</div>}
+          )}
+        </div>
+      </section>
+
+      {(params.success || message) ? (
+        <div className={styles.alertStack}>
+          {params.success ? <div className="notice" role="status">{params.success}</div> : null}
+          {message ? <div className="error" role="alert">{message}</div> : null}
+        </div>
+      ) : null}
+
+      <section className={styles.section} aria-labelledby="portal-services-heading">
+        <div className={styles.sectionHeading}>
+          <div>
+            <h2 id="portal-services-heading">Your company services</h2>
+            <p>Open the areas available to your account.</p>
+          </div>
+        </div>
+        <div className={styles.actionGrid}>
+          {quickActions.map((action) => (
+            <Link className={styles.actionCard} href={action.href} key={action.href}>
+              <span className={styles.actionEyebrow}>{action.eyebrow}</span>
+              <h3>{action.title}</h3>
+              <p>{action.description}</p>
+              <span className={styles.actionArrow}>Open <span aria-hidden="true">→</span></span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       {administration ? (
-        <>
-          <section className="card stack">
-            <div className="card-heading-row">
-              <div><p className="eyebrow">Access</p><h2>{administration.is_company_admin ? "Company administrator" : "Company role access"}</h2><p className="muted">Capabilities below are returned by Fluid for company user {administration.company_user_id}.</p></div>
-              <span className={`badge ${administration.is_company_admin ? "badge-ok" : "badge-neutral"}`}>{administration.is_company_admin ? "Company admin" : "Role-authorized"}</span>
+        <section className={styles.section} aria-labelledby="account-summary-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <h2 id="account-summary-heading">At a glance</h2>
+              <p>A simple view of your current company access.</p>
             </div>
-            <dl className="detail-list">
-              <dt>View users</dt><dd>{administration.can_view_users ? "Yes" : "No"}</dd>
-              <dt>Manage users</dt><dd>{administration.can_manage_users ? "Yes" : "No"}</dd>
-              <dt>View roles</dt><dd>{administration.can_view_roles ? "Yes" : "No"}</dd>
-              <dt>Manage roles</dt><dd>{administration.can_manage_roles ? "Yes" : "No"}</dd>
-              <dt>Manage catalogue visibility</dt><dd>{administration.can_manage_catalog_visibility ? "Yes" : "No"}</dd>
-              <dt>View purchase controls</dt><dd>{administration.can_view_purchase_controls ? "Yes" : "No"}</dd>
-              <dt>Manage purchase controls</dt><dd>{administration.can_manage_purchase_controls ? "Yes" : "No"}</dd>
-            </dl>
-          </section>
+          </div>
+          <div className={styles.summaryGrid}>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryValue}>{administration.is_company_admin ? "Administrator" : "Company role"}</span>
+              <span className={styles.summaryLabel}>Your access level</span>
+            </div>
+            {administration.can_view_users ? (
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryValue}>{administration.users.length}</span>
+                <span className={styles.summaryLabel}>Company users</span>
+              </div>
+            ) : null}
+            {administration.can_view_roles ? (
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryValue}>{administration.roles.length}</span>
+                <span className={styles.summaryLabel}>Company roles</span>
+              </div>
+            ) : null}
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryValue}>{administration.can_manage_purchase_controls ? "Manage" : administration.can_view_purchase_controls ? "View" : "Not enabled"}</span>
+              <span className={styles.summaryLabel}>Purchase controls</span>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
-          {administration.can_manage_catalog_visibility || administration.can_view_purchase_controls ? (
-            <section className="grid" aria-label="Authorized company controls">
-              {administration.can_manage_catalog_visibility ? (
-                <article className="card stack"><div><p className="eyebrow">Authorized</p><h2>Catalogue controls</h2></div><p className="muted">Manage company and role catalogue visibility.</p><Link className="button button-link" href="/portal/catalog">Open catalogue controls</Link></article>
-              ) : null}
-              {administration.can_view_purchase_controls ? (
-                <article className="card stack"><div><p className="eyebrow">Authorized</p><h2>Purchase controls</h2></div><p className="muted">{administration.can_manage_purchase_controls ? "Manage templates, assignments and counters." : "View templates, allowances and purchase history."}</p><Link className="button button-link" href="/portal/purchase-controls">Open purchase controls</Link></article>
-              ) : null}
-            </section>
-          ) : null}
+      {administration && (administration.can_view_users || administration.can_view_roles) ? (
+        <section className={styles.section} id="team-access" aria-labelledby="team-access-heading">
+          <div className={styles.sectionHeading}>
+            <div>
+              <h2 id="team-access-heading">Team &amp; access</h2>
+              <p>Manage company users and roles where your account permissions allow.</p>
+            </div>
+          </div>
 
-          {(administration.can_view_users || administration.can_view_roles) ? (
-            <nav className="management-jump-nav" aria-label="Company management sections">
-              {administration.can_view_users ? <a href="#portal-users">Users <span>{administration.users.length}</span></a> : null}
-              {administration.can_view_roles ? <a href="#portal-roles">Roles <span>{administration.roles.length}</span></a> : null}
-            </nav>
-          ) : null}
+          <nav className={styles.managementNav} aria-label="Team and access sections">
+            {administration.can_view_users ? <a href="#portal-users">Users <span>{administration.users.length}</span></a> : null}
+            {administration.can_view_roles ? <a href="#portal-roles">Roles <span>{administration.roles.length}</span></a> : null}
+          </nav>
 
           {administration.can_view_users ? (
-            <section className="card stack management-section" id="portal-users">
-              <div><p className="eyebrow">Membership</p><h2>Company users</h2><p className="muted">Staff provision new memberships; authorized company managers can maintain role, manager and approval settings.</p></div>
+            <section className={`card stack management-section ${styles.managementCard}`} id="portal-users">
+              <div>
+                <p className="eyebrow">People</p>
+                <h2>Company users</h2>
+                <p className="muted">Maintain role, manager and approval settings for your company team.</p>
+              </div>
               {administration.users.length ? (
                 <div className="table-wrap management-table">
                   <table>
@@ -192,7 +310,7 @@ export default async function CompanyPortalPage({
                                   </form>
                                   <form className="danger-zone" action={removePortalUserAction}><input type="hidden" name="userId" value={user.user_id} /><div className="field"><label htmlFor={`remove-${user.user_id}`}>Type {user.email} to remove</label><input id={`remove-${user.user_id}`} name="confirmEmail" autoComplete="off" required /></div><button className="button button-danger" type="submit">Remove company user</button></form>
                                 </div></details>
-                              ) : user.is_company_admin ? <span className="muted small-text">Protected by Fluid</span> : "—"}
+                              ) : user.is_company_admin ? <span className="muted small-text">Protected</span> : "—"}
                             </td>
                           </tr>
                         );
@@ -200,17 +318,21 @@ export default async function CompanyPortalPage({
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="muted">No users returned for this company.</p>}
+              ) : <p className="muted">No users are currently available for this company.</p>}
             </section>
           ) : null}
 
           {administration.can_view_roles ? (
-            <section className="card stack management-section" id="portal-roles">
-              <div><p className="eyebrow">Access control</p><h2>Company roles</h2><p className="muted">The permission picker uses Fluid&apos;s live resource hierarchy and keeps protected resources intact.</p></div>
+            <section className={`card stack management-section ${styles.managementCard}`} id="portal-roles">
+              <div>
+                <p className="eyebrow">Permissions</p>
+                <h2>Company roles</h2>
+                <p className="muted">Control the permissions assigned to each company role.</p>
+              </div>
 
               {administration.can_manage_roles ? (
                 <details className="management-create-panel nested-card">
-                  <summary><span><strong>Create role</strong><small>Select permissions by group instead of scrolling one long resource list.</small></span></summary>
+                  <summary><span><strong>Create role</strong><small>Select permissions by group.</small></span></summary>
                   <form className="management-panel-body stack" action={savePortalRoleAction}>
                     <div className="form-grid"><div className="field"><label htmlFor="newRoleName">Role name</label><input id="newRoleName" name="name" required /></div><div className="field"><label htmlFor="newRoleSort">Sort order</label><input id="newRoleSort" name="sortOrder" type="number" step="1" /></div></div>
                     <CompanyPermissionPicker resources={administration.resources} label="Role permissions" />
@@ -248,12 +370,32 @@ export default async function CompanyPortalPage({
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="muted">No saved roles returned for this company.</p>}
+              ) : <p className="muted">No saved roles are currently available for this company.</p>}
             </section>
           ) : null}
-        </>
+        </section>
+      ) : null}
+
+      {administration ? (
+        <details className={styles.accessDetails}>
+          <summary>Your access</summary>
+          <div className={styles.accessBody}>
+            <p className={styles.accessIntro}>These permissions are controlled by your company account and determine which management tools are available here.</p>
+            <div className={styles.permissionGrid}>
+              {accessItems.map(([label, enabled]) => (
+                <div className={styles.permission} key={label}>
+                  <span>{label}</span>
+                  <span className={`${styles.permissionState}${enabled ? "" : ` ${styles.permissionOff}`}`}>{enabled ? "Available" : "Not available"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </details>
       ) : context.selected_company_id !== null ? (
-        <section className="card stack"><div><p className="eyebrow">Restricted</p><h2>No management access for this company</h2><p className="muted">Fluid did not authorize company-user or role administration for the selected company. Choose another company if available.</p></div></section>
+        <section className={styles.emptyState}>
+          <div><p className="eyebrow">Company access</p><h2>No company-management tools are available</h2></div>
+          <p>You can still use the company services shown above. Additional management areas appear when your account is authorized for them.</p>
+        </section>
       ) : null}
     </div>
   );

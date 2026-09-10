@@ -23,7 +23,7 @@ The existing Staff/Admin UI is the production management baseline and should not
 
 Company Portal navigation remains capability-driven by Fluid. A customer token must never be used for `css_admin_*` operations, and a Magento admin token must never be treated as a company-user session.
 
-See [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) for the full contract and maintenance rules.
+See [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) for the full authentication/ownership contract and [`docs/PORTAL_UI_ROADMAP.md`](docs/PORTAL_UI_ROADMAP.md) for the staged customer-facing UI refinement plan.
 
 ## Stack
 
