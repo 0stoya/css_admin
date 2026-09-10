@@ -4,12 +4,26 @@ Last updated: 2026-09-10
 
 This document is the canonical frontend contract for the two authenticated experiences hosted by `css_admin`.
 
-## 1. Two principals, two entry points
+## 1. One sign-in screen, two principals
+
+Both Staff and Company users enter through `/login`.
+
+The page is intentionally neutral and asks for **Email or username** plus password. It does not expose or ask the user to choose an account type.
+
+Routing is automatic:
+
+- email-shaped identifier -> Magento customer authentication -> `css_company_token` -> `/portal`
+- non-email username -> Magento administrator authentication -> `css_admin_token` -> `/companies`
+
+`/portal/login` is retained only as a compatibility redirect to `/login` so old bookmarks and links do not break.
+
+The login API may still accept an explicit `mode` for backwards compatibility, but the primary UI does not send one.
+
+## 2. Principal and UI boundaries remain separate after sign-in
 
 ### Staff / Magento administrator
 
-- Sign-in URL: `/login`
-- Identifier: Magento administrator **username**
+- Credential: Magento administrator username + password
 - Authentication: Magento admin token endpoint
 - HttpOnly cookie: `css_admin_token`
 - Destination: `/companies`
@@ -17,12 +31,11 @@ This document is the canonical frontend contract for the two authenticated exper
 - GraphQL surface: Staff operations, principally `css_admin_*`
 - UI shell: existing `AppHeader` / `AppSidebar`
 
-The Staff/Admin UI is the current management baseline. Company Portal UI work must not restyle or repurpose its shell.
+The Staff/Admin UI is the management baseline. Company Portal UI work must not restyle or repurpose its shell.
 
 ### Company user
 
-- Sign-in URL: `/portal/login`
-- Identifier: Magento customer **email address**
+- Credential: Magento customer email address + password
 - Authentication: Magento customer token endpoint
 - HttpOnly cookie: `css_company_token`
 - Destination: `/portal`
@@ -32,14 +45,13 @@ The Staff/Admin UI is the current management baseline. Company Portal UI work mu
 
 Company Portal navigation is capability-driven. The frontend only renders routes/actions that Fluid authorizes and direct-route access must still fail closed at the backend.
 
-## 2. Explicit authentication mode
+## 3. Automatic authentication routing
 
-`POST /api/auth/login` requires a mode supplied by the UI:
+`POST /api/auth/login` receives the identifier and password from the shared sign-in screen:
 
 ```json
 {
-  "mode": "admin",
-  "login": "admin-username",
+  "login": "customer@example.com",
   "password": "..."
 }
 ```
@@ -48,40 +60,36 @@ or:
 
 ```json
 {
-  "mode": "company",
-  "login": "customer@example.com",
+  "login": "admin-username",
   "password": "..."
 }
 ```
 
-Do not reintroduce identifier-shape inference (`@` means customer, otherwise admin). Explicit mode avoids ambiguity for administrator usernames that contain an email address and keeps the security boundary visible in code review.
+Email-shaped identifiers use Magento customer authentication. Other identifiers use Magento administrator authentication. This intentionally restores the shared-login behavior that existed before the temporary split-sign-in experiment.
 
-## 3. Session isolation
+If the business later needs Magento administrator usernames that are email-shaped, revisit this routing rule explicitly rather than silently attempting both credential endpoints.
+
+## 4. Session isolation
 
 `setAdminToken()` clears the company token and `setCompanyToken()` clears the admin token. Only one principal is active in a browser session at a time.
 
 Route boundaries are independent:
 
 - `app/(admin)/layout.tsx` requires `css_admin_token` and redirects to `/login` when absent.
-- `app/(portal)/layout.tsx` requires `css_company_token` and redirects to `/portal/login` when absent.
+- `app/(portal)/layout.tsx` requires `css_company_token` and redirects to `/login` when absent.
 
 A customer token must never be promoted into Staff/Admin behavior. A Magento admin token must never be used to impersonate a company user.
 
-## 4. Logout and expiry destinations
+## 5. Logout and expiry
 
-Staff/Admin:
+Both authenticated surfaces return to the same sign-in page:
 
 - logout -> `/login`
 - upstream Magento HTTP 401 -> `/login?reason=expired`
 
-Company Portal:
+The session itself remains principal-specific before it is cleared.
 
-- logout -> `/portal/login`
-- upstream Magento HTTP 401 -> `/portal/login?reason=expired`
-
-The shared route handlers accept `mode=company` for the Company Portal destination. The existing admin shell continues to call the handlers without a mode, preserving Staff behavior.
-
-## 5. UI ownership
+## 6. UI ownership
 
 ### Admin-owned files
 
@@ -102,7 +110,17 @@ New Company Portal presentation work belongs under:
 
 The Company Portal may reuse brand tokens from `app/globals.css`, but visual changes should prefer Portal CSS modules instead of modifying shared global selectors. This is the visual firewall that lets the customer experience evolve without changing the Magento-admin view.
 
-## 6. Acceptance checklist for auth/UI changes
+### Shared sign-in files
+
+The one neutral sign-in experience is owned by:
+
+- `app/login/page.tsx`
+- `components/login-form.tsx`
+- `components/login-page.module.css`
+
+It may be visually customer-friendly while remaining neutral about which principal will be authenticated.
+
+## 7. Acceptance checklist for auth/UI changes
 
 Run:
 
@@ -114,13 +132,14 @@ yarn build
 
 Then verify on the real environment:
 
-1. `/login` accepts a Magento admin username and lands on `/companies`.
-2. `/portal/login` accepts a Magento customer email and lands on `/portal`.
-3. Company logout returns to `/portal/login`.
-4. Admin logout returns to `/login`.
-5. Expired company token returns to `/portal/login?reason=expired`.
-6. Expired admin token returns to `/login?reason=expired`.
-7. `/companies` cannot use the customer session.
-8. `/portal` cannot use the admin session.
-9. Existing Staff/Admin navigation and visuals are unchanged by Portal shell work.
-10. Portal navigation still follows Fluid-returned capabilities.
+1. `/login` accepts a Magento customer email and lands on `/portal`.
+2. `/login` accepts a Magento administrator username and lands on `/companies`.
+3. `/portal/login` redirects to `/login`.
+4. Company logout returns to `/login`.
+5. Admin logout returns to `/login`.
+6. Expired customer token returns to `/login?reason=expired`.
+7. Expired admin token returns to `/login?reason=expired`.
+8. `/companies` cannot use the customer session.
+9. `/portal` cannot use the admin session.
+10. Existing Staff/Admin navigation and visuals are unchanged by Portal UI work.
+11. Portal navigation still follows Fluid-returned capabilities.

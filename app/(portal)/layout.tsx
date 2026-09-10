@@ -13,7 +13,7 @@ import { getCompanyToken } from "@/lib/session";
 
 export default async function CompanyPortalLayout({ children }: Readonly<{ children: ReactNode }>) {
   if (!(await getCompanyToken())) {
-    redirect("/portal/login");
+    redirect("/login");
   }
 
   const [administrationResult, employeeResult] = await Promise.allSettled([
@@ -27,7 +27,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
       && result.reason.status === 401,
   );
   if (sessionExpired) {
-    redirect("/api/auth/session-expired?mode=company");
+    redirect("/api/auth/session-expired");
   }
 
   const capabilities = administrationResult.status === "fulfilled" ? administrationResult.value : null;

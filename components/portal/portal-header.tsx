@@ -22,7 +22,7 @@ export function PortalHeader() {
           <span className={styles.brandLabel}>Company Portal</span>
         </Link>
 
-        <form className={styles.signoutForm} action="/api/auth/logout?mode=company" method="post">
+        <form className={styles.signoutForm} action="/api/auth/logout" method="post">
           <button className={styles.signoutButton} type="submit">Sign out</button>
         </form>
       </div>
