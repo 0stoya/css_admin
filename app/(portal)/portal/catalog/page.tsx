@@ -42,28 +42,6 @@ function productPageHref(roleId: number, page: number, search?: string) {
   return `/portal/catalog?${params.toString()}#effective-products`;
 }
 
-function CompanyPolicySummary({ policy }: { policy: CompanyCatalogPolicy }) {
-  return (
-    <section className={styles.summaryGrid} aria-label="Company catalogue summary">
-      <article className={styles.metricCard}>
-        <span>Public catalogue</span>
-        <strong>{policy.allow_public_catalog ? "Allowed" : "Not allowed"}</strong>
-        <small>Company-wide public catalogue access</small>
-      </article>
-      <article className={styles.metricCard}>
-        <span>Categories</span>
-        <strong>{policy.category_restriction ? policy.allowed_category_ids.length : "All"}</strong>
-        <small>{policy.category_restriction ? "Explicitly allowed" : "No category restriction"}</small>
-      </article>
-      <article className={`${styles.metricCard} ${styles.metricPrimary}`}>
-        <span>Products</span>
-        <strong>{policy.product_restriction ? policy.allowed_product_ids.length : "All"}</strong>
-        <small>{policy.product_restriction ? "Explicitly allowed" : "No product restriction"}</small>
-      </article>
-    </section>
-  );
-}
-
 export default async function CompanyPortalCatalogPage({
   searchParams,
 }: {
@@ -120,6 +98,7 @@ export default async function CompanyPortalCatalogPage({
   const totalProductPages = rolePolicy ? Math.max(1, Math.ceil(rolePolicy.products.total_count / rolePolicy.products.page_size)) : 1;
   const notice = firstParam(query.notice);
   const mutationError = firstParam(query.error);
+  const hasCompanyRestrictions = policy.category_restriction || policy.product_restriction;
 
   return (
     <div className={styles.workspace}>
@@ -127,7 +106,7 @@ export default async function CompanyPortalCatalogPage({
         <div>
           <p className="eyebrow">{companyReference}</p>
           <h1>Catalogue</h1>
-          <p>Control the products and categories available to your company, then narrow access for individual company roles.</p>
+          <p>Set the catalogue available to your company, then add narrower access only where a company role needs it.</p>
         </div>
         <div className={styles.headerBadge}>
           <span>Catalogue access</span>
@@ -138,19 +117,12 @@ export default async function CompanyPortalCatalogPage({
       {notice ? <div className="notice">{notice}</div> : null}
       {mutationError ? <div className="error">{mutationError}</div> : null}
 
-      <CompanyPolicySummary policy={policy} />
-
-      <nav className={styles.jumpNav} aria-label="Catalogue sections">
-        <a href="#company-policy"><span>Company catalogue</span><small>Your maximum catalogue boundary</small></a>
-        <a href="#role-policy"><span>Role visibility</span><small>{administration.control_roles.length} role{administration.control_roles.length === 1 ? "" : "s"} available</small></a>
-      </nav>
-
       <section className={styles.section} id="company-policy">
         <div className={styles.sectionHeading}>
           <div>
-            <p className="eyebrow">Company catalogue</p>
-            <h2>Your catalogue boundary</h2>
-            <p className="muted">This is the widest catalogue any role in {companyName} can receive.</p>
+            <p className="eyebrow">Step 1 · Company catalogue</p>
+            <h2>Your catalogue</h2>
+            <p className="muted">This is the maximum catalogue available to anyone ordering for {companyName}.</p>
           </div>
           <PortalModal
             title="Edit company catalogue"
@@ -178,42 +150,44 @@ export default async function CompanyPortalCatalogPage({
           <article className={styles.policyCard}>
             <div className={styles.policyCardTop}><span className={styles.policyIcon} aria-hidden="true">◎</span><span className={policy.allow_public_catalog ? "badge badge-ok" : "badge badge-neutral"}>{policy.allow_public_catalog ? "Allowed" : "Not allowed"}</span></div>
             <h3>Public catalogue</h3>
-            <p>{policy.allow_public_catalog ? "Your company can use the public catalogue within the restrictions below." : "Public catalogue access is disabled for this company."}</p>
+            <p>{policy.allow_public_catalog ? "Public catalogue access is available within your company restrictions." : "Public catalogue access is disabled for this company."}</p>
           </article>
           <article className={styles.policyCard}>
             <div className={styles.policyCardTop}><span className={styles.policyIcon} aria-hidden="true">▦</span><span className={policy.category_restriction ? "badge badge-neutral" : "badge badge-ok"}>{policy.category_restriction ? `${policy.allowed_category_ids.length} allowed` : "All allowed"}</span></div>
             <h3>Categories</h3>
-            <p>{policy.category_restriction ? "Only the selected company categories are available." : "No company-level category restriction is applied."}</p>
+            <p>{policy.category_restriction ? "Only the selected company categories are available." : "All company categories are available."}</p>
           </article>
           <article className={styles.policyCard}>
             <div className={styles.policyCardTop}><span className={styles.policyIcon} aria-hidden="true">□</span><span className={policy.product_restriction ? "badge badge-neutral" : "badge badge-ok"}>{policy.product_restriction ? `${policy.allowed_product_ids.length} allowed` : "All allowed"}</span></div>
             <h3>Products</h3>
-            <p>{policy.product_restriction ? "Only the selected company products are available." : "No company-level product restriction is applied."}</p>
+            <p>{policy.product_restriction ? "Only the selected company products are available." : "All company products are available."}</p>
           </article>
         </div>
 
-        <div className={styles.selectionGrid}>
-          <article className={styles.selectionCard}>
-            <div className={styles.selectionHeading}><div><p className="eyebrow">Categories</p><h3>Allowed categories</h3></div><span>{policy.category_restriction ? policy.allowed_categories.length : "All"}</span></div>
-            {policy.category_restriction && policy.allowed_categories.length ? (
-              <div className={styles.chipList}>{policy.allowed_categories.map((category) => <span className={styles.chip} key={category.category_id} title={category.path}>{category.name}<code>#{category.category_id}</code></span>)}</div>
-            ) : <p className="muted">{policy.category_restriction ? "No categories are currently allowed." : "All company categories are available."}</p>}
-          </article>
-          <article className={styles.selectionCard}>
-            <div className={styles.selectionHeading}><div><p className="eyebrow">Products</p><h3>Allowed products</h3></div><span>{policy.product_restriction ? policy.allowed_products.length : "All"}</span></div>
-            {policy.product_restriction && policy.allowed_products.length ? (
-              <div className={styles.chipList}>{policy.allowed_products.map((product) => <span className={styles.chip} key={product.product_id}>{product.name}<code>{product.sku}</code></span>)}</div>
-            ) : <p className="muted">{policy.product_restriction ? "No products are currently allowed." : "All company products are available."}</p>}
-          </article>
-        </div>
+        {hasCompanyRestrictions ? (
+          <div className={styles.selectionGrid}>
+            {policy.category_restriction ? (
+              <article className={styles.selectionCard}>
+                <div className={styles.selectionHeading}><div><p className="eyebrow">Restricted categories</p><h3>Company category allowlist</h3></div><span>{policy.allowed_categories.length}</span></div>
+                {policy.allowed_categories.length ? <div className={styles.chipList}>{policy.allowed_categories.map((category) => <span className={styles.chip} key={category.category_id} title={category.path}>{category.name}<code>#{category.category_id}</code></span>)}</div> : <p className="muted">No categories are currently allowed.</p>}
+              </article>
+            ) : null}
+            {policy.product_restriction ? (
+              <article className={styles.selectionCard}>
+                <div className={styles.selectionHeading}><div><p className="eyebrow">Restricted products</p><h3>Company product allowlist</h3></div><span>{policy.allowed_products.length}</span></div>
+                {policy.allowed_products.length ? <div className={styles.chipList}>{policy.allowed_products.map((product) => <span className={styles.chip} key={product.product_id}>{product.name}<code>{product.sku}</code></span>)}</div> : <p className="muted">No products are currently allowed.</p>}
+              </article>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <section className={styles.section} id="role-policy">
         <div className={styles.sectionHeading}>
           <div>
-            <p className="eyebrow">Role visibility</p>
-            <h2>Role catalogue</h2>
-            <p className="muted">A role can only narrow the company catalogue; it can never broaden it.</p>
+            <p className="eyebrow">Step 2 · Role access</p>
+            <h2>Role restrictions</h2>
+            <p className="muted">Roles inherit the company catalogue by default. Only add a restriction when that role should see less.</p>
           </div>
         </div>
 
@@ -227,35 +201,29 @@ export default async function CompanyPortalCatalogPage({
                 <select id="roleId" name="roleId" defaultValue={selectedRole.role_id}>{administration.control_roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.name}</option>)}</select>
               </div>
               <button className="button button-secondary" type="submit">Open role</button>
-              <span className={styles.roleMeta}>Choose a role to review its effective catalogue visibility.</span>
+              <span className={styles.roleMeta}>{selectedRole.name} can inherit the company catalogue or have narrower category/product access.</span>
             </form>
-
-            <section className={styles.roleSummary} aria-label={`${selectedRole.name} catalogue summary`}>
-              <article><span>Categories</span><strong>{usesAllCompanyCategories ? "All" : rolePolicy.selected_category_ids.length}</strong><small>{usesAllCompanyCategories ? "Uses company categories" : "Role restricted"}</small></article>
-              <article><span>Category-scope products</span><strong>{rolePolicy.products_count}</strong><small>Available before product restriction</small></article>
-              <article><span>Role products</span><strong>{rolePolicy.preselect_all_products ? "All" : rolePolicy.allowed_product_ids.length}</strong><small>{rolePolicy.preselect_all_products ? "Uses all in category scope" : "Explicitly restricted"}</small></article>
-            </section>
 
             <div className={styles.roleGrid}>
               <article className={styles.roleCard}>
                 <div className={styles.roleCardHeader}>
                   <div><p className="eyebrow">{selectedRole.name}</p><h3>Categories</h3></div>
-                  <span className={usesAllCompanyCategories ? "badge badge-ok" : "badge badge-neutral"}>{usesAllCompanyCategories ? "All company categories" : "Restricted"}</span>
+                  <span className={usesAllCompanyCategories ? "badge badge-ok" : "badge badge-neutral"}>{usesAllCompanyCategories ? "Uses company catalogue" : "Restricted"}</span>
                 </div>
-                <p>Choose which company categories this role can use. Selecting a parent selects its full branch.</p>
+                <p>{usesAllCompanyCategories ? "This role currently uses every category available to the company." : `This role is limited to ${rolePolicy.selected_category_ids.length} selected categories.`}</p>
                 <div className={styles.roleCardFooter}>
                   {!usesAllCompanyCategories ? (
                     <form action={savePortalRoleCategoriesAction} className={styles.quickAction}>
                       <input name="roleId" type="hidden" value={selectedRole.role_id} />
                       {allCategoryIds.map((id) => <input key={id} name="categoryIds" type="hidden" value={id} />)}
-                      <button className="button button-secondary" type="submit">Use all categories</button>
+                      <button className="button button-secondary" type="submit">Remove restriction</button>
                     </form>
-                  ) : <span className={styles.statusCopy}>No extra role category restriction.</span>}
+                  ) : <span className={styles.statusCopy}>No extra category restriction.</span>}
                   <PortalModal
                     title={`${selectedRole.name} categories`}
                     description="Search the company category tree and choose the categories available to this role."
                     triggerLabel="Manage categories"
-                    triggerHint={usesAllCompanyCategories ? "Currently all company categories" : `${rolePolicy.selected_category_ids.length} selected`}
+                    triggerHint={usesAllCompanyCategories ? "Currently uses company catalogue" : `${rolePolicy.selected_category_ids.length} selected`}
                     triggerIcon="edit"
                   >
                     <form action={savePortalRoleCategoriesAction} className={styles.modalForm}>
@@ -270,58 +238,60 @@ export default async function CompanyPortalCatalogPage({
               <article className={styles.roleCard} id="role-products">
                 <div className={styles.roleCardHeader}>
                   <div><p className="eyebrow">{selectedRole.name}</p><h3>Products</h3></div>
-                  <span className={rolePolicy.preselect_all_products ? "badge badge-ok" : "badge badge-neutral"}>{rolePolicy.preselect_all_products ? "All in categories" : "Restricted"}</span>
+                  <span className={rolePolicy.preselect_all_products ? "badge badge-ok" : "badge badge-neutral"}>{rolePolicy.preselect_all_products ? "Uses category access" : "Restricted"}</span>
                 </div>
-                <p>Product access stays inside both the company catalogue and this role&apos;s selected categories.</p>
                 {!rolePolicy.has_saved_categories ? (
                   <form action={savePortalRoleCategoriesAction} className={styles.setupCard}>
                     <input name="roleId" type="hidden" value={selectedRole.role_id} />
                     {allCategoryIds.map((id) => <input key={id} name="categoryIds" type="hidden" value={id} />)}
-                    <div><strong>Save category state first</strong><span>Products can be configured after the role has a saved category state.</span></div>
+                    <div><strong>Confirm category access first</strong><span>Save the role&apos;s category state before setting a product restriction.</span></div>
                     <button className="button" type="submit">Use company categories</button>
                   </form>
                 ) : (
-                  <div className={styles.roleCardFooter}>
-                    {!rolePolicy.preselect_all_products ? (
-                      <form action={savePortalRoleProductsAction} className={styles.quickAction}>
-                        <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                        <input name="productMode" type="hidden" value="all" />
-                        <button className="button button-secondary" type="submit">Use all products</button>
-                      </form>
-                    ) : <span className={styles.statusCopy}>No extra role product restriction.</span>}
-                    <PortalModal
-                      title={`${selectedRole.name} products`}
-                      description="Choose the products available to this role within its current company and category boundaries."
-                      triggerLabel="Manage products"
-                      triggerHint={rolePolicy.preselect_all_products ? "Currently all in category scope" : `${rolePolicy.allowed_product_ids.length} selected`}
-                      triggerIcon="edit"
-                    >
-                      {canUseCompanyProductChecklist ? (
-                        <form action={savePortalRoleProductsAction} className={styles.modalForm}>
+                  <>
+                    <p>{rolePolicy.preselect_all_products ? "This role can use every product available inside its category access." : `This role is limited to ${rolePolicy.allowed_product_ids.length} selected products inside its category access.`}</p>
+                    <div className={styles.roleCardFooter}>
+                      {!rolePolicy.preselect_all_products ? (
+                        <form action={savePortalRoleProductsAction} className={styles.quickAction}>
                           <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                          <input name="productMode" type="hidden" value="explicit" />
-                          <CatalogProductPicker products={policy.allowed_products.map((product) => ({ id: product.product_id, sku: product.sku, name: product.name }))} selectedProductIds={rolePolicy.allowed_product_ids} preselectAll={rolePolicy.preselect_all_products} label={`${selectedRole.name} products`} />
-                          <div className={styles.modalActions}><button className="button" type="submit">Save role products</button></div>
+                          <input name="productMode" type="hidden" value="all" />
+                          <button className="button button-secondary" type="submit">Remove restriction</button>
                         </form>
-                      ) : (
-                        <div className={styles.productModes}>
-                          <form action={savePortalRoleProductsAction} className={styles.modeCard}>
-                            <input name="roleId" type="hidden" value={selectedRole.role_id} />
-                            <input name="productMode" type="hidden" value="all" />
-                            <div><strong>All products in selected categories</strong><span>No additional role-level product allowlist.</span></div>
-                            <button className="button button-secondary" type="submit">Use all products</button>
-                          </form>
-                          <form action={savePortalRoleProductsAction} className={styles.modeCard}>
+                      ) : <span className={styles.statusCopy}>No extra product restriction.</span>}
+                      <PortalModal
+                        title={`${selectedRole.name} products`}
+                        description="Choose the products available to this role within its current company and category boundaries."
+                        triggerLabel="Manage products"
+                        triggerHint={rolePolicy.preselect_all_products ? "Currently uses category access" : `${rolePolicy.allowed_product_ids.length} selected`}
+                        triggerIcon="edit"
+                      >
+                        {canUseCompanyProductChecklist ? (
+                          <form action={savePortalRoleProductsAction} className={styles.modalForm}>
                             <input name="roleId" type="hidden" value={selectedRole.role_id} />
                             <input name="productMode" type="hidden" value="explicit" />
-                            <div className="field"><label htmlFor={`allowedProductIds-${selectedRole.role_id}`}>Explicit product IDs</label><textarea id={`allowedProductIds-${selectedRole.role_id}`} name="allowedProductIds" rows={7} defaultValue={rolePolicy.allowed_product_ids.join(", ")} /></div>
-                            <span className="muted small-text">Fluid validates every product against this role&apos;s category scope.</span>
-                            <button className="button" type="submit">Save explicit products</button>
+                            <CatalogProductPicker products={policy.allowed_products.map((product) => ({ id: product.product_id, sku: product.sku, name: product.name }))} selectedProductIds={rolePolicy.allowed_product_ids} preselectAll={rolePolicy.preselect_all_products} label={`${selectedRole.name} products`} />
+                            <div className={styles.modalActions}><button className="button" type="submit">Save role products</button></div>
                           </form>
-                        </div>
-                      )}
-                    </PortalModal>
-                  </div>
+                        ) : (
+                          <div className={styles.productModes}>
+                            <form action={savePortalRoleProductsAction} className={styles.modeCard}>
+                              <input name="roleId" type="hidden" value={selectedRole.role_id} />
+                              <input name="productMode" type="hidden" value="all" />
+                              <div><strong>Use every product in category access</strong><span>Remove any extra role-level product restriction.</span></div>
+                              <button className="button button-secondary" type="submit">Use category access</button>
+                            </form>
+                            <form action={savePortalRoleProductsAction} className={styles.modeCard}>
+                              <input name="roleId" type="hidden" value={selectedRole.role_id} />
+                              <input name="productMode" type="hidden" value="explicit" />
+                              <div className="field"><label htmlFor={`allowedProductIds-${selectedRole.role_id}`}>Explicit product IDs</label><textarea id={`allowedProductIds-${selectedRole.role_id}`} name="allowedProductIds" rows={7} defaultValue={rolePolicy.allowed_product_ids.join(", ")} /></div>
+                              <span className="muted small-text">Fluid validates every product against this role&apos;s category access.</span>
+                              <button className="button" type="submit">Save product restriction</button>
+                            </form>
+                          </div>
+                        )}
+                      </PortalModal>
+                    </div>
+                  </>
                 )}
               </article>
             </div>
@@ -329,7 +299,7 @@ export default async function CompanyPortalCatalogPage({
             {rolePolicy.show_product_grid ? (
               <section className={styles.effectiveSection} id="effective-products">
                 <details className={styles.effectivePanel}>
-                  <summary><span><strong>Verify effective products</strong><small>Search the backend-returned product grid for {selectedRole.name}.</small></span><span aria-hidden="true">＋</span></summary>
+                  <summary><span><strong>Check product access</strong><small>Optional: search the effective products available to {selectedRole.name}.</small></span><span aria-hidden="true">＋</span></summary>
                   <div className={styles.effectiveBody}>
                     <form className={styles.searchBar} method="get">
                       <input name="roleId" type="hidden" value={selectedRole.role_id} />
