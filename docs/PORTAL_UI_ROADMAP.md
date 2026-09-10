@@ -45,10 +45,15 @@ Runtime acceptance remains pending until the corresponding PR is deployed and ch
 
 ### Phase 2 — Employees
 
-- [ ] customer-facing page hierarchy and copy;
-- [ ] clearer employee summary and actions;
-- [ ] responsive table/detail behavior;
-- [ ] preserve Fluid employee ACL and write validation exactly.
+- [x] customer-facing page hierarchy and copy;
+- [x] clearer employee summary, settings and data actions;
+- [x] improved create/edit/deactivate presentation;
+- [x] clearer spend reporting and date filtering;
+- [x] responsive employee and order-history rows;
+- [x] Portal-only employee stylesheet so Admin employee presentation remains unchanged;
+- [x] preserve Fluid employee ACL and write validation exactly.
+
+Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
 
 ### Phase 3 — Catalogue
 
