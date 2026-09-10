@@ -41,25 +41,33 @@ Goal: turn the acceptance-oriented company management landing page into a custom
 - [x] responsive desktop/tablet/mobile layouts;
 - [x] Portal-only CSS modules; no Admin workspace restyling.
 
-Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
+Runtime acceptance completed on the deployed environment.
 
 ### Phase 2 — Employees
 
 - [x] customer-facing page hierarchy and copy;
 - [x] clearer employee summary, settings and data actions;
 - [x] improved create/edit/deactivate presentation;
+- [x] Add employee and Manage/Details use reusable Portal modals;
 - [x] clearer spend reporting and date filtering;
 - [x] responsive employee and order-history rows;
 - [x] Portal-only employee stylesheet so Admin employee presentation remains unchanged;
 - [x] preserve Fluid employee ACL and write validation exactly.
 
-Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
+Runtime acceptance completed on the deployed environment.
 
 ### Phase 3 — Catalogue
 
-- [ ] simplify company/role catalogue controls for customer users;
-- [ ] improve product/category restriction navigation and empty states;
-- [ ] retain Fluid-backed catalogue search and authorization boundaries.
+- [x] customer-facing Catalogue hierarchy and company boundary summary;
+- [x] separate company-wide catalogue policy from role-level visibility;
+- [x] move company, role-category and role-product editing into reusable Portal modals;
+- [x] improve category/product restriction summaries and empty states;
+- [x] retain effective-product search/pagination for verification;
+- [x] responsive role/product layouts;
+- [x] Portal-only catalogue stylesheet; no Admin catalogue restyling;
+- [x] retain Fluid-backed catalogue search, validation and authorization boundaries.
+
+Runtime acceptance remains pending until the corresponding PR is deployed and checked on the real environment.
 
 ### Phase 4 — Purchase controls
 
