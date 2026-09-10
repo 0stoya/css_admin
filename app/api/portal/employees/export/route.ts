@@ -1,4 +1,5 @@
 import { employeeExportCsv } from "@/lib/company-employees-csv";
+import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
 import { getPortalEmployeeExport } from "@/lib/graphql/company-portal-employees";
 import { getCompanyToken } from "@/lib/session";
 
@@ -10,8 +11,13 @@ export async function GET(request: Request) {
   const active = activeParam === "1" ? true : activeParam === "0" ? false : undefined;
 
   try {
-    const rows = await getPortalEmployeeExport(active);
-    return new Response(employeeExportCsv(rows), {
+    const [rows, administration] = await Promise.all([
+      getPortalEmployeeExport(active),
+      getCompanyPortalAdministration().catch(() => null),
+    ]);
+    const managers = administration?.users.map((user) => ({ user_id: user.user_id, email: user.email })) ?? [];
+
+    return new Response(employeeExportCsv(rows, managers), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": "attachment; filename=company-employees.csv",

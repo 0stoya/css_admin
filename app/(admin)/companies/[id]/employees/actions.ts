@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
-import { parseEmployeeCsv } from "@/lib/company-employees-csv";
+import { parseEmployeeCsv, resolveEmployeeCsvManagers } from "@/lib/company-employees-csv";
+import { getCompanyManagement } from "@/lib/graphql/company-management";
 import {
   createCompanyEmployee,
   deactivateCompanyEmployee,
@@ -118,7 +119,16 @@ export async function importEmployeesCsvAction(formData: FormData) {
   return runMutation(companyId, "Employee CSV imported.", async () => {
     if (!(upload instanceof File) || upload.size === 0) throw new Error("Choose a non-empty employee CSV file.");
     if (upload.size > 2_000_000) throw new Error("Employee CSV must be 2 MB or smaller.");
-    const rows = parseEmployeeCsv(await upload.text());
+
+    const parsedRows = parseEmployeeCsv(await upload.text());
+    let managers: Array<{ user_id: number; email: string }> = [];
+
+    if (parsedRows.some((row) => Boolean(row.manager_email))) {
+      const management = await getCompanyManagement(companyId);
+      managers = management.users.map((user) => ({ user_id: user.user_id, email: user.email }));
+    }
+
+    const rows = resolveEmployeeCsvManagers(parsedRows, managers);
     const result = await importCompanyEmployees(companyId, rows);
     if (result.failed > 0) {
       const details = result.errors.slice(0, 3).map((item) => `row ${item.row}: ${item.message}`).join("; ");

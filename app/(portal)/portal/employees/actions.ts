@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { parseEmployeeCsv } from "@/lib/company-employees-csv";
+import { parseEmployeeCsv, resolveEmployeeCsvManagers } from "@/lib/company-employees-csv";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
 import {
   createPortalEmployee,
   deactivatePortalEmployee,
@@ -96,7 +97,16 @@ export async function importPortalEmployeesCsvAction(formData: FormData) {
   return runMutation("Employee CSV imported.", async () => {
     if (!(upload instanceof File) || upload.size === 0) throw new Error("Choose a non-empty employee CSV file.");
     if (upload.size > 2_000_000) throw new Error("Employee CSV must be 2 MB or smaller.");
-    const result = await importPortalEmployees(parseEmployeeCsv(await upload.text()));
+
+    const parsedRows = parseEmployeeCsv(await upload.text());
+    let managers: Array<{ user_id: number; email: string }> = [];
+
+    if (parsedRows.some((row) => Boolean(row.manager_email))) {
+      const administration = await getCompanyPortalAdministration();
+      managers = administration.users.map((user) => ({ user_id: user.user_id, email: user.email }));
+    }
+
+    const result = await importPortalEmployees(resolveEmployeeCsvManagers(parsedRows, managers));
     if (result.failed > 0) {
       const details = result.errors.slice(0, 3).map((item) => `row ${item.row}: ${item.message}`).join("; ");
       throw new Error(`Employee import completed with ${result.failed} failed row(s). ${details}`);
