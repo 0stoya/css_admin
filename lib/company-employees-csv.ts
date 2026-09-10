@@ -1,8 +1,17 @@
 import type { CompanyEmployeeExportRow, CompanyEmployeeImportRow } from "@/lib/graphql/company-employees";
 
+export type EmployeeCsvImportRow = CompanyEmployeeImportRow & {
+  manager_email: string | null;
+};
+
+export type EmployeeCsvManager = {
+  user_id: number;
+  email: string;
+};
+
 export const EMPLOYEE_IMPORT_TEMPLATE =
-  "employee_code,first_name,last_name,department,cost_centre,manager_company_user_id,active\n" +
-  "EMP001,Spencer,Surname,Warehouse,CC100,,true\n";
+  "employee_code,first_name,last_name,department,cost_centre,manager_email,manager_company_user_id,active\n" +
+  "EMP001,Spencer,Surname,Warehouse,CC100,manager@example.com,,true\n";
 
 function optionalPositiveInt(value: string, label: string) {
   const raw = value.trim();
@@ -60,7 +69,7 @@ function importBoolean(value: string, rowNumber: number) {
   throw new Error(`CSV row ${rowNumber}: active must be true/false, yes/no or 1/0.`);
 }
 
-export function parseEmployeeCsv(text: string): CompanyEmployeeImportRow[] {
+export function parseEmployeeCsv(text: string): EmployeeCsvImportRow[] {
   const rows = parseCsv(text.replace(/^\uFEFF/, ""));
   if (rows.length < 2) throw new Error("CSV must contain a header row and at least one employee row.");
 
@@ -86,6 +95,7 @@ export function parseEmployeeCsv(text: string): CompanyEmployeeImportRow[] {
       last_name: lastName,
       department: valueAt(values, "department") || null,
       cost_centre: valueAt(values, "cost_centre") || null,
+      manager_email: valueAt(values, "manager_email") || null,
       manager_company_user_id: optionalPositiveInt(
         valueAt(values, "manager_company_user_id"),
         `CSV row ${rowNumber} manager_company_user_id`,
@@ -95,18 +105,71 @@ export function parseEmployeeCsv(text: string): CompanyEmployeeImportRow[] {
   });
 }
 
+function normalizedEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export function resolveEmployeeCsvManagers(
+  rows: EmployeeCsvImportRow[],
+  managers: EmployeeCsvManager[],
+): CompanyEmployeeImportRow[] {
+  const managerIdsByEmail = new Map<string, number[]>();
+
+  for (const manager of managers) {
+    const email = normalizedEmail(manager.email);
+    if (!email) continue;
+    const ids = managerIdsByEmail.get(email) ?? [];
+    ids.push(manager.user_id);
+    managerIdsByEmail.set(email, ids);
+  }
+
+  return rows.map((row, index) => {
+    let managerCompanyUserId = row.manager_company_user_id;
+
+    if (row.manager_email) {
+      const matches = managerIdsByEmail.get(normalizedEmail(row.manager_email)) ?? [];
+      if (matches.length === 0) {
+        throw new Error(
+          `CSV row ${index + 2}: manager_email ${row.manager_email} is not a company user in this company.`,
+        );
+      }
+      if (matches.length > 1) {
+        throw new Error(
+          `CSV row ${index + 2}: manager_email ${row.manager_email} matches more than one company user.`,
+        );
+      }
+      managerCompanyUserId = matches[0];
+    }
+
+    return {
+      employee_code: row.employee_code,
+      first_name: row.first_name,
+      last_name: row.last_name,
+      department: row.department,
+      cost_centre: row.cost_centre,
+      manager_company_user_id: managerCompanyUserId,
+      active: row.active,
+    };
+  });
+}
+
 function csvCell(value: string | number | boolean | null) {
   const text = value === null ? "" : String(value);
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
-export function employeeExportCsv(rows: CompanyEmployeeExportRow[]) {
+export function employeeExportCsv(
+  rows: CompanyEmployeeExportRow[],
+  managers: EmployeeCsvManager[] = [],
+) {
+  const managerEmailById = new Map(managers.map((manager) => [manager.user_id, manager.email]));
   const headers = [
     "employee_code",
     "first_name",
     "last_name",
     "department",
     "cost_centre",
+    "manager_email",
     "manager_company_user_id",
     "active",
   ];
@@ -119,6 +182,7 @@ export function employeeExportCsv(rows: CompanyEmployeeExportRow[]) {
       row.last_name,
       row.department,
       row.cost_centre,
+      row.manager_company_user_id === null ? null : managerEmailById.get(row.manager_company_user_id) ?? null,
       row.manager_company_user_id,
       row.active,
     ].map(csvCell).join(",")),

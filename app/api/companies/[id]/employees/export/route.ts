@@ -1,4 +1,5 @@
 import { getCompanyEmployeeExport } from "@/lib/graphql/company-employees";
+import { getCompanyManagement } from "@/lib/graphql/company-management";
 import { employeeExportCsv } from "@/lib/company-employees-csv";
 import { getAdminToken } from "@/lib/session";
 
@@ -16,8 +17,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const active = activeParam === "1" ? true : activeParam === "0" ? false : undefined;
 
   try {
-    const rows = await getCompanyEmployeeExport(companyId, active);
-    const csv = employeeExportCsv(rows);
+    const [rows, management] = await Promise.all([
+      getCompanyEmployeeExport(companyId, active),
+      getCompanyManagement(companyId).catch(() => null),
+    ]);
+    const managers = management?.users.map((user) => ({ user_id: user.user_id, email: user.email })) ?? [];
+    const csv = employeeExportCsv(rows, managers);
 
     return new Response(csv, {
       headers: {
