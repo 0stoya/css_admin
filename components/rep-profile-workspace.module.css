@@ -1,0 +1,23 @@
+.workspace { display: grid; gap: 1.25rem; }
+.headerRow { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.cardGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; }
+.repCard { display: grid; gap: 1rem; }
+.repHeader { display: grid; grid-template-columns: 5rem minmax(0, 1fr) auto; gap: 1rem; align-items: center; }
+.photo, .initials { width: 5rem; height: 5rem; border-radius: 50%; object-fit: cover; background: var(--css-primary); color: #fff; display: grid; place-items: center; font-size: 1.2rem; font-weight: 700; }
+.identity { display: grid; gap: 0.18rem; min-width: 0; }
+.identity strong { font-size: 1.05rem; }
+.identity span { color: var(--css-muted); overflow-wrap: anywhere; }
+.code { align-self: start; }
+.profileForm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; padding-top: 1rem; border-top: 1px solid var(--css-border); }
+.spanTwo { grid-column: 1 / -1; }
+.toggleRow { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 0.9rem; border: 1px solid var(--css-border); border-radius: 0.8rem; background: var(--css-accent); cursor: pointer; }
+.toggleText { display: grid; gap: 0.15rem; }
+.toggleRow input { appearance: none; -webkit-appearance: none; width: 2.8rem; height: 1.55rem; margin: 0; border: 1px solid #a7b7c5; border-radius: 999px; background: radial-gradient(circle at 27% 50%, #fff 0 0.48rem, transparent 0.52rem), #c8d3dd; cursor: pointer; }
+.toggleRow input:checked { border-color: var(--css-primary); background: radial-gradient(circle at 73% 50%, #fff 0 0.48rem, transparent 0.52rem), var(--css-primary); }
+.toggleRow input:focus-visible { outline: 3px solid rgb(255 221 0 / 78%); outline-offset: 3px; }
+.mediaActions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding-top: 0.2rem; }
+.mediaActions form { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
+.fileInput { max-width: 15rem; }
+.metaStrip { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.empty { padding: 2rem; text-align: center; border: 1px dashed var(--css-border); border-radius: 0.9rem; }
+@media (max-width: 620px) { .repHeader { grid-template-columns: 4rem minmax(0, 1fr); } .photo, .initials { width: 4rem; height: 4rem; } .code { grid-column: 1 / -1; } .profileForm { grid-template-columns: 1fr; } .spanTwo { grid-column: auto; } }

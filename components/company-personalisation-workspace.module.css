@@ -1,0 +1,32 @@
+.workspace { display: grid; gap: 1.25rem; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(20rem, 0.8fr); gap: 1.25rem; align-items: start; }
+.sectionCard { display: grid; gap: 1rem; }
+.sectionHeader { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.spanTwo { grid-column: 1 / -1; }
+.toggleRow { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--css-border); border-radius: 0.8rem; background: var(--css-accent); cursor: pointer; }
+.toggleRow input { appearance: none; -webkit-appearance: none; width: 2.8rem; height: 1.55rem; margin: 0; border: 1px solid #a7b7c5; border-radius: 999px; background: radial-gradient(circle at 27% 50%, #fff 0 0.48rem, transparent 0.52rem), #c8d3dd; cursor: pointer; transition: background 160ms ease, border-color 160ms ease; }
+.toggleRow input:checked { border-color: var(--css-primary); background: radial-gradient(circle at 73% 50%, #fff 0 0.48rem, transparent 0.52rem), var(--css-primary); }
+.toggleRow input:focus-visible { outline: 3px solid rgb(255 221 0 / 78%); outline-offset: 3px; }
+.toggleText { display: grid; gap: 0.2rem; }
+.saveBar { display: flex; justify-content: flex-end; padding-top: 0.25rem; }
+.mediaGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.mediaCard { border: 1px solid var(--css-border); border-radius: 0.9rem; overflow: hidden; background: var(--css-surface); }
+.mediaPreview { min-height: 10rem; display: grid; place-items: center; background: var(--css-accent); border-bottom: 1px solid var(--css-border); padding: 1rem; }
+.mediaPreview img { display: block; max-width: 100%; max-height: 11rem; object-fit: contain; border-radius: 0.5rem; }
+.mediaBody { display: grid; gap: 0.8rem; padding: 1rem; }
+.fileInput { width: 100%; }
+.previewCard { overflow: hidden; padding: 0; }
+.banner { min-height: 8rem; background: linear-gradient(135deg, #edf4f9, #d9e8f3); background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 1rem; }
+.logo { width: 5rem; height: 5rem; object-fit: contain; background: #fff; border: 1px solid var(--css-border); border-radius: 0.8rem; padding: 0.5rem; box-shadow: 0 0.4rem 1rem rgb(0 35 72 / 10%); }
+.previewBody { display: grid; gap: 1rem; padding: 1.15rem; }
+.companyDetails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.detail { display: grid; gap: 0.15rem; }
+.detail span { color: var(--css-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.repCard { display: grid; grid-template-columns: 4.75rem minmax(0, 1fr); gap: 1rem; align-items: center; border-top: 1px solid var(--css-border); padding-top: 1rem; }
+.repPhoto, .repInitials { width: 4.75rem; height: 4.75rem; border-radius: 50%; object-fit: cover; background: var(--css-primary); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 1.15rem; }
+.repBody { display: grid; gap: 0.2rem; min-width: 0; }
+.repBody a { overflow-wrap: anywhere; }
+.empty { padding: 1rem; border: 1px dashed var(--css-border); border-radius: 0.8rem; color: var(--css-muted); }
+@media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .formGrid, .mediaGrid, .companyDetails { grid-template-columns: 1fr; } .spanTwo { grid-column: auto; } .sectionHeader { flex-direction: column; } }
