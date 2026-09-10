@@ -9,8 +9,35 @@ type PortalModalProps = {
   triggerLabel: string;
   triggerHint?: string;
   variant?: "primary" | "row";
+  triggerIcon?: "plus" | "edit" | "arrow";
   children: ReactNode;
 };
+
+function TriggerIcon({ icon }: { icon: "plus" | "edit" | "arrow" }) {
+  if (icon === "edit") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+    );
+  }
+
+  if (icon === "arrow") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="m9 18 6-6-6-6" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
 
 export function PortalModal({
   title,
@@ -18,6 +45,7 @@ export function PortalModal({
   triggerLabel,
   triggerHint,
   variant = "primary",
+  triggerIcon,
   children,
 }: PortalModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -37,6 +65,7 @@ export function PortalModal({
   }
 
   const isRow = variant === "row";
+  const icon = triggerIcon ?? (isRow ? "arrow" : "plus");
 
   return (
     <div className={`${styles.slot} ${isRow ? styles.rowSlot : styles.primarySlot}`}>
@@ -54,9 +83,7 @@ export function PortalModal({
             {triggerHint ? <small>{triggerHint}</small> : null}
           </span>
         )}
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          {isRow ? <path d="m9 18 6-6-6-6" /> : <><path d="M12 5v14" /><path d="M5 12h14" /></>}
-        </svg>
+        <TriggerIcon icon={icon} />
       </button>
 
       <dialog
