@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
   applyCompanyPortalPurchaseControlTemplate,
@@ -10,117 +10,71 @@ import {
   resetCompanyPortalPurchaseControlCounters,
   saveCompanyPortalPurchaseControlTemplate,
 } from "@/lib/graphql/company-portal-purchase-controls";
-import type { SavePurchaseControlRuleInput } from "@/lib/graphql/purchase-controls";
+import {
+  affectedUsersNotice, assignmentNotice, checkboxChecked, requiredId,
+  optionalId, requireAcknowledgement, templateInput,
+} from "@/lib/purchase-control-forms";
 
 const PURCHASE_CONTROLS_PATH = "/portal/purchase-controls";
 
-function requiredInt(formData: FormData, key: string) {
-  const raw = String(formData.get(key) ?? "").trim();
-  const value = Number(raw);
-  if (!raw || !Number.isInteger(value) || value <= 0) {
-    throw new Error(`${key} must be a positive integer.`);
-  }
-  return value;
-}
-
-function optionalInt(formData: FormData, key: string) {
-  const raw = String(formData.get(key) ?? "").trim();
-  if (!raw) return null;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${key} must be a positive integer.`);
-  }
-  return value;
-}
-
-function parseRules(raw: string): SavePurchaseControlRuleInput[] {
-  return raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line, index) => {
-    const [sku, quantityRaw, durationRaw, startDate, ...extra] = line.split("|").map((value) => value.trim());
-    if (extra.length || !sku || !quantityRaw || !durationRaw || !startDate) {
-      throw new Error(`Rule ${index + 1} must use: SKU | quantity limit | duration days | YYYY-MM-DD.`);
-    }
-    const quantityLimit = Number(quantityRaw);
-    const durationDays = Number(durationRaw);
-    if (!Number.isInteger(quantityLimit) || quantityLimit < 1) {
-      throw new Error(`Rule ${index + 1} quantity limit must be greater than 0.`);
-    }
-    if (!Number.isInteger(durationDays) || durationDays < 1) {
-      throw new Error(`Rule ${index + 1} duration days must be greater than 0.`);
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      throw new Error(`Rule ${index + 1} start date must use YYYY-MM-DD.`);
-    }
-    return { sku, quantity_limit: quantityLimit, duration_days: durationDays, start_date: startDate };
-  });
-}
-
-async function runMutation(notice: string, work: () => Promise<unknown>) {
+async function runMutation(section: "templates" | "assignments", work: () => Promise<string>) {
   let errorMessage: string | null = null;
+  let notice = "";
   try {
-    await work();
+    notice = await work();
     revalidatePath(PURCHASE_CONTROLS_PATH);
   } catch (error) {
+    unstable_rethrow(error);
     errorMessage = graphQLErrorMessage(error);
   }
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ section });
   if (errorMessage) params.set("error", errorMessage);
   else params.set("notice", notice);
   redirect(`${PURCHASE_CONTROLS_PATH}?${params.toString()}`);
 }
 
 export async function savePortalPurchaseControlTemplateAction(formData: FormData) {
-  const templateId = optionalInt(formData, "templateId");
-  const name = String(formData.get("name") ?? "").trim();
-  const rules = parseRules(String(formData.get("rules") ?? ""));
-  return runMutation(
-    templateId ? "Purchase-control template updated." : "Purchase-control template created.",
-    () => saveCompanyPortalPurchaseControlTemplate({
-      ...(templateId ? { template_id: templateId } : {}),
-      name,
-      rules,
-    }),
-  );
+  return runMutation("templates", async () => {
+    await saveCompanyPortalPurchaseControlTemplate(templateInput(formData));
+    return "Template saved. Existing applied allowances and counters were not changed; assign and apply separately when ready.";
+  });
 }
 
 export async function assignPortalPurchaseControlTemplateAction(formData: FormData) {
-  const roleId = requiredInt(formData, "roleId");
-  const templateId = optionalInt(formData, "templateId");
-  const applyToUsers = formData.get("applyToUsers") !== null;
-  return runMutation(
-    templateId ? "Purchase-control template assigned to role." : "Purchase-control template unassigned from role.",
-    () => assignCompanyPortalPurchaseControlTemplate(roleId, templateId, applyToUsers),
-  );
+  return runMutation("assignments", async () => {
+    const roleId = requiredId(formData, "roleId");
+    const templateId = optionalId(formData, "templateId");
+    const applyToUsers = checkboxChecked(formData, "applyToUsers");
+    if (applyToUsers && templateId === null) throw new Error("Select a template before choosing to apply it to users.");
+    const result = await assignCompanyPortalPurchaseControlTemplate(roleId, templateId, applyToUsers);
+    return assignmentNotice(templateId, applyToUsers, result.cssAssignCompanyPurchaseControlTemplate.applied_users);
+  });
 }
 
 export async function applyPortalPurchaseControlTemplateAction(formData: FormData) {
-  const templateId = requiredInt(formData, "templateId");
-  const confirmed = formData.get("confirmApply") === "yes";
-  return runMutation(
-    "Purchase-control template applied to eligible users.",
-    async () => {
-      if (!confirmed) throw new Error("Confirm that the template should overwrite eligible users before applying it.");
-      await applyCompanyPortalPurchaseControlTemplate(templateId);
-    },
-  );
+  return runMutation("templates", async () => {
+    const templateId = requiredId(formData, "templateId");
+    requireAcknowledgement(formData, "confirmApply");
+    const result = await applyCompanyPortalPurchaseControlTemplate(templateId);
+    return affectedUsersNotice("applied", result.cssApplyCompanyPurchaseControlTemplate.affected_users);
+  });
 }
 
 export async function resetPortalPurchaseControlCountersAction(formData: FormData) {
-  const templateId = requiredInt(formData, "templateId");
-  const confirmed = formData.get("confirmReset") === "yes";
-  return runMutation(
-    "Purchase-control counters reset.",
-    async () => {
-      if (!confirmed) throw new Error("Confirm that consumed purchase-control counters should be reset before continuing.");
-      await resetCompanyPortalPurchaseControlCounters(templateId);
-    },
-  );
+  return runMutation("templates", async () => {
+    const templateId = requiredId(formData, "templateId");
+    requireAcknowledgement(formData, "confirmReset");
+    const result = await resetCompanyPortalPurchaseControlCounters(templateId);
+    return affectedUsersNotice("reset", result.cssResetCompanyPurchaseControlCounters.affected_users);
+  });
 }
 
 export async function deletePortalPurchaseControlTemplateAction(formData: FormData) {
-  const templateId = requiredInt(formData, "templateId");
-  const confirmName = String(formData.get("confirmName") ?? "").trim();
-  return runMutation(
-    "Purchase-control template deleted.",
-    () => deleteCompanyPortalPurchaseControlTemplate(templateId, confirmName),
-  );
+  return runMutation("templates", async () => {
+    const templateId = requiredId(formData, "templateId");
+    const confirmName = String(formData.get("confirmName") ?? "").trim();
+    const result = await deleteCompanyPortalPurchaseControlTemplate(templateId, confirmName);
+    if (!result.cssDeleteCompanyPurchaseControlTemplate) throw new Error("Magento did not confirm template deletion.");
+    return "Purchase-control template deleted.";
+  });
 }
