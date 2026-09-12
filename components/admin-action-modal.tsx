@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Eye, Pencil, Plus, ShieldCheck } from "lucide-react";
 import { PurchaseControlDialog } from "./purchase-control-dialog";
@@ -48,14 +48,13 @@ export function AdminActionModal({
   wide = false,
   children,
 }: AdminActionModalProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const resetKey = `${stateKey}\u0000${defaultOpen ? "open" : "closed"}`;
+  const [modalState, setModalState] = useState(() => ({ resetKey, open: defaultOpen }));
+  const open = modalState.resetKey === resetKey ? modalState.open : defaultOpen;
 
-  // Server actions redirect back with a new state key. Reset to the server-supplied
-  // default so successful saves close, while validation/backend errors can reopen
-  // the relevant modal through ?modal=....
-  useEffect(() => {
-    setOpen(defaultOpen);
-  }, [defaultOpen, stateKey]);
+  function setOpen(nextOpen: boolean) {
+    setModalState({ resetKey, open: nextOpen });
+  }
 
   const triggerClass = triggerVariant === "primary"
     ? `button ${styles.primaryTrigger}`

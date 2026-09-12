@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("OGL polish keeps registry, mappings and live preview contracts in-page", () => {
