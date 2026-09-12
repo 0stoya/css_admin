@@ -1,28 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Info } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { PurchaseControlDialog } from "@/components/purchase-control-dialog";
 import { adminHelpForPathname } from "@/lib/admin-context-help";
 
+const HEADING_SELECTOR = "main.content h1";
+
+function subscribeToHeading(onStoreChange: () => void) {
+  if (typeof document === "undefined" || !document.body || typeof MutationObserver === "undefined") {
+    return () => undefined;
+  }
+
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(document.body, { childList: true, subtree: true });
+  return () => observer.disconnect();
+}
+
+function getHeadingSnapshot() {
+  if (typeof document === "undefined") return null;
+  return document.querySelector<HTMLElement>(HEADING_SELECTOR);
+}
+
+function getServerHeadingSnapshot() {
+  return null;
+}
+
 export function AdminContextHelp() {
   const pathname = usePathname();
   const topic = adminHelpForPathname(pathname);
   const topicKey = topic?.key ?? null;
-  const [heading, setHeading] = useState<HTMLElement | null>(null);
-  const [open, setOpen] = useState(false);
+  const heading = useSyncExternalStore(subscribeToHeading, getHeadingSnapshot, getServerHeadingSnapshot);
+  const dialogKey = `${pathname}\u0000${topicKey ?? ""}`;
+  const [dialogState, setDialogState] = useState(() => ({ dialogKey, open: false }));
+  const open = dialogState.dialogKey === dialogKey ? dialogState.open : false;
 
-  useEffect(() => {
-    setOpen(false);
-    if (!topicKey) {
-      setHeading(null);
-      return;
-    }
-
-    setHeading(document.querySelector<HTMLElement>("main.content h1"));
-  }, [pathname, topicKey]);
+  function setOpen(nextOpen: boolean) {
+    setDialogState({ dialogKey, open: nextOpen });
+  }
 
   if (!topic) return null;
 

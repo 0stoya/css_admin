@@ -3,6 +3,7 @@ import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getAdminOglRepProfiles } from "@/lib/graphql/company-presentation";
 import { clearOglRepPhotoAction, saveOglRepProfileAction, uploadOglRepPhotoAction } from "./actions";
 import styles from "@/components/rep-profile-workspace.module.css";
+import polish from "@/components/rep-profile-final-polish.module.css";
 
 function displayName(profile: Awaited<ReturnType<typeof getAdminOglRepProfiles>>[number]) {
   return `${profile.firstname ?? ""} ${profile.lastname ?? ""}`.trim() || profile.username || `Admin #${profile.admin_user_id}`;
@@ -31,7 +32,7 @@ export default async function OglRepProfilesPage({
   }
 
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${polish.workspace}`}>
       <header className="page-header">
         <div>
           <p className="eyebrow">OGL sales representatives</p>
@@ -44,16 +45,16 @@ export default async function OglRepProfilesPage({
       {query.notice ? <div className="notice" role="status">{query.notice}</div> : null}
       {query.error ? <div className="error" role="alert">{query.error}</div> : null}
 
-      <div className={styles.headerRow}>
+      <div className={`${styles.headerRow} ${polish.headerRow}`}>
         <div><h2>Rep cards</h2><p className="muted">Profile data is presentation-only and never changes which Magento administrator a rep code maps to.</p></div>
         <span className="badge badge-neutral">{profiles.length} mapped rep{profiles.length === 1 ? "" : "s"}</span>
       </div>
 
       {profiles.length ? (
-        <div className={styles.cardGrid}>
+        <div className={`${styles.cardGrid} ${polish.cardGrid}`}>
           {profiles.map((profile) => (
-            <article className={`card ${styles.repCard}`} key={profile.rep_code}>
-              <div className={styles.repHeader}>
+            <article className={`card ${styles.repCard} ${polish.repCard}`} key={profile.rep_code}>
+              <div className={`${styles.repHeader} ${polish.repHeader}`}>
                 {profile.photo_url ? <img className={styles.photo} src={profile.photo_url} alt={`${displayName(profile)} profile`} /> : <div className={styles.initials} aria-hidden="true">{initials(profile)}</div>}
                 <div className={styles.identity}>
                   <strong>{displayName(profile)}</strong>
@@ -65,15 +66,15 @@ export default async function OglRepProfilesPage({
                 </span>
               </div>
 
-              <div className={styles.metaStrip}>
+              <div className={`${styles.metaStrip} ${polish.metaStrip}`}>
                 <span className="badge badge-neutral">{profile.affected_company_count} compan{profile.affected_company_count === 1 ? "y" : "ies"}</span>
                 <span className={`badge ${profile.admin_active ? "badge-ok" : "badge-restricted"}`}>Admin {profile.admin_active ? "active" : "inactive"}</span>
                 <span className={`badge ${profile.profile_active ? "badge-ok" : "badge-neutral"}`}>Card {profile.profile_active ? "visible" : "hidden"}</span>
               </div>
 
-              <form action={saveOglRepProfileAction} className={styles.profileForm}>
+              <form action={saveOglRepProfileAction} className={`${styles.profileForm} ${polish.profileForm}`}>
                 <input type="hidden" name="repCode" value={profile.rep_code} />
-                <label className={styles.toggleRow}>
+                <label className={`${styles.toggleRow} ${polish.toggleRow}`}>
                   <span className={styles.toggleText}><strong>Show representative card</strong><small className="muted">Inactive profiles are suppressed from company-user GraphQL.</small></span>
                   <input name="profileActive" type="checkbox" defaultChecked={profile.profile_active} aria-label={`Show ${profile.rep_code} representative card`} />
                 </label>
@@ -102,10 +103,10 @@ export default async function OglRepProfilesPage({
                 </div>
               </form>
 
-              <div className={styles.mediaActions}>
+              <div className={`${styles.mediaActions} ${polish.mediaActions}`}>
                 <form action={uploadOglRepPhotoAction}>
                   <input type="hidden" name="repCode" value={profile.rep_code} />
-                  <input className={styles.fileInput} name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
+                  <input className={`${styles.fileInput} ${polish.fileInput}`} name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
                   <button className="button button-secondary" type="submit">Upload photo</button>
                 </form>
                 {profile.photo_url ? (
