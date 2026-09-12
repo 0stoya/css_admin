@@ -1,5 +1,11 @@
 # CSS Commerce UI / UX foundation
 
+## Live polish tracking
+
+The current Staff/Admin polish pass is tracked in [`docs/ADMIN_UI_POLISH_ROADMAP.md`](./ADMIN_UI_POLISH_ROADMAP.md). Keep phase status, merged PR references and deferred interaction work there rather than expanding this foundation document into an implementation log.
+
+The route-by-route decision for contextual `(i)` help is recorded separately in [`docs/ADMIN_UI_POLISH_AUDIT.md`](./ADMIN_UI_POLISH_AUDIT.md).
+
 ## Brand source
 
 The management UI follows the existing CSS Commerce website identity rather than introducing a separate admin brand.
