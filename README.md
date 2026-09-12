@@ -13,9 +13,9 @@ The sign-in UI is intentionally neutral. Email-shaped identifiers use Magento cu
 
 `/portal/login` is retained only as a compatibility redirect to `/login`.
 
-## UI boundary
+## UI status and boundary
 
-The existing Staff/Admin UI is the production management baseline and should not be restyled as part of Company Portal work.
+The Staff/Admin UI polish programme is **complete through PR #81** and is now the production management baseline.
 
 - Staff shell: `components/app-header.tsx`, `components/app-sidebar.tsx`, `app/(admin)/**`
 - Company Portal shell: `components/portal/**`, `app/(portal)/**`
@@ -23,7 +23,15 @@ The existing Staff/Admin UI is the production management baseline and should not
 
 Company Portal navigation remains capability-driven by Fluid. A customer token must never be used for `css_admin_*` operations, and a Magento admin token must never be treated as a company-user session.
 
-See [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) for the full authentication/ownership contract, [`docs/PORTAL_UI_ROADMAP.md`](docs/PORTAL_UI_ROADMAP.md) for the customer-facing UI refinement plan, and [`docs/PORTAL_REGRESSION_CHECKLIST.md`](docs/PORTAL_REGRESSION_CHECKLIST.md) for the live Company Portal acceptance gate.
+Roadmaps and acceptance references:
+
+- [`docs/ADMIN_UI_POLISH_ROADMAP.md`](docs/ADMIN_UI_POLISH_ROADMAP.md) — completed Staff/Admin UI programme and retained interaction rules;
+- [`docs/ADMIN_UI_POLISH_AUDIT.md`](docs/ADMIN_UI_POLISH_AUDIT.md) — route-by-route contextual `(i)` decisions;
+- [`docs/PORTAL_UI_ROADMAP.md`](docs/PORTAL_UI_ROADMAP.md) — customer-facing UI refinement and remaining Portal-wide acceptance gate;
+- [`docs/PORTAL_REGRESSION_CHECKLIST.md`](docs/PORTAL_REGRESSION_CHECKLIST.md) — live Company Portal acceptance checklist;
+- [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) — authentication and ownership contract.
+
+The next agreed functional candidate is stacked purchase allowances for the same logical product (for example, **10 within 365 days and 2 within 30 days**, both enforced simultaneously). That is a backend capability first under `Css/Commerce/**`, not a browser-side rule.
 
 ## Stack
 

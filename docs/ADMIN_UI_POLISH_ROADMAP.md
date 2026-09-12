@@ -2,172 +2,127 @@
 
 Last updated: 2026-09-12
 
-This is the live tracker for the **Staff / Magento-admin** UI polish pass in `css_admin`.
+**Status: ✅ Complete**
 
-It is intentionally separate from the functional product roadmap. Fluid/Magento remains authoritative for permissions, company scope, purchasing policy, pricing, credit, catalogue eligibility and every mutation outcome. Company Portal (`app/(portal)`) is a separate UI surface and remains out of scope unless explicitly stated.
+This document records the completed **Staff / Magento-admin** UI polish programme in `css_admin`.
 
-## Status legend
+Fluid/Magento remains authoritative for permissions, company scope, purchasing policy, pricing, credit, catalogue eligibility and every mutation outcome. Company Portal (`app/(portal)`) remains a separate authenticated UI surface with its own roadmap.
 
-- ✅ **Complete** — merged into `main`; deployed/runtime acceptance recorded where applicable.
-- 🟡 **Active** — current focused implementation block.
-- ⬜ **Planned** — agreed direction, not implemented yet.
+## Completion summary
 
-## Current position
+The Admin UI polish programme is complete through **PR #81**.
+
+Completed outcomes:
+
+- consistent CSS Commerce visual system and Admin shell;
+- Lucide navigation/action language and selective contextual `(i)` help;
+- focused modal interactions for compact create/edit tasks;
+- improved Users & roles, Employees, Catalogue, Purchase controls, Payment, Settings, Credit, Pricing, Finance and Credit orders;
+- clearer OGL source-of-truth treatment and representative-profile workflows;
+- clearer **Choose → Preview → Apply** import hierarchy;
+- denser Companies and Company overview surfaces;
+- keyboard-visible skip navigation, local-nav preservation when the sidebar collapses, 200% zoom hardening, narrow-width resilience, long-content wrapping, reduced-motion handling and forced-colour fallbacks;
+- no Company Portal visual redesign, GraphQL schema change, ACL change or Magento/Fluid business-rule duplication as part of the polish pass.
+
+## Completed phases
 
 ### ✅ Phase 0 — UI / UX foundation
 
-Established before this pass:
+Established the CSS Commerce brand tokens, typography, buttons, fields, cards, badges, notices, Admin shell, company context, sidebar, responsive content width and visible focus treatment.
 
-- CSS Commerce brand tokens, typography, buttons, fields, cards, badges and notices;
-- Admin shell, company context and company sidebar;
-- responsive operational content width and visible keyboard focus;
-- company directory/overview hierarchy;
-- specialised Users/Roles, Catalogue, commercial, OGL and Credit-order layouts;
-- Company Portal kept as a separate authenticated UI surface.
-
-Reference: `docs/ui-ux-foundation.md`.
+Reference: [`ui-ux-foundation.md`](ui-ux-foundation.md).
 
 ### ✅ Phase 1 — Purchase-control UX hardening and polish
 
-Completed through PRs **#69–#71**:
+Completed through **PRs #69–#71**.
 
 - clearer quantity-allowance management feedback and affected-buyer reporting;
 - Lucide help/edit modals;
 - compact metrics, quieter operations and stronger rule hierarchy;
 - specialist help for buyer allowances, periods, resets and retained history.
 
-Purchase Controls remains the reference pattern for focused Admin editing: state first, edit in a modal when appropriate, destructive actions secondary, backend decisions authoritative.
+Purchase Controls remains the reference interaction pattern for focused Admin editing.
 
 ### ✅ Phase 2 — Admin visual system and contextual help
 
-**PR #72 merged.**
-
-Completed:
+Completed through **PR #72**.
 
 - Lucide icons across Admin navigation;
 - consistent Admin-only headings, cards, tables, searches and notices;
 - selective route-aware `(i)` help for policy, identity, source-of-truth and workflow semantics;
-- decisions recorded in `docs/ADMIN_UI_POLISH_AUDIT.md`;
-- no generic help on Companies, Overview, Purchase Controls or Company Portal.
+- route decisions recorded in [`ADMIN_UI_POLISH_AUDIT.md`](ADMIN_UI_POLISH_AUDIT.md).
 
 ### ✅ Phase 3 — Users & roles + Employees interaction consistency
 
-**PR #74 merged, deployed and visually accepted.**
+Completed through **PR #74** and deployed/runtime accepted.
 
-Completed:
-
-- Add/Edit User, Create/Edit Role and Add/Edit Employee use focused Admin action modals;
+- Add/Edit User, Create/Edit Role and Add/Edit Employee use focused Admin modals;
 - protected roles remain read-only;
-- Employee History stays a separate reporting flow;
+- Employee History remains a separate reporting flow;
 - Lucide row actions and quieter destructive actions are consistent;
-- practical filter/search/page state is retained around modal errors;
-- GraphQL payloads, Fluid ACL decisions and Employee-vs-buyer semantics are unchanged.
+- existing GraphQL payloads, Fluid ACL decisions and Employee-vs-buyer semantics remain unchanged.
 
 ### ✅ Phase 4 — Catalogue, Payment and Company settings
 
-**PR #75 merged, deployed and visually accepted. PR #76 followed with the deployed Payment save-button contrast fix.**
+Completed through **PR #75**, with **PR #76** for the Payment save-action contrast follow-up.
 
-Completed:
-
-- Catalogue policy uses clearer tab/status/search/restriction/save hierarchy while retaining backend-authoritative Company/Role boundaries;
+- clearer Catalogue policy hierarchy while retaining Company/Role boundaries;
 - large catalogue pickers remain full-width;
-- Payment configuration uses the shared Lucide language, clearer Default/All/Specific choices, better selection feedback and pending-save protection;
-- Company settings cleanly separates OGL-owned read-only identity, Magento-local settings and destructive lifecycle controls;
-- no GraphQL, server-action, ACL or backend-rule changes.
+- clearer Default / All / Specific Payment configuration;
+- Company settings separates OGL-owned read-only identity, Magento-local settings and destructive lifecycle controls;
+- no backend-rule changes.
 
 ### ✅ Phase 5 — Commercial and operational surfaces
 
-**PR #77 merged, deployed and visually accepted.**
+Completed through **PR #77** and deployed/runtime accepted.
 
-Completed:
-
-- Company Credit has denser Credit limit / Used / Available hierarchy and clearer read-only/source-of-truth treatment;
-- Pricing makes OGL custom pricing vs Magento fallback obvious while keeping import health secondary;
-- Finance uses denser metrics, stronger OGL provenance and a clearer definition of “spend”;
-- Credit Orders has cleaner filters/rows/tabs, stronger acting-company-user context and clearer lifecycle disclosures;
-- Credit Order actions are still rendered only from Fluid-returned `can_*` decisions for the selected real company user.
+- denser Company Credit hierarchy;
+- clearer OGL custom pricing vs Magento fallback;
+- stronger Finance provenance and spend definition;
+- cleaner Credit-order filters, rows, tabs, actor context and lifecycle disclosures;
+- lifecycle actions remain exclusively backend/actor-authoritative.
 
 ### ✅ Phase 6 — OGL + import workflows
 
-**PR #78 merged and deployed. PR #80 landed the final Representative profiles / Companies / Company overview cleanup and fixed the Admin lint blockers found during real-server validation.**
+Completed through **PR #78**, with **PR #80** landing the final Representative profiles / Companies / Company overview cleanup and Admin lint fixes.
 
-Completed:
+- stronger OGL health/source-of-truth presentation;
+- clearer rep identity/profile/media actions while rep profiles remain presentation-only;
+- **Choose → Preview → Apply** is the dominant import workflow;
+- import guards and `company_ref` / `company_reference` routing remain unchanged;
+- Companies and Company overview received their final density/hierarchy cleanup.
 
-- OGL Companies / Rep mappings use stronger source-of-truth and operational health presentation;
-- Live OGL preview is visually distinct from Magento company state;
-- Representative profiles have clearer rep identity, profile controls and media actions while remaining presentation-only;
-- Bulk import and company Import / export make **Choose → Preview → Apply** the dominant workflow;
-- preview/apply guardrails and `company_ref` / `company_reference` routing are unchanged;
-- Companies and Company overview received a final density/hierarchy cleanup;
-- real-server `yarn lint`, typecheck/build validation was green after #80.
+### ✅ Phase 7 — Final Admin accessibility and responsive hardening
 
-No GraphQL, ACL or backend business rules changed during this phase.
+Completed through **PR #81** and visually accepted on the deployed application.
 
-## 🟡 Phase 7 — Final Admin accessibility and responsive hardening
+- keyboard-visible **Skip to main content**;
+- reliable main-content focus target;
+- earlier sidebar collapse for 200% zoom;
+- company/OGL/import local navigation remains available after sidebar collapse;
+- long names, references, labels and status text wrap safely;
+- dense tables/pickers keep contained horizontal scrolling;
+- narrow-width action rows remain usable;
+- `prefers-reduced-motion` is honoured across Admin polish layers;
+- forced-colour/high-contrast focus/boundary fallbacks are present;
+- company structure controls expose clearer accessible names and state;
+- representative-profile and Personalisation media controls have clearer accessible names;
+- non-critical Admin preview images use lazy loading / async decoding;
+- no Portal, backend or business-rule changes were introduced.
 
-This is the **active final Admin UI block**.
+**The Staff/Admin UI polish programme is now closed.** Future Admin UI changes should be treated as targeted product work or regression fixes rather than a continuation of this redesign pass.
 
-The goal is not another redesign. It is to make the now-consistent Admin interface robust under keyboard-only use, browser zoom, narrow viewports, long content and accessibility preferences.
+## Shared interaction rules retained after completion
 
-### Navigation and focus
+### Modals
 
-- add a keyboard-visible **Skip to main content** link;
-- make the main content a reliable skip-link focus target;
-- keep the full company/OGL/import local navigation reachable when the desktop sidebar collapses;
-- collapse the desktop sidebar earlier so 200% zoom does not squeeze operational content into an unusable column;
-- retain visible focus and `aria-current` state throughout navigation.
-
-### Responsive and content resilience
-
-- support 200% browser zoom and approximately 360–390px mobile widths;
-- keep cards/forms/table wrappers shrinkable with `min-width: 0` where appropriate;
-- allow long names, references, status text and errors to wrap instead of forcing horizontal page overflow;
-- preserve intentional horizontal scrolling inside dense tables/pickers rather than the whole page;
-- keep action rows usable when labels wrap.
-
-### Motion and high-contrast preferences
-
-- honor `prefers-reduced-motion` across Admin transitions/animations;
-- retain focus and surface boundaries under forced-colour/high-contrast modes;
-- do not remove state indicators that are conveyed by text/badges as well as colour.
-
-### Modal and workflow regression
-
-- verify native dialog focus containment/restoration;
-- verify Escape, Close and Cancel behavior, including pending-save protection;
-- verify route/session-expiry recovery still rethrows navigation rather than converting redirects to inline mutation errors;
-- keep destructive confirmations explicit.
-
-### Phase 7 acceptance
-
-Before marking the Admin UI pass complete:
-
-- `yarn lint` passes with no errors;
-- `yarn typecheck` passes;
-- `yarn build` passes;
-- focused Phase 7 source tests pass;
-- keyboard-only navigation reaches top-level and local company/OGL/import navigation;
-- skip-link focus lands on the main Admin content;
-- modal focus returns to its trigger after close;
-- 200% zoom remains usable on Companies, Overview, Users/Roles, Employees, Purchase Controls, Payment, Credit Orders, OGL and imports;
-- 360–390px widths do not create page-level horizontal overflow;
-- long company/product/user/role names remain readable;
-- reduced-motion and forced-colour checks are acceptable;
-- representative Company Portal smoke regression confirms Admin-only styles did not leak across the auth/UI boundary.
-
-When those checks pass on the deployed application, mark **Phase 7 complete** and the Admin UI polish programme complete.
-
-## Shared interaction rules
-
-### Modal use
-
-Use a modal for focused create/edit/confirmation tasks where retaining list/overview context helps. Do not move long queues, reports, history, large browsing experiences or long configuration/import flows into modals merely for consistency.
+Use a modal for focused create/edit/confirmation tasks where retaining list or overview context helps. Do not move long queues, reports, history, browsing experiences or long configuration/import flows into modals merely for consistency.
 
 ### Actions
 
 - one obvious primary action per task;
-- secondary actions stay visually quieter;
-- destructive actions remain explicit and confirmed;
+- secondary actions remain visually quieter;
+- destructive actions stay explicit and confirmed;
 - row actions use a consistent right-side action area;
 - icons improve scanning rather than decorate every label.
 
@@ -176,32 +131,34 @@ Use a modal for focused create/edit/confirmation tasks where retaining list/over
 - overview/state before editing;
 - status badges describe backend-returned state, never frontend guesses;
 - dense operational screens favour compact metrics over oversized dashboard cards;
-- search/filter controls should look and behave consistently;
+- search/filter controls remain consistent;
 - empty states should explain what can happen next.
 
 ### Contextual `(i)` help
 
-Add help only for non-obvious rules, ownership boundaries or workflows. Canonical route decisions remain in `docs/ADMIN_UI_POLISH_AUDIT.md`.
+Add help only for non-obvious rules, ownership boundaries or workflows. Canonical route decisions remain in [`ADMIN_UI_POLISH_AUDIT.md`](ADMIN_UI_POLISH_AUDIT.md).
 
 ## Backend / product boundaries
 
-The UI pass must **not**:
+Admin UI work must not:
 
 - reproduce Fluid/Magento authorization;
 - add client-side purchasing, catalogue, pricing, credit or import business rules;
 - turn read-only OGL/credit/pricing surfaces into unsupported write surfaces;
-- change Company Portal behaviour;
+- change Company Portal behaviour for visual consistency;
 - use REST shortcuts instead of accepted GraphQL contracts;
 - conflate company users/buyers with beneficiary Employees.
 
-If UI work reveals a legitimate missing capability, record it separately and extend `Css/Commerce/**` first under the project backend golden rule.
+If a UI task exposes a legitimate missing capability, implement the backend contract first under the project rule that backend changes belong in `Css/Commerce/**`.
 
-## Update discipline
+## Next product work
 
-After each Admin UI polish PR:
+The completed UI pass intentionally leaves functional gaps outside its scope. The next agreed functional candidate is **stacked purchase allowances** for the same logical product, for example:
 
-1. update the relevant phase status here;
-2. add the merged PR number and outcome;
-3. record intentionally deferred items;
-4. keep runtime acceptance separate from source completion;
-5. do not mark a phase complete until the real application passes `yarn lint`, `yarn typecheck`, `yarn build` and relevant browser/runtime checks.
+- maximum **10 within 365 days**; and
+- maximum **2 within 30 days**;
+- both enforced simultaneously by Fluid/Magento rather than by browser-side arithmetic.
+
+That capability requires backend work first in `Css/Commerce/**`, then a focused `css_admin` management UI extension.
+
+Company Portal work remains tracked separately in [`PORTAL_UI_ROADMAP.md`](PORTAL_UI_ROADMAP.md).
