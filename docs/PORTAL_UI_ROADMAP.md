@@ -1,12 +1,20 @@
 # Company Portal UI roadmap
 
-Last updated: 2026-09-10
+Last updated: 2026-09-12
+
+## Cross-product status
+
+The **Staff / Magento-admin UI polish programme is complete through PR #81** and is now the stable management baseline. See [`ADMIN_UI_POLISH_ROADMAP.md`](ADMIN_UI_POLISH_ROADMAP.md).
+
+Company Portal remains a separate authenticated product surface. Completion of the Admin pass does **not** reopen Portal styling or make Admin patterns automatically applicable to customer-facing screens.
+
+The next agreed functional candidate across the wider product is stacked purchase allowances for the same logical product (for example, 10 within 365 days **and** 2 within 30 days). That is a backend capability first and is not a Portal-only UI task.
 
 ## Product boundary
 
 `css_admin` hosts two authenticated products behind one shared sign-in screen:
 
-- **Staff / Magento Admin**: admin token, `app/(admin)/**`, existing Admin UI baseline.
+- **Staff / Magento Admin**: admin token, `app/(admin)/**`, completed Admin UI baseline.
 - **Company Portal**: customer token, `app/(portal)/**`, customer-facing UI.
 
 The sign-in screen may be shared, but the authenticated UI surfaces are intentionally separate. Portal presentation work must not restyle or repurpose the Admin shell.
@@ -96,14 +104,14 @@ Implementation:
 - [x] keep all polish scoped to `app/(portal)/**` and `components/portal/**` apart from documentation;
 - [x] add a permanent live regression checklist.
 
-Runtime acceptance:
+Runtime acceptance remains the outstanding Portal-wide gate:
 
 - [ ] execute the Company administrator profile;
 - [ ] execute a limited/view-only Company user profile where available;
 - [ ] execute a Company user without each management capability being exercised;
 - [ ] execute multi-company switching where available;
 - [ ] check desktop, tablet and narrow/mobile navigation and modal journeys;
-- [ ] run production `yarn lint`, `yarn typecheck` and `yarn build`;
+- [ ] run production `yarn lint`, `yarn typecheck` and `yarn build` for the Portal acceptance slice;
 - [ ] confirm representative Staff/Admin routes remain visually and functionally unchanged.
 
 Use [`PORTAL_REGRESSION_CHECKLIST.md`](PORTAL_REGRESSION_CHECKLIST.md) as the acceptance gate for this phase and future Portal UI changes.
