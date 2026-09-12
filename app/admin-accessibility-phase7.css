@@ -1,0 +1,143 @@
+/* Phase 7: final Admin accessibility and responsive hardening.
+   Keep these rules Admin-scoped so Company Portal remains a separate surface. */
+
+.admin-skip-link {
+  position: fixed;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 200;
+  transform: translateY(-160%);
+  padding: 0.65rem 0.85rem;
+  border: 2px solid var(--css-primary);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--css-primary);
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 22px rgb(0 35 72 / 18%);
+}
+
+.admin-skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+.admin-shell .content:focus {
+  outline: none;
+}
+
+.admin-shell .content:focus-visible {
+  box-shadow: inset 0 0 0 3px rgb(255 221 0 / 78%);
+}
+
+.admin-shell :where(
+  h1,
+  h2,
+  h3,
+  p,
+  dt,
+  dd,
+  th,
+  td,
+  label,
+  .muted,
+  .small-text,
+  .badge
+) {
+  overflow-wrap: anywhere;
+}
+
+.admin-shell :where(.card, form, fieldset, .table-wrap) {
+  min-width: 0;
+}
+
+.admin-shell .table-wrap {
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+.admin-shell :where(.resource-picker, .catalog-tree) {
+  overscroll-behavior: contain;
+}
+
+.admin-shell :where(button, .button, summary) {
+  min-block-size: 40px;
+}
+
+.admin-shell :where(a, button, input, select, textarea, summary):focus-visible {
+  scroll-margin-block: 7rem 2rem;
+}
+
+.admin-shell :where(.error, .notice, .success) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .admin-shell .page-header,
+  .admin-shell .section-heading,
+  .admin-shell .card-heading-row {
+    min-width: 0;
+  }
+
+  .admin-shell .content > * {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-shell :where(.page-header, .section-heading, .card-heading-row) {
+    align-items: stretch;
+  }
+
+  .admin-shell .button-row {
+    align-items: stretch;
+  }
+
+  .admin-shell .button-row > :where(button, .button) {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .admin-shell table {
+    font-size: 0.94rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-shell .card {
+    padding: 1rem;
+  }
+
+  .admin-shell :where(.page-header .button-link, .section-heading .button-link) {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell,
+  .admin-shell *,
+  .admin-shell *::before,
+  .admin-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .admin-shell :where(.badge, .card, .table-wrap, .sidebar-sublink-active) {
+    border: 1px solid CanvasText;
+  }
+
+  .admin-shell :where(button, .button, a, input, select, textarea, summary):focus-visible,
+  .admin-shell .content:focus-visible,
+  .admin-skip-link:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}

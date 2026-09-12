@@ -124,24 +124,25 @@ export default async function CompanyPersonalisationPage({
             <div className={styles.mediaGrid}>
               {(["LOGO", "BANNER"] as const).map((kind) => {
                 const url = kind === "LOGO" ? presentation.logo_url : presentation.banner_url;
+                const label = kind === "LOGO" ? "Company logo" : "Portal banner";
                 return (
                   <article className={styles.mediaCard} key={kind}>
                     <div className={styles.mediaPreview}>
-                      {url ? <img src={url} alt={`${kind === "LOGO" ? "Company logo" : "Company banner"} preview`} /> : <span className="muted">No {kind.toLowerCase()} uploaded</span>}
+                      {url ? <img src={url} alt={`${label} preview`} loading="lazy" decoding="async" /> : <span className="muted">No {kind.toLowerCase()} uploaded</span>}
                     </div>
                     <div className={styles.mediaBody}>
-                      <strong>{kind === "LOGO" ? "Company logo" : "Portal banner"}</strong>
+                      <strong>{label}</strong>
                       <form action={uploadCompanyPresentationMediaAction} className="stack">
                         <input type="hidden" name="companyId" value={companyId} />
                         <input type="hidden" name="kind" value={kind} />
-                        <input className={styles.fileInput} name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
+                        <input className={styles.fileInput} name="file" type="file" accept="image/jpeg,image/png,image/webp" required aria-label={`Choose ${label.toLowerCase()} image`} />
                         <button className="button button-secondary" type="submit">Upload {kind.toLowerCase()}</button>
                       </form>
                       {url ? (
                         <form action={clearCompanyPresentationMediaAction}>
                           <input type="hidden" name="companyId" value={companyId} />
                           <input type="hidden" name="kind" value={kind} />
-                          <button className="button button-secondary" type="submit">Remove</button>
+                          <button className="button button-secondary" type="submit">Remove {kind.toLowerCase()}</button>
                         </form>
                       ) : null}
                     </div>
@@ -155,7 +156,7 @@ export default async function CompanyPersonalisationPage({
         <aside className="stack">
           <section className={`card ${styles.previewCard}`}>
             <div className={styles.banner} style={bannerStyle}>
-              {presentation.logo_url ? <img className={styles.logo} src={presentation.logo_url} alt="Company logo" /> : null}
+              {presentation.logo_url ? <img className={styles.logo} src={presentation.logo_url} alt="Company logo" decoding="async" /> : null}
             </div>
             <div className={styles.previewBody}>
               <div>
@@ -173,7 +174,7 @@ export default async function CompanyPersonalisationPage({
               </div>
               {rep ? (
                 <div className={styles.repCard}>
-                  {rep.image_url ? <img className={styles.repPhoto} src={rep.image_url} alt={`${rep.name} profile`} /> : <div className={styles.repInitials} aria-hidden="true">{initials(rep.name)}</div>}
+                  {rep.image_url ? <img className={styles.repPhoto} src={rep.image_url} alt={`${rep.name} profile`} loading="lazy" decoding="async" /> : <div className={styles.repInitials} aria-hidden="true">{initials(rep.name)}</div>}
                   <div className={styles.repBody}>
                     <span className="muted small-text">Your account representative</span>
                     <strong>{rep.name}</strong>

@@ -113,6 +113,7 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
           const isCanonicalRoot = company.parent_company_id === null;
           const expanded = normalizedQuery ? hasChildren : expandedIds.includes(company.company_id);
           const totalInStructure = countStructureCompanies(root);
+          const structureId = `company-tree-${company.company_id}`;
 
           return (
             <article className={`company-group${expanded ? " company-group-expanded" : ""}`} key={company.company_id}>
@@ -122,7 +123,8 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
                   type="button"
                   onClick={() => hasChildren && toggle(company.company_id)}
                   aria-expanded={hasChildren ? expanded : undefined}
-                  aria-controls={hasChildren ? `company-tree-${company.company_id}` : undefined}
+                  aria-controls={hasChildren ? structureId : undefined}
+                  aria-label={hasChildren ? (expanded ? `Hide ${company.name} company structure` : `View ${company.name} company structure`) : `${company.name} is an independent company`}
                   disabled={!hasChildren}
                   title={hasChildren ? (expanded ? "Hide company structure" : "View company structure") : "Independent company"}
                 >
@@ -147,7 +149,13 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
 
                 <div className="company-group-actions">
                   {hasChildren ? (
-                    <button className="company-structure-action" type="button" onClick={() => toggle(company.company_id)}>
+                    <button
+                      className="company-structure-action"
+                      type="button"
+                      onClick={() => toggle(company.company_id)}
+                      aria-expanded={expanded}
+                      aria-controls={structureId}
+                    >
                       {expanded ? "Hide structure" : `View structure · ${totalInStructure}`}
                     </button>
                   ) : (
@@ -158,7 +166,7 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
               </div>
 
               {hasChildren && expanded ? (
-                <div className="company-tree-panel" id={`company-tree-${company.company_id}`}>
+                <div className="company-tree-panel" id={structureId}>
                   <div className="company-tree-head">
                     <div>
                       <span className="company-tree-kicker">Company structure</span>
