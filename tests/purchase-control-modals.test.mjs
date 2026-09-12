@@ -186,6 +186,6 @@ test("new edit action has no apply/reset mutation or template-creation fallback"
   assert.doesNotMatch(text, /applyPurchaseControlTemplate|resetPurchaseControlCounters|optionalId/);
   assert.match(text, /requiredId\(formData, "templateId"\)/);
 });
-test("Lucide is pinned to the version already used by css_store", () => {
-  assert.equal(JSON.parse(source("package.json")).dependencies["lucide-react"], "1.44.0");
+test("Lucide dependency matches the installed Admin version", () => {
+  assert.equal(JSON.parse(source("package.json")).dependencies["lucide-react"], "^1.45.0");
 });

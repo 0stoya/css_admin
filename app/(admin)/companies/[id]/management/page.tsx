@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ShieldCheck, Trash2, UserMinus, UsersRound } from "lucide-react";
+import { AdminActionModal, AdminCloseFooter, AdminFormFooter } from "@/components/admin-action-modal";
 import { CompanyPermissionPicker } from "@/components/company-permission-picker";
 import { getCompany } from "@/lib/graphql/companies";
 import {
@@ -129,12 +131,33 @@ function WorkspaceTabs({
   return (
     <nav className="management-tabs" aria-label="Users and roles workspace">
       <Link className={view === "users" ? "management-tab management-tab-active" : "management-tab"} href={base} aria-current={view === "users" ? "page" : undefined}>
-        <span>Users</span><strong>{userCount}</strong>
+        <span className="management-tab-label"><UsersRound size={16} aria-hidden="true" />Users</span><strong>{userCount}</strong>
       </Link>
       <Link className={view === "roles" ? "management-tab management-tab-active" : "management-tab"} href={`${base}?view=roles`} aria-current={view === "roles" ? "page" : undefined}>
-        <span>Roles</span><strong>{roleCount}</strong>
+        <span className="management-tab-label"><ShieldCheck size={16} aria-hidden="true" />Roles</span><strong>{roleCount}</strong>
       </Link>
     </nav>
+  );
+}
+
+function ReturnStateFields({
+  modal,
+  userSearch,
+  userRoleFilter,
+  roleSearch,
+}: {
+  modal: string;
+  userSearch?: string;
+  userRoleFilter?: string;
+  roleSearch?: string;
+}) {
+  return (
+    <>
+      <input name="returnModal" type="hidden" value={modal} />
+      {userSearch !== undefined ? <input name="returnUserSearch" type="hidden" value={userSearch} /> : null}
+      {userRoleFilter !== undefined ? <input name="returnRoleFilter" type="hidden" value={userRoleFilter} /> : null}
+      {roleSearch !== undefined ? <input name="returnRoleSearch" type="hidden" value={roleSearch} /> : null}
+    </>
   );
 }
 
@@ -153,11 +176,13 @@ export default async function CompanyManagementPage({
 
   const candidateSearch = firstParam(query.candidateSearch)?.trim();
   const view = workspaceView(firstParam(query.view));
+  const modal = firstParam(query.modal)?.trim() ?? "";
   const userSearch = firstParam(query.userSearch)?.trim() ?? "";
   const userRoleFilter = firstParam(query.role)?.trim() ?? "";
   const roleSearch = firstParam(query.roleSearch)?.trim() ?? "";
   const notice = firstParam(query.notice);
   const mutationError = firstParam(query.error);
+  const modalStateKey = [modal, candidateSearch ?? "", userSearch, userRoleFilter, roleSearch, notice ?? "", mutationError ?? ""].join("|");
   const { company, management, candidates, error } = await loadManagement(companyId, candidateSearch);
 
   if (!company || !management || !candidates) {
@@ -211,7 +236,7 @@ export default async function CompanyManagementPage({
       </header>
 
       {notice ? <div className="notice">{notice}</div> : null}
-      {mutationError ? <div className="error">{mutationError}</div> : null}
+      {mutationError && !modal ? <div className="error">{mutationError}</div> : null}
 
       <WorkspaceTabs companyId={company.company_id} view={view} userCount={management.users.length} roleCount={management.roles.length} />
 
@@ -223,11 +248,23 @@ export default async function CompanyManagementPage({
               <h2>Company users</h2>
               <p className="muted">{management.users.length} users · {companyAdminCount} company administrator{companyAdminCount === 1 ? "" : "s"}</p>
             </div>
-            <details className="management-create-panel management-create-inline" open={Boolean(candidateSearch)}>
-              <summary><span><strong>Add user</strong><small>Existing Magento customer</small></span></summary>
-              <div className="management-panel-body stack">
+            <AdminActionModal
+              title="Add company user"
+              description="Add an existing Magento customer to this company, then set their role, manager and approval behaviour."
+              triggerLabel="Add user"
+              triggerIcon="plus"
+              triggerVariant="primary"
+              defaultOpen={modal === "add-user"}
+              stateKey={modalStateKey}
+              wide
+            >
+              <div className="management-modal-stack">
+                {mutationError && modal === "add-user" ? <div className="error" role="alert">{mutationError}</div> : null}
                 <form className="management-candidate-search" method="get">
                   <input name="view" type="hidden" value="users" />
+                  <input name="modal" type="hidden" value="add-user" />
+                  {userSearch ? <input name="userSearch" type="hidden" value={userSearch} /> : null}
+                  {userRoleFilter ? <input name="role" type="hidden" value={userRoleFilter} /> : null}
                   <div className="field grow">
                     <label htmlFor="candidateSearch">Find Magento customer</label>
                     <input id="candidateSearch" name="candidateSearch" defaultValue={candidateSearch} placeholder="Name or email" />
@@ -235,9 +272,11 @@ export default async function CompanyManagementPage({
                   <button className="button button-secondary" type="submit">Search</button>
                 </form>
 
-                <form action={addCompanyUserAction} className="management-user-form">
+                <form action={addCompanyUserAction} className="management-user-form management-modal-form">
                   <input name="companyId" type="hidden" value={company.company_id} />
                   <input name="returnView" type="hidden" value="users" />
+                  <ReturnStateFields modal="add-user" userSearch={userSearch} userRoleFilter={userRoleFilter} />
+                  <input name="returnCandidateSearch" type="hidden" value={candidateSearch ?? ""} />
                   <div className="field management-field-wide">
                     <label htmlFor="customerId">Customer</label>
                     <select id="customerId" name="customerId" required defaultValue="">
@@ -271,13 +310,17 @@ export default async function CompanyManagementPage({
                     <label htmlFor="newApprovalThreshold">Approval threshold</label>
                     <input id="newApprovalThreshold" name="approvalThreshold" type="number" min="0" step="0.01" />
                   </div>
-                  <div className="management-form-actions">
-                    <button className="button" type="submit" disabled={!availableCandidates.length || !management.roles.length}>Add company user</button>
-                    <span className="muted small-text">{availableCandidates.length} available in the current {candidateSearch ? "search" : "candidate set"}.</span>
+                  <div className="management-field-wide">
+                    <AdminFormFooter
+                      submitLabel="Add company user"
+                      pendingLabel="Adding user…"
+                      disabled={!availableCandidates.length || !management.roles.length}
+                      hint={`${availableCandidates.length} customer${availableCandidates.length === 1 ? "" : "s"} available in the current ${candidateSearch ? "search" : "candidate set"}.`}
+                    />
                   </div>
                 </form>
               </div>
-            </details>
+            </AdminActionModal>
           </div>
 
           <form className="card management-filter-bar" method="get">
@@ -309,9 +352,10 @@ export default async function CompanyManagementPage({
             {filteredUsers.map((user) => {
               const manager = user.manager_user_id === null ? null : usersById.get(user.manager_user_id);
               const selectedRoleId = user.roles[0]?.role_id;
+              const modalKey = `edit-user-${user.user_id}`;
               return (
-                <details className="management-record" key={user.user_id}>
-                  <summary className="management-record-summary management-user-grid">
+                <div className="management-record" key={user.user_id}>
+                  <div className="management-record-summary management-user-grid">
                     <span className="management-record-identity">
                       <strong>{userName(user)}</strong>
                       <small>{user.email}</small>
@@ -321,66 +365,74 @@ export default async function CompanyManagementPage({
                     <span className="management-record-cell" data-label="Manager">{manager ? userName(manager) : user.manager_user_id === null ? "—" : `User #${user.manager_user_id}`}</span>
                     <span className="management-record-cell" data-label="Approval"><span className="badge badge-neutral">{approvalSummary(user)}</span></span>
                     <span className="management-record-cell" data-label="Access"><CapabilityPills user={user} /></span>
-                    <span className="management-record-action">Manage <span aria-hidden="true">›</span></span>
-                  </summary>
+                    <div className="management-record-action">
+                      <AdminActionModal
+                        title={`Edit ${userName(user)}`}
+                        description={`Customer #${user.customer_id} · Company user #${user.user_id}. Fluid remains authoritative for effective permissions.`}
+                        triggerLabel="Edit"
+                        triggerIcon="edit"
+                        defaultOpen={modal === modalKey}
+                        stateKey={modalStateKey}
+                        wide
+                      >
+                        {mutationError && modal === modalKey ? <div className="error" role="alert">{mutationError}</div> : null}
+                        <form action={updateCompanyUserAction} className="management-user-form management-modal-form">
+                          <input name="companyId" type="hidden" value={company.company_id} />
+                          <input name="userId" type="hidden" value={user.user_id} />
+                          <input name="returnView" type="hidden" value="users" />
+                          <ReturnStateFields modal={modalKey} userSearch={userSearch} userRoleFilter={userRoleFilter} />
+                          <div className="field">
+                            <label>Role</label>
+                            <select name="roleId" required defaultValue={selectedRoleId ?? ""}>
+                              <option value="" disabled>Select role</option>
+                              {management.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.name}</option>)}
+                            </select>
+                          </div>
+                          <div className="field">
+                            <label>Manager</label>
+                            <select name="managerId" defaultValue={user.manager_user_id ?? ""}>
+                              <option value="">No manager</option>
+                              {management.users.filter((candidate) => candidate.user_id !== user.user_id).map((candidate) => <option key={candidate.user_id} value={candidate.user_id}>{userName(candidate)}</option>)}
+                            </select>
+                          </div>
+                          <div className="field">
+                            <label>Approval type</label>
+                            <ApprovalTypeSelect defaultValue={user.approval_type} />
+                          </div>
+                          <div className="field">
+                            <label>Approval threshold</label>
+                            <input name="approvalThreshold" type="number" min="0" step="0.01" defaultValue={user.approval_threshold ?? ""} />
+                          </div>
+                          <div className="management-field-wide management-effective-access">
+                            <span className="muted small-text">Effective access</span>
+                            <CapabilityPills user={user} />
+                          </div>
+                          <div className="management-field-wide">
+                            <AdminFormFooter submitLabel="Save user" pendingLabel="Saving user…" />
+                          </div>
+                        </form>
 
-                  <div className="management-record-body">
-                    <div className="management-record-body-heading">
-                      <div><p className="eyebrow">Edit user</p><h3>{userName(user)}</h3></div>
-                      <span className="muted small-text">Customer #{user.customer_id} · Company user #{user.user_id}</span>
-                    </div>
-                    <div className="management-editor-layout">
-                      <form action={updateCompanyUserAction} className="management-user-form management-edit-form">
-                        <input name="companyId" type="hidden" value={company.company_id} />
-                        <input name="userId" type="hidden" value={user.user_id} />
-                        <input name="returnView" type="hidden" value="users" />
-                        <div className="field">
-                          <label>Role</label>
-                          <select name="roleId" required defaultValue={selectedRoleId ?? ""}>
-                            <option value="" disabled>Select role</option>
-                            {management.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.name}</option>)}
-                          </select>
-                        </div>
-                        <div className="field">
-                          <label>Manager</label>
-                          <select name="managerId" defaultValue={user.manager_user_id ?? ""}>
-                            <option value="">No manager</option>
-                            {management.users.filter((candidate) => candidate.user_id !== user.user_id).map((candidate) => <option key={candidate.user_id} value={candidate.user_id}>{userName(candidate)}</option>)}
-                          </select>
-                        </div>
-                        <div className="field">
-                          <label>Approval type</label>
-                          <ApprovalTypeSelect defaultValue={user.approval_type} />
-                        </div>
-                        <div className="field">
-                          <label>Approval threshold</label>
-                          <input name="approvalThreshold" type="number" min="0" step="0.01" defaultValue={user.approval_threshold ?? ""} />
-                        </div>
-                        <div className="management-form-actions"><button className="button" type="submit">Save user</button></div>
-                      </form>
-
-                      <aside className="management-editor-aside">
-                        <div>
-                          <p className="eyebrow">Effective access</p>
-                          <div className="management-pill-row management-pill-row-spaced"><CapabilityPills user={user} /></div>
-                        </div>
                         {!user.is_company_admin ? (
-                          <details className="management-danger-disclosure">
-                            <summary>Remove from company</summary>
-                            <form action={removeCompanyUserAction} className="danger-zone compact-form">
+                          <details className="management-modal-danger">
+                            <summary><UserMinus size={16} aria-hidden="true" />Remove from company</summary>
+                            <form action={removeCompanyUserAction} className="management-danger-form">
                               <input name="companyId" type="hidden" value={company.company_id} />
                               <input name="userId" type="hidden" value={user.user_id} />
                               <input name="expectedEmail" type="hidden" value={user.email} />
                               <input name="returnView" type="hidden" value="users" />
+                              <ReturnStateFields modal={modalKey} userSearch={userSearch} userRoleFilter={userRoleFilter} />
+                              <p className="muted small-text">This removes company membership; it does not delete the Magento customer.</p>
                               <div className="field"><label>Type {user.email} to confirm</label><input name="confirmEmail" autoComplete="off" required /></div>
                               <button className="button button-danger" type="submit">Remove user</button>
                             </form>
                           </details>
-                        ) : <p className="muted small-text">Company administrators are protected from removal by Fluid.</p>}
-                      </aside>
+                        ) : (
+                          <p className="management-modal-note">Company administrators are protected from removal by Fluid.</p>
+                        )}
+                      </AdminActionModal>
                     </div>
                   </div>
-                </details>
+                </div>
               );
             })}
             {!filteredUsers.length ? <div className="card management-empty-state"><strong>No users match these filters.</strong><span>Clear the search or choose a different role.</span></div> : null}
@@ -394,19 +446,29 @@ export default async function CompanyManagementPage({
               <h2>Company roles</h2>
               <p className="muted">{management.roles.length} roles · {roleInUseCount} currently assigned · {assignableResourceCount} assignable Fluid permissions</p>
             </div>
-            <details className="management-create-panel management-create-inline">
-              <summary><span><strong>Create role</strong><small>Build from Fluid permissions</small></span></summary>
-              <form action={saveCompanyRoleAction} className="management-panel-body stack">
+            <AdminActionModal
+              title="Create company role"
+              description="Build a role from the assignable Fluid permissions returned for this company."
+              triggerLabel="Create role"
+              triggerIcon="plus"
+              triggerVariant="primary"
+              defaultOpen={modal === "create-role"}
+              stateKey={modalStateKey}
+              wide
+            >
+              {mutationError && modal === "create-role" ? <div className="error" role="alert">{mutationError}</div> : null}
+              <form action={saveCompanyRoleAction} className="stack management-modal-form">
                 <input name="companyId" type="hidden" value={company.company_id} />
                 <input name="returnView" type="hidden" value="roles" />
+                <ReturnStateFields modal="create-role" roleSearch={roleSearch} />
                 <div className="form-grid">
                   <div className="field"><label htmlFor="roleName">Role name</label><input id="roleName" name="name" required /></div>
                   <div className="field"><label htmlFor="roleSort">Sort order</label><input id="roleSort" name="sortOrder" type="number" /></div>
                 </div>
                 <CompanyPermissionPicker resources={management.resources} label="Role permissions" />
-                <div><button className="button" type="submit">Create role</button></div>
+                <AdminFormFooter submitLabel="Create role" pendingLabel="Creating role…" />
               </form>
-            </details>
+            </AdminActionModal>
           </div>
 
           <form className="card management-filter-bar management-role-filter" method="get">
@@ -431,9 +493,10 @@ export default async function CompanyManagementPage({
             {filteredRoles.map((role) => {
               const permissionCount = rolePermissionCount(role, assignableResourceIds);
               const permissionPaths = role.allowed_resources.map((resourceId) => resourcePaths.get(resourceId) ?? resourceId);
+              const modalKey = `edit-role-${role.role_id}`;
               return (
-                <details className="management-record" key={role.role_id}>
-                  <summary className="management-record-summary management-role-grid">
+                <div className="management-record" key={role.role_id}>
+                  <div className="management-record-summary management-role-grid">
                     <span className="management-record-identity">
                       <strong>{role.name}</strong>
                       <span className={`badge ${role.manageable ? "badge-ok" : "badge-neutral"}`}>{role.manageable ? "Manageable" : "Protected"}</span>
@@ -441,50 +504,62 @@ export default async function CompanyManagementPage({
                     <span className="management-record-cell" data-label="Users"><strong>{role.user_count}</strong></span>
                     <span className="management-record-cell" data-label="Sort">{role.sort_order}</span>
                     <span className="management-record-cell" data-label="Permissions"><strong>{permissionCount}</strong> <span className="muted small-text">assignable selected</span></span>
-                    <span className="management-record-action">{role.manageable ? "Manage" : "View"} <span aria-hidden="true">›</span></span>
-                  </summary>
+                    <div className="management-record-action">
+                      <AdminActionModal
+                        title={role.manageable ? `Edit ${role.name}` : role.name}
+                        description={role.manageable
+                          ? `Role #${role.role_id} · ${role.user_count} assigned user${role.user_count === 1 ? "" : "s"}.`
+                          : `Role #${role.role_id} is protected by Fluid and is read-only in Admin.`}
+                        triggerLabel={role.manageable ? "Edit" : "View"}
+                        triggerIcon={role.manageable ? "edit" : "view"}
+                        defaultOpen={modal === modalKey}
+                        stateKey={modalStateKey}
+                        wide
+                      >
+                        {mutationError && modal === modalKey ? <div className="error" role="alert">{mutationError}</div> : null}
+                        {role.manageable ? (
+                          <>
+                            <form action={saveCompanyRoleAction} className="stack management-modal-form">
+                              <input name="companyId" type="hidden" value={company.company_id} />
+                              <input name="roleId" type="hidden" value={role.role_id} />
+                              <input name="returnView" type="hidden" value="roles" />
+                              <ReturnStateFields modal={modalKey} roleSearch={roleSearch} />
+                              <div className="form-grid">
+                                <div className="field"><label>Name</label><input name="name" defaultValue={role.name} required /></div>
+                                <div className="field"><label>Sort order</label><input name="sortOrder" type="number" defaultValue={role.sort_order} /></div>
+                              </div>
+                              <CompanyPermissionPicker resources={management.resources} selectedResourceIds={role.allowed_resources} label={`${role.name} permissions`} />
+                              <AdminFormFooter submitLabel="Save role" pendingLabel="Saving role…" />
+                            </form>
 
-                  <div className="management-record-body">
-                    <div className="management-record-body-heading">
-                      <div><p className="eyebrow">{role.manageable ? "Edit role" : "Protected role"}</p><h3>{role.name}</h3></div>
-                      <span className="muted small-text">Role #{role.role_id} · {role.user_count} user{role.user_count === 1 ? "" : "s"}</span>
+                            <details className="management-modal-danger">
+                              <summary><Trash2 size={16} aria-hidden="true" />Delete role</summary>
+                              <form action={deleteCompanyRoleAction} className="management-danger-form">
+                                <input name="companyId" type="hidden" value={company.company_id} />
+                                <input name="roleId" type="hidden" value={role.role_id} />
+                                <input name="expectedName" type="hidden" value={role.name} />
+                                <input name="returnView" type="hidden" value="roles" />
+                                <ReturnStateFields modal={modalKey} roleSearch={roleSearch} />
+                                <p className="muted small-text">Fluid only deletes roles with no assigned users.</p>
+                                <div className="field"><label>Type {role.name} to confirm</label><input name="confirmName" autoComplete="off" required /></div>
+                                <button className="button button-danger" type="submit" disabled={role.user_count > 0}>Delete role</button>
+                                {role.user_count > 0 ? <p className="muted small-text">Move the {role.user_count} assigned user{role.user_count === 1 ? "" : "s"} first.</p> : null}
+                              </form>
+                            </details>
+                          </>
+                        ) : (
+                          <>
+                            <div className="management-protected-role">
+                              <p className="muted">Fluid marks this role as protected. Its permissions are shown for reference and cannot be edited here.</p>
+                              {permissionPaths.length ? <ul className="management-permission-list">{permissionPaths.map((path) => <li key={path}>{path}</li>)}</ul> : <p className="muted small-text">No explicit resources were returned.</p>}
+                            </div>
+                            <AdminCloseFooter />
+                          </>
+                        )}
+                      </AdminActionModal>
                     </div>
-
-                    {role.manageable ? (
-                      <div className="stack">
-                        <form action={saveCompanyRoleAction} className="stack management-role-editor">
-                          <input name="companyId" type="hidden" value={company.company_id} />
-                          <input name="roleId" type="hidden" value={role.role_id} />
-                          <input name="returnView" type="hidden" value="roles" />
-                          <div className="form-grid">
-                            <div className="field"><label>Name</label><input name="name" defaultValue={role.name} required /></div>
-                            <div className="field"><label>Sort order</label><input name="sortOrder" type="number" defaultValue={role.sort_order} /></div>
-                          </div>
-                          <CompanyPermissionPicker resources={management.resources} selectedResourceIds={role.allowed_resources} label={`${role.name} permissions`} />
-                          <div className="management-form-actions"><button className="button" type="submit">Save role</button></div>
-                        </form>
-
-                        <details className="management-danger-disclosure management-role-danger">
-                          <summary>Delete role</summary>
-                          <form action={deleteCompanyRoleAction} className="danger-zone compact-form">
-                            <input name="companyId" type="hidden" value={company.company_id} />
-                            <input name="roleId" type="hidden" value={role.role_id} />
-                            <input name="expectedName" type="hidden" value={role.name} />
-                            <input name="returnView" type="hidden" value="roles" />
-                            <div className="field"><label>Type {role.name} to confirm</label><input name="confirmName" autoComplete="off" required /></div>
-                            <button className="button button-danger" type="submit" disabled={role.user_count > 0}>Delete role</button>
-                            {role.user_count > 0 ? <p className="muted small-text">Fluid only deletes unused roles; move the {role.user_count} assigned user{role.user_count === 1 ? "" : "s"} first.</p> : null}
-                          </form>
-                        </details>
-                      </div>
-                    ) : (
-                      <div className="management-protected-role">
-                        <p className="muted">Fluid marks this role as protected. Its permissions are shown for reference and cannot be edited here.</p>
-                        {permissionPaths.length ? <ul className="management-permission-list">{permissionPaths.map((path) => <li key={path}>{path}</li>)}</ul> : <p className="muted small-text">No explicit resources were returned.</p>}
-                      </div>
-                    )}
                   </div>
-                </details>
+                </div>
               );
             })}
             {!filteredRoles.length ? <div className="card management-empty-state"><strong>No roles match this search.</strong><span>Try a role name or a permission title.</span></div> : null}

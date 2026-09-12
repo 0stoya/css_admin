@@ -1,0 +1,208 @@
+/* Phase 3 Admin interaction polish.
+ * Scoped to the Staff/Admin shell so Company Portal presentation is unchanged.
+ */
+
+.admin-shell .management-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.admin-shell .management-record-summary {
+  cursor: default;
+}
+
+.admin-shell .management-record-summary:hover {
+  background: #f8fbfd;
+}
+
+.admin-shell .management-record-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.admin-shell .management-modal-stack,
+.admin-shell .management-modal-form,
+.admin-shell .admin-employee-modal-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-shell .management-modal-form {
+  padding: 0;
+}
+
+.admin-shell .management-effective-access {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--css-border);
+  border-radius: 9px;
+  background: #f8fbfd;
+}
+
+.admin-shell .management-modal-note {
+  margin: 0;
+  padding: 0.82rem 0.9rem;
+  border: 1px solid var(--css-border);
+  border-radius: 9px;
+  background: #f8fbfd;
+  color: var(--css-muted);
+  font-size: 0.82rem;
+}
+
+.admin-shell .management-modal-danger,
+.admin-shell .admin-employee-danger {
+  margin-top: 0.15rem;
+  border-top: 1px solid var(--css-border);
+  padding-top: 0.8rem;
+}
+
+.admin-shell .management-modal-danger > summary,
+.admin-shell .admin-employee-danger > summary {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.35rem 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--css-danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.admin-shell .management-modal-danger > summary::-webkit-details-marker,
+.admin-shell .admin-employee-danger > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-shell .management-danger-form,
+.admin-shell .admin-employee-danger-form {
+  display: grid;
+  max-width: 620px;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  padding: 0.9rem;
+  border: 1px solid #f1c8c4;
+  border-radius: 9px;
+  background: var(--css-danger-soft);
+}
+
+.admin-shell .management-danger-form p,
+.admin-shell .admin-employee-danger-form p {
+  margin: 0;
+}
+
+.admin-shell .admin-employee-record {
+  border-bottom: 1px solid var(--css-border);
+}
+
+.admin-shell .admin-employee-record:last-child {
+  border-bottom: 0;
+}
+
+.admin-shell .admin-employee-row {
+  grid-template-columns: minmax(12rem, 1.5fr) minmax(9rem, 1fr) minmax(9rem, 1fr) 5rem 8rem 6rem minmax(9rem, auto);
+  transition: background 120ms ease;
+}
+
+.admin-shell .admin-employee-row:hover {
+  background: #f8fbfd;
+}
+
+.admin-shell .admin-employee-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.18rem;
+  white-space: nowrap;
+}
+
+.admin-shell .admin-employee-history-link {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.36rem;
+  padding: 0.38rem 0.52rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--css-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-shell .admin-employee-history-link:hover {
+  border-color: #c8dced;
+  background: var(--css-primary-soft);
+  color: var(--css-primary-hover);
+}
+
+.admin-shell #employee-history {
+  scroll-margin-top: 96px;
+}
+
+@media (max-width: 1180px) {
+  .admin-shell .management-record-action {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 1100px) {
+  .admin-shell .admin-employee-row {
+    grid-template-columns: 1.5fr 1fr 1fr;
+  }
+
+  .admin-shell .admin-employee-row > :nth-child(4),
+  .admin-shell .admin-employee-row > :nth-child(5),
+  .admin-shell .admin-employee-row > :nth-child(6) {
+    display: none;
+  }
+
+  .admin-shell .admin-employee-row-actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-shell .management-record-action {
+    justify-self: start;
+  }
+
+  .admin-shell .management-candidate-search {
+    display: grid;
+  }
+
+  .admin-shell .management-user-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .management-field-wide,
+  .admin-shell .management-form-actions {
+    grid-column: 1;
+  }
+
+  .admin-shell .admin-employee-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .admin-shell .admin-employee-row > :nth-child(4),
+  .admin-shell .admin-employee-row > :nth-child(5),
+  .admin-shell .admin-employee-row > :nth-child(6) {
+    display: grid;
+  }
+
+  .admin-shell .admin-employee-row-actions {
+    grid-column: auto;
+    grid-row: auto;
+    justify-self: start;
+    padding-top: 0.3rem;
+  }
+}

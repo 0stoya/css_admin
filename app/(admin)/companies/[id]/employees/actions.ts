@@ -14,6 +14,8 @@ import {
   type CompanyEmployeeInput,
 } from "@/lib/graphql/company-employees";
 
+const MODAL_PATTERN = /^(add-employee|edit-employee-\d+)$/;
+
 function employeesPath(companyId: number) {
   return `/companies/${companyId}/employees`;
 }
@@ -58,7 +60,30 @@ function employeeInput(formData: FormData): CompanyEmployeeInput {
   };
 }
 
-async function runMutation(companyId: number, notice: string, work: () => Promise<unknown>) {
+function safeText(formData: FormData, key: string, maxLength = 200) {
+  return stringValue(formData, key).slice(0, maxLength);
+}
+
+function returnModal(formData: FormData) {
+  const value = safeText(formData, "returnModal", 80);
+  return MODAL_PATTERN.test(value) ? value : "";
+}
+
+function appendReturnState(query: URLSearchParams, formData: FormData) {
+  const q = safeText(formData, "returnQ");
+  const status = safeText(formData, "returnStatus", 12);
+  const from = safeText(formData, "returnFrom", 10);
+  const to = safeText(formData, "returnTo", 10);
+  const page = safeText(formData, "returnPage", 12);
+
+  if (q) query.set("q", q);
+  if (["active", "inactive", "all"].includes(status) && status !== "active") query.set("status", status);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(from)) query.set("from", from);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(to)) query.set("to", to);
+  if (/^\d+$/.test(page) && Number(page) > 1) query.set("page", page);
+}
+
+async function runMutation(companyId: number, notice: string, formData: FormData, work: () => Promise<unknown>) {
   let errorMessage: string | null = null;
   try {
     await work();
@@ -68,8 +93,14 @@ async function runMutation(companyId: number, notice: string, work: () => Promis
   }
 
   const query = new URLSearchParams();
-  if (errorMessage) query.set("error", errorMessage);
-  else query.set("notice", notice);
+  appendReturnState(query, formData);
+  if (errorMessage) {
+    query.set("error", errorMessage);
+    const modal = returnModal(formData);
+    if (modal) query.set("modal", modal);
+  } else {
+    query.set("notice", notice);
+  }
   redirect(`${employeesPath(companyId)}?${query.toString()}`);
 }
 
@@ -78,12 +109,12 @@ export async function saveEmployeeConfigurationAction(formData: FormData) {
   const usesEmployee = formData.get("usesEmployee") === "on";
   const multiEmployeeBasket = formData.get("multiEmployeeBasket") === "on";
   if (multiEmployeeBasket && !usesEmployee) {
-    return runMutation(companyId, "", async () => {
+    return runMutation(companyId, "", formData, async () => {
       throw new Error("Multi-employee baskets require Uses employees to be enabled.");
     });
   }
 
-  return runMutation(companyId, "Employee ordering settings updated.", () =>
+  return runMutation(companyId, "Employee ordering settings updated.", formData, () =>
     saveCompanyEmployeeConfiguration(companyId, {
       uses_employee: usesEmployee,
       multi_employee_basket: multiEmployeeBasket,
@@ -93,13 +124,13 @@ export async function saveEmployeeConfigurationAction(formData: FormData) {
 
 export async function createEmployeeAction(formData: FormData) {
   const companyId = positiveInt(formData, "companyId");
-  return runMutation(companyId, "Employee created.", () => createCompanyEmployee(companyId, employeeInput(formData)));
+  return runMutation(companyId, "Employee created.", formData, () => createCompanyEmployee(companyId, employeeInput(formData)));
 }
 
 export async function updateEmployeeAction(formData: FormData) {
   const companyId = positiveInt(formData, "companyId");
   const employeeId = positiveInt(formData, "employeeId");
-  return runMutation(companyId, "Employee updated.", () =>
+  return runMutation(companyId, "Employee updated.", formData, () =>
     updateCompanyEmployee(companyId, employeeId, employeeInput(formData)),
   );
 }
@@ -107,7 +138,7 @@ export async function updateEmployeeAction(formData: FormData) {
 export async function deactivateEmployeeAction(formData: FormData) {
   const companyId = positiveInt(formData, "companyId");
   const employeeId = positiveInt(formData, "employeeId");
-  return runMutation(companyId, "Employee deactivated. Historical order attribution remains available.", () =>
+  return runMutation(companyId, "Employee deactivated. Historical order attribution remains available.", formData, () =>
     deactivateCompanyEmployee(companyId, employeeId),
   );
 }
@@ -116,7 +147,7 @@ export async function importEmployeesCsvAction(formData: FormData) {
   const companyId = positiveInt(formData, "companyId");
   const upload = formData.get("employeeCsv");
 
-  return runMutation(companyId, "Employee CSV imported.", async () => {
+  return runMutation(companyId, "Employee CSV imported.", formData, async () => {
     if (!(upload instanceof File) || upload.size === 0) throw new Error("Choose a non-empty employee CSV file.");
     if (upload.size > 2_000_000) throw new Error("Employee CSV must be 2 MB or smaller.");
 
