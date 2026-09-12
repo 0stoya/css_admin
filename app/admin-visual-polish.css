@@ -1,0 +1,290 @@
+/* Admin-only visual refinement layer.
+ * Every selector is scoped to .admin-shell so the Company Portal remains unchanged.
+ * Page-specific CSS modules still own specialised layouts and behaviour.
+ */
+
+.admin-shell main.content {
+  background:
+    radial-gradient(circle at 92% 1%, rgb(0 87 168 / 3.2%), transparent 28rem),
+    var(--css-accent);
+}
+
+.admin-shell main.content > * {
+  animation: admin-content-in 140ms ease-out both;
+}
+
+.admin-shell main.content h1 {
+  letter-spacing: -0.028em;
+}
+
+.admin-shell .page-header {
+  margin-bottom: 1.25rem;
+}
+
+.admin-shell .page-header > div:first-child {
+  min-width: 0;
+}
+
+.admin-shell .page-header h1 {
+  margin-bottom: 0.28rem;
+}
+
+.admin-shell .page-header .muted,
+.admin-shell main.content h1 + .muted {
+  max-width: 76ch;
+}
+
+.admin-shell .card,
+.admin-shell .table-wrap,
+.admin-shell .stat-card {
+  border-color: #dbe4eb;
+  box-shadow: 0 2px 10px rgb(0 35 72 / 4.5%);
+}
+
+.admin-shell .card {
+  border-radius: 13px;
+}
+
+.admin-shell .table-wrap {
+  border-radius: 12px;
+}
+
+.admin-shell table th {
+  background: #f4f8fb;
+  color: #183b5c;
+  font-size: 0.72rem;
+  letter-spacing: 0.062em;
+}
+
+.admin-shell table td {
+  border-bottom-color: #e8eef3;
+}
+
+.admin-shell table tbody tr:hover {
+  background: #f8fbfd;
+}
+
+.admin-shell .stat-card {
+  border-radius: 12px;
+}
+
+.admin-shell .stat-value {
+  letter-spacing: -0.02em;
+}
+
+.admin-shell .badge {
+  letter-spacing: 0.005em;
+}
+
+.admin-shell .button {
+  border-radius: 9px;
+}
+
+.admin-shell input[type="search"] {
+  padding-left: 2.35rem;
+  background-color: var(--css-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%235d7085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.78rem 50%;
+  background-size: 17px 17px;
+}
+
+.admin-shell .app-sidebar-admin-icons .sidebar-link {
+  grid-template-columns: 4px 18px minmax(0, 1fr);
+  gap: 0.58rem;
+}
+
+.admin-shell .app-sidebar-admin-icons .sidebar-sublink {
+  grid-template-columns: 5px 17px minmax(0, 1fr);
+  gap: 0.46rem;
+}
+
+.admin-shell .sidebar-nav-icon {
+  display: block;
+  flex: none;
+  color: #6d8194;
+  transition: color 130ms ease, transform 130ms ease;
+}
+
+.admin-shell .sidebar-link:hover .sidebar-nav-icon,
+.admin-shell .sidebar-sublink:hover .sidebar-nav-icon,
+.admin-shell .sidebar-link-active .sidebar-nav-icon,
+.admin-shell .sidebar-sublink-active .sidebar-nav-icon {
+  color: var(--css-primary);
+}
+
+.admin-shell .sidebar-link:hover .sidebar-nav-icon,
+.admin-shell .sidebar-sublink:hover .sidebar-nav-icon {
+  transform: translateX(1px);
+}
+
+.admin-shell main.content h1:has(.admin-context-help-trigger) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+}
+
+.admin-shell .admin-context-help-trigger {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--css-primary);
+  box-shadow: none;
+  cursor: pointer;
+  transform: none;
+}
+
+.admin-shell .admin-context-help-trigger:hover {
+  border-color: #c8dced;
+  background: var(--css-primary-soft);
+  color: var(--css-primary-hover);
+  transform: none;
+}
+
+.admin-shell .admin-context-help-trigger:active {
+  transform: none;
+}
+
+.admin-shell .admin-context-help-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1.35rem 1.5rem;
+}
+
+.admin-shell .admin-context-help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-shell .admin-context-help-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.72rem;
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fbfdfe;
+}
+
+.admin-shell .admin-context-help-card > div {
+  min-width: 0;
+}
+
+.admin-shell .admin-context-help-card h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.93rem;
+}
+
+.admin-shell .admin-context-help-card p {
+  margin: 0;
+  color: var(--css-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.admin-shell .admin-context-help-number {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.admin-shell .admin-context-help-note {
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--css-primary);
+  border-radius: 0 8px 8px 0;
+  background: #f5f9fc;
+  color: var(--css-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.admin-shell .admin-context-help-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid var(--css-border);
+  background: var(--css-surface);
+}
+
+.admin-shell .sidebar-subnav-heading {
+  letter-spacing: 0.085em;
+}
+
+.admin-shell .sidebar-link-active,
+.admin-shell .sidebar-sublink-active {
+  box-shadow: inset 0 0 0 1px rgb(0 87 168 / 3%);
+}
+
+.admin-shell .company-directory-toolbar input[type="search"] {
+  min-height: 42px;
+}
+
+.admin-shell .notice,
+.admin-shell .success,
+.admin-shell .error {
+  box-shadow: 0 1px 4px rgb(0 35 72 / 3%);
+}
+
+@keyframes admin-content-in {
+  from { opacity: 0.72; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell main.content > * { animation: none; }
+  .admin-shell .sidebar-nav-icon { transition: none; }
+}
+
+@media (max-width: 900px) {
+  .admin-shell .admin-context-help-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-shell .page-header {
+    gap: 0.75rem;
+  }
+
+  .admin-shell main.content h1:has(.admin-context-help-trigger) {
+    gap: 0.3rem;
+  }
+
+  .admin-shell .admin-context-help-trigger {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    flex-basis: 30px;
+  }
+
+  .admin-shell .admin-context-help-body {
+    padding: 1rem;
+  }
+
+  .admin-shell .admin-context-help-footer {
+    padding: 0.8rem 1rem;
+  }
+}

@@ -2,6 +2,29 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import {
+  Activity,
+  ArrowLeftRight,
+  BookOpen,
+  Building2,
+  CircleDollarSign,
+  ClipboardList,
+  Contact,
+  CreditCard,
+  Database,
+  LayoutDashboard,
+  Network,
+  Package,
+  Palette,
+  Settings,
+  Shield,
+  SlidersHorizontal,
+  Upload,
+  UserRound,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import type { NavigationItem } from "@/components/app-header";
 import { useAppHeaderContext } from "@/components/app-header-context";
 
@@ -18,6 +41,39 @@ export type SidebarSectionNavigation = {
     href: string;
     label: string;
   }>;
+};
+
+const adminTopLevelIcons: Record<string, LucideIcon> = {
+  "/companies": Building2,
+  "/bulk-import": Upload,
+  "/ogl": Database,
+};
+
+const adminCompanyIcons: Record<string, LucideIcon> = {
+  "": LayoutDashboard,
+  finance: Activity,
+  management: Users,
+  employees: UserRound,
+  catalog: BookOpen,
+  "purchase-controls": SlidersHorizontal,
+  payment: CreditCard,
+  credit: Wallet,
+  "credit-orders": ClipboardList,
+  pricing: CircleDollarSign,
+  "import-export": ArrowLeftRight,
+  personalisation: Palette,
+  settings: Settings,
+};
+
+const adminSectionIcons: Record<string, LucideIcon> = {
+  "/bulk-import": Network,
+  "/bulk-import?view=users": Users,
+  "/bulk-import?view=roles": Shield,
+  "/bulk-import?view=role-products": Package,
+  "/bulk-import?view=company-products": Package,
+  "/ogl": Building2,
+  "/ogl?view=mappings": Network,
+  "/ogl/rep-profiles": Contact,
 };
 
 function hrefPath(href: string) {
@@ -56,6 +112,10 @@ function isSectionChildActive(pathname: string, currentQuery: string, href: stri
   return true;
 }
 
+function SidebarIcon({ icon: Icon }: { icon: LucideIcon | undefined }) {
+  return Icon ? <Icon className="sidebar-nav-icon" size={16} strokeWidth={1.9} aria-hidden="true" /> : null;
+}
+
 export function AppSidebar({
   productLabel,
   navigation,
@@ -77,9 +137,10 @@ export function AppSidebar({
     && pathname.startsWith(companyBase)
     && companyNavigation.length,
   );
+  const showAdminIcons = productLabel === "Admin";
 
   return (
-    <aside className="app-sidebar" aria-label={`${productLabel} navigation`}>
+    <aside className={`app-sidebar${showAdminIcons ? " app-sidebar-admin-icons" : ""}`} aria-label={`${productLabel} navigation`}>
       <div className="app-sidebar-inner">
         <nav className="sidebar-nav" aria-label="Primary navigation">
           {navigation.map((item) => {
@@ -101,6 +162,7 @@ export function AppSidebar({
                   aria-expanded={showCompanySection || showStaticSection ? true : undefined}
                 >
                   <span className="sidebar-link-marker" aria-hidden="true" />
+                  {showAdminIcons ? <SidebarIcon icon={adminTopLevelIcons[item.href]} /> : null}
                   <span>{item.label}</span>
                 </Link>
 
@@ -118,6 +180,7 @@ export function AppSidebar({
                           key={child.segment || "overview"}
                         >
                           <span className="sidebar-sublink-marker" aria-hidden="true" />
+                          {showAdminIcons ? <SidebarIcon icon={adminCompanyIcons[child.segment]} /> : null}
                           <span>{child.label}</span>
                         </Link>
                       );
@@ -138,6 +201,7 @@ export function AppSidebar({
                           key={child.href}
                         >
                           <span className="sidebar-sublink-marker" aria-hidden="true" />
+                          {showAdminIcons ? <SidebarIcon icon={adminSectionIcons[child.href]} /> : null}
                           <span>{child.label}</span>
                         </Link>
                       );
