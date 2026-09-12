@@ -321,6 +321,22 @@
   color: var(--css-text);
 }
 
+.saveBar button {
+  min-height: 42px;
+  padding-inline: 1.15rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.saveBar button > span,
+.saveBar button > svg {
+  color: inherit;
+}
+
+.saveBar button > svg {
+  flex: none;
+}
+
 @media (max-width: 980px) {
   .modeGrid,
   .methodGrid {
