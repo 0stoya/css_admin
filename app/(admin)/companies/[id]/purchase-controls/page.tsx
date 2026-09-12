@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PurchaseRuleEditor } from "@/components/purchase-rule-editor";
+import { PurchaseControlGuidance } from "@/components/purchase-control-guidance";
+import { PurchaseTemplateEditModal } from "@/components/purchase-template-edit-modal";
+import modalStyles from "@/components/purchase-control-modals.module.css";
+import { editPurchaseControlTemplateAction } from "./edit-actions";
 import { getCompany } from "@/lib/graphql/companies";
 import { getCompanyManagement } from "@/lib/graphql/company-management";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
@@ -204,8 +208,8 @@ export default async function PurchaseControlsPage({
         </div>
       </header>
 
-      {notice ? <div className="success">{notice}</div> : null}
-      {mutationError ? <div className="error">{mutationError}</div> : null}
+      {notice ? <div className="success" role="status">{notice}</div> : null}
+      {mutationError ? <div className="error" role="alert">{mutationError}</div> : null}
 
       <nav className="purchase-workspace-tabs" aria-label="Purchase control workspace">
         {tabItems.map((item) => (
@@ -225,7 +229,10 @@ export default async function PurchaseControlsPage({
           <div className="purchase-section-heading">
             <div>
               <p className="eyebrow">Templates</p>
-              <h2>Purchase-control templates</h2>
+              <div className={modalStyles.titleRow}>
+                <h2>Purchase-control templates</h2>
+                <PurchaseControlGuidance iconOnly />
+              </div>
               <p className="muted">
                 Each template is a reusable set of SKU quantity and time-window rules.
               </p>
@@ -367,6 +374,18 @@ export default async function PurchaseControlsPage({
                   <span className={`badge ${selectedTemplate.assigned_roles.length ? "badge-ok" : "badge-neutral"}`}>
                     {selectedTemplate.assigned_roles.length ? "Assigned" : "Unassigned"}
                   </span>
+                  <PurchaseTemplateEditModal
+                    key={selectedTemplate.template_id}
+                    companyId={companyId}
+                    template={selectedTemplate}
+                    saveAction={editPurchaseControlTemplateAction}
+                    successHref={purchaseControlsHref(companyId, {
+                      view: "templates",
+                      templateId: selectedTemplate.template_id,
+                      templateSearch,
+                      notice: "Template saved. Existing applied allowances and counters were not changed; apply separately when ready.",
+                    })}
+                  />
                   <Link
                     className="button button-secondary"
                     href={purchaseControlsHref(companyId, { view: "templates", templateSearch })}
@@ -428,30 +447,6 @@ export default async function PurchaseControlsPage({
                     </tbody>
                   </table>
                 </div>
-
-                <details className="purchase-editor-panel">
-                  <summary>
-                    <span>
-                      <strong>Edit template</strong>
-                      <small className="muted">Change the name or product rule rows.</small>
-                    </span>
-                  </summary>
-                  <form className="purchase-editor-body" action={savePurchaseControlTemplateAction}>
-                    <input type="hidden" name="companyId" value={companyId} />
-                    <input type="hidden" name="templateId" value={selectedTemplate.template_id} />
-                    <div className="field">
-                      <label htmlFor={`template-name-${selectedTemplate.template_id}`}>Template name</label>
-                      <input
-                        id={`template-name-${selectedTemplate.template_id}`}
-                        name="name"
-                        required
-                        defaultValue={selectedTemplate.name}
-                      />
-                    </div>
-                    <PurchaseRuleEditor initialRules={selectedTemplate.rules} label="Product rules" />
-                    <div><button className="button" type="submit">Save template</button></div>
-                  </form>
-                </details>
 
                 <div>
                   <p className="eyebrow">Operations</p>
@@ -551,7 +546,10 @@ export default async function PurchaseControlsPage({
           <div className="purchase-section-heading">
             <div>
               <p className="eyebrow">Role assignments</p>
-              <h2>Assign templates to roles</h2>
+              <div className={modalStyles.titleRow}>
+                <h2>Assign templates to roles</h2>
+                <PurchaseControlGuidance iconOnly />
+              </div>
               <p className="muted">
                 Each role can have one purchase-control template. Applying immediately updates eligible users.
               </p>
@@ -703,7 +701,10 @@ export default async function PurchaseControlsPage({
           <div className="purchase-section-heading">
             <div>
               <p className="eyebrow">Current state</p>
-              <h2>Applied allowances</h2>
+              <div className={modalStyles.titleRow}>
+                <h2>Applied allowances</h2>
+                <PurchaseControlGuidance iconOnly />
+              </div>
               <p className="muted">
                 These are the user-level limits actually applied from purchase-control templates.
               </p>
@@ -792,7 +793,10 @@ export default async function PurchaseControlsPage({
           <div className="purchase-section-heading">
             <div>
               <p className="eyebrow">Consumption log</p>
-              <h2>Purchase history</h2>
+              <div className={modalStyles.titleRow}>
+                <h2>Purchase history</h2>
+                <PurchaseControlGuidance iconOnly />
+              </div>
               <p className="muted">
                 Review purchases that consumed an applied allowance.
               </p>
