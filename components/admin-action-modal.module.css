@@ -1,0 +1,93 @@
+.body {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.primaryTrigger,
+.secondaryTrigger,
+.rowTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+}
+
+.primaryTrigger,
+.secondaryTrigger {
+  white-space: nowrap;
+}
+
+.rowTrigger {
+  width: fit-content;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0.38rem 0.52rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--css-primary);
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rowTrigger:hover {
+  border-color: #c8dced;
+  background: var(--css-primary-soft);
+  color: var(--css-primary-hover);
+  transform: none;
+}
+
+.rowTrigger:active {
+  transform: none;
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0 -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--css-border);
+  background: var(--css-surface);
+}
+
+.footerHint,
+.footerSpacer {
+  flex: 1;
+  min-width: 140px;
+}
+
+.footerHint {
+  color: var(--css-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .body {
+    padding: 1rem 1rem 0;
+  }
+
+  .footer {
+    margin: 0 -1rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .footerHint,
+  .footerSpacer {
+    flex-basis: 100%;
+  }
+
+  .primaryTrigger,
+  .secondaryTrigger {
+    width: 100%;
+  }
+}

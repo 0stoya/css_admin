@@ -14,6 +14,7 @@ import "./purchase-controls-visual-polish.css";
 import "./purchase-product-picker.css";
 import "./toggle-controls.css";
 import "./admin-visual-polish.css";
+import "./admin-interaction-polish.css";
 
 export const metadata: Metadata = {
   title: {

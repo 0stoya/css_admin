@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { History, UserMinus } from "lucide-react";
+import { AdminActionModal, AdminFormFooter } from "@/components/admin-action-modal";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { EMPLOYEE_IMPORT_TEMPLATE } from "@/lib/company-employees-csv";
@@ -136,6 +138,33 @@ function EmployeeFields({ employee, managers }: { employee?: CompanyEmployee; ma
   );
 }
 
+function EmployeeReturnState({
+  modal,
+  q,
+  status,
+  from,
+  to,
+  page,
+}: {
+  modal: string;
+  q: string;
+  status: EmployeeStatus;
+  from: string;
+  to: string;
+  page: number;
+}) {
+  return (
+    <>
+      <input type="hidden" name="returnModal" value={modal} />
+      <input type="hidden" name="returnQ" value={q} />
+      <input type="hidden" name="returnStatus" value={status} />
+      <input type="hidden" name="returnFrom" value={from} />
+      <input type="hidden" name="returnTo" value={to} />
+      <input type="hidden" name="returnPage" value={page} />
+    </>
+  );
+}
+
 function ReportingSummary({ report }: { report: CompanyEmployeeSpendResult | null }) {
   if (!report) return null;
   return (
@@ -167,7 +196,7 @@ function OrderHistory({
   query: { q: string; status: EmployeeStatus; from: string; to: string; page: number; historyPage: number };
 }) {
   return (
-    <section className={`card ${styles.historyCard}`}>
+    <section className={`card ${styles.historyCard}`} id="employee-history">
       <div className={styles.sectionHeading}>
         <div>
           <p className="eyebrow">Employee history</p>
@@ -208,17 +237,17 @@ function OrderHistory({
           {orders.page_info.total_pages > 1 ? (
             <div className={styles.pagination}>
               {query.historyPage > 1 ? (
-                <Link className="button button-secondary button-link" href={withQuery(companyId, {
+                <Link className="button button-secondary button-link" href={`${withQuery(companyId, {
                   q: query.q, status: query.status, from: query.from, to: query.to, page: query.page,
                   employee: employee.employee_id, historyPage: query.historyPage - 1,
-                })}>Previous</Link>
+                })}#employee-history`}>Previous</Link>
               ) : <span />}
               <span>Page {orders.page_info.current_page} of {orders.page_info.total_pages}</span>
               {query.historyPage < orders.page_info.total_pages ? (
-                <Link className="button button-secondary button-link" href={withQuery(companyId, {
+                <Link className="button button-secondary button-link" href={`${withQuery(companyId, {
                   q: query.q, status: query.status, from: query.from, to: query.to, page: query.page,
                   employee: employee.employee_id, historyPage: query.historyPage + 1,
-                })}>Next</Link>
+                })}#employee-history`}>Next</Link>
               ) : <span />}
             </div>
           ) : null}
@@ -247,8 +276,10 @@ export default async function CompanyEmployeesPage({
   const selectedEmployeeId = Number(firstParam(paramsValue.employee) ?? 0);
   const from = firstParam(paramsValue.from)?.trim() ?? "";
   const to = firstParam(paramsValue.to)?.trim() ?? "";
+  const modal = firstParam(paramsValue.modal)?.trim() ?? "";
   const notice = firstParam(paramsValue.notice);
   const mutationError = firstParam(paramsValue.error);
+  const modalStateKey = [modal, q, status, from, to, String(page), notice ?? "", mutationError ?? ""].join("|");
 
   const [companyResult, configResult, employeesResult, managementResult, spendResult] = await Promise.allSettled([
     getCompany(companyId),
@@ -320,7 +351,7 @@ export default async function CompanyEmployeesPage({
       </header>
 
       {notice ? <div className="notice">{notice}</div> : null}
-      {mutationError ? <div className="error">{mutationError}</div> : null}
+      {mutationError && !modal ? <div className="error">{mutationError}</div> : null}
 
       <section className={styles.topGrid}>
         <article className={`card ${styles.configurationCard}`}>
@@ -392,14 +423,24 @@ export default async function CompanyEmployeesPage({
       <section className={styles.directorySection}>
         <div className={styles.sectionHeading}>
           <div><p className="eyebrow">Beneficiary directory</p><h2>Company employees</h2><p className="muted">{employees.total_count} employee{employees.total_count === 1 ? "" : "s"} match the current filters.</p></div>
-          <details className={styles.createPanel}>
-            <summary><strong>Add employee</strong><span aria-hidden="true">＋</span></summary>
-            <form action={createEmployeeAction} className={styles.createForm}>
+          <AdminActionModal
+            title="Add employee"
+            description="Create a non-login beneficiary record for ordering and employee-attributed reporting."
+            triggerLabel="Add employee"
+            triggerIcon="plus"
+            triggerVariant="primary"
+            defaultOpen={modal === "add-employee"}
+            stateKey={modalStateKey}
+            wide
+          >
+            {mutationError && modal === "add-employee" ? <div className="error" role="alert">{mutationError}</div> : null}
+            <form action={createEmployeeAction} className="admin-employee-modal-form">
               <input type="hidden" name="companyId" value={companyId} />
+              <EmployeeReturnState modal="add-employee" q={q} status={status} from={from} to={to} page={page} />
               <EmployeeFields managers={managers} />
-              <div><button className="button" type="submit">Create employee</button></div>
+              <AdminFormFooter submitLabel="Create employee" pendingLabel="Creating employee…" />
             </form>
-          </details>
+          </AdminActionModal>
         </div>
 
         <form className={`card ${styles.filterBar}`} method="get">
@@ -428,43 +469,58 @@ export default async function CompanyEmployeesPage({
           {employees.items.map((employee) => {
             const manager = managers.find((user) => user.user_id === employee.manager_company_user_id);
             const employeeSpend = spendByEmployee.get(employee.employee_id);
+            const modalKey = `edit-employee-${employee.employee_id}`;
+            const historyHref = `${withQuery(companyId, {
+              q, status, from, to, page,
+              employee: employee.employee_id,
+            })}#employee-history`;
             return (
-              <details className={styles.employeeRecord} key={employee.employee_id}>
-                <summary className={styles.employeeRow}>
+              <div className={`${styles.employeeRecord} admin-employee-record`} key={employee.employee_id}>
+                <div className={`${styles.employeeRow} admin-employee-row`}>
                   <span className={styles.identity}><strong>{employeeName(employee)}</strong><small>{employee.employee_code || `Employee #${employee.employee_id}`}</small></span>
                   <span>{employee.department || "—"}<small>{employee.cost_centre || ""}</small></span>
                   <span>{manager ? userName(manager) : employee.manager_company_user_id ? `User #${employee.manager_company_user_id}` : "—"}</span>
                   <span>{employeeSpend?.order_count ?? "—"}</span>
                   <strong>{employeeSpend && spend ? formatMoney(employeeSpend.product_spend, spend.currency) : "—"}</strong>
                   <span><span className={employee.active ? "badge badge-ok" : "badge badge-neutral"}>{employee.active ? "Active" : "Inactive"}</span></span>
-                  <span className={styles.manageLabel}>Manage ›</span>
-                </summary>
-                <div className={styles.recordBody}>
-                  <div className={styles.recordHeading}>
-                    <div><p className="eyebrow">Employee #{employee.employee_id}</p><h3>{employeeName(employee)}</h3></div>
-                    <Link className="button button-secondary button-link" href={withQuery(companyId, {
-                      q, status, from, to, page,
-                      employee: employee.employee_id,
-                    })}>View order history</Link>
+                  <div className="admin-employee-row-actions">
+                    <AdminActionModal
+                      title={`Edit ${employeeName(employee)}`}
+                      description={`${employee.employee_code || `Employee #${employee.employee_id}`} · beneficiary record, not a Magento login.`}
+                      triggerLabel="Edit"
+                      triggerIcon="edit"
+                      defaultOpen={modal === modalKey}
+                      stateKey={modalStateKey}
+                      wide
+                    >
+                      {mutationError && modal === modalKey ? <div className="error" role="alert">{mutationError}</div> : null}
+                      <form action={updateEmployeeAction} className="admin-employee-modal-form">
+                        <input type="hidden" name="companyId" value={companyId} />
+                        <input type="hidden" name="employeeId" value={employee.employee_id} />
+                        <EmployeeReturnState modal={modalKey} q={q} status={status} from={from} to={to} page={page} />
+                        <EmployeeFields employee={employee} managers={managers} />
+                        <AdminFormFooter submitLabel="Save employee" pendingLabel="Saving employee…" />
+                      </form>
+                      {employee.active ? (
+                        <details className="admin-employee-danger">
+                          <summary><UserMinus size={16} aria-hidden="true" />Deactivate employee</summary>
+                          <form action={deactivateEmployeeAction} className="admin-employee-danger-form">
+                            <input type="hidden" name="companyId" value={companyId} />
+                            <input type="hidden" name="employeeId" value={employee.employee_id} />
+                            <EmployeeReturnState modal={modalKey} q={q} status={status} from={from} to={to} page={page} />
+                            <p className="muted small-text">Stops new basket assignment while preserving immutable order history and reporting.</p>
+                            <button className="button button-secondary" type="submit">Deactivate employee</button>
+                          </form>
+                        </details>
+                      ) : null}
+                    </AdminActionModal>
+                    <Link className="admin-employee-history-link" href={historyHref}>
+                      <History size={16} aria-hidden="true" />
+                      <span>History</span>
+                    </Link>
                   </div>
-                  <form action={updateEmployeeAction} className="stack">
-                    <input type="hidden" name="companyId" value={companyId} />
-                    <input type="hidden" name="employeeId" value={employee.employee_id} />
-                    <EmployeeFields employee={employee} managers={managers} />
-                    <div className={styles.actionRow}>
-                      <button className="button" type="submit">Save employee</button>
-                    </div>
-                  </form>
-                  {employee.active ? (
-                    <form action={deactivateEmployeeAction} className={styles.deactivateRow}>
-                      <input type="hidden" name="companyId" value={companyId} />
-                      <input type="hidden" name="employeeId" value={employee.employee_id} />
-                      <div><strong>Deactivate employee</strong><p className="muted small-text">Stops new assignment while preserving order history and reporting.</p></div>
-                      <button className="button button-secondary" type="submit">Deactivate</button>
-                    </form>
-                  ) : null}
                 </div>
-              </details>
+              </div>
             );
           })}
           {!employees.items.length ? <div className={styles.emptyRow}>No employees match the current filters.</div> : null}
