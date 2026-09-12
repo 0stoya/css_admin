@@ -62,70 +62,65 @@ Deliberately no generic info trigger on:
 - Purchase controls (already has specialist help);
 - Company Portal routes.
 
-## 🟡 Phase 3 — Interaction consistency: Users & roles + Employees
+## ✅ Phase 3 — Interaction consistency: Users & roles + Employees
 
-This is the **next focused implementation block**.
+**PR #74 merged, deployed and visually accepted.**
 
-### Users & roles
+Completed:
 
-Target interaction model:
+- Add user / Create role / Edit user / Edit role use focused Admin action modals;
+- protected roles use the same interaction language but remain read-only;
+- Add/Edit Employee uses the shared Admin modal pattern;
+- Employee History remains a separate reporting flow;
+- Lucide row actions and quieter destructive actions are consistent across both workspaces;
+- failed mutations can reopen the relevant modal while retaining practical search/filter/page state;
+- existing GraphQL payloads, Fluid ACL decisions and Employee-vs-buyer identity semantics remain unchanged.
 
-- move **Add user** into a modal rather than an expanding page panel;
-- move **Create role** into a modal;
-- move **Edit user** into a focused modal opened from the row action;
-- move **Edit role** into a focused modal for manageable roles;
-- keep protected roles read-only and clearly labelled;
-- standardise row actions with Lucide icons and right-aligned action affordances;
-- keep search/role filters compact and consistent with other Admin workspaces;
-- keep effective-access pills visible in the list, but move detailed editing out of the table flow;
-- make Remove user / Delete role low-emphasis destructive actions that open explicit confirmation UI;
-- preserve all existing server actions, GraphQL operations, ACL enforcement and redirect/session behaviour.
+Runtime acceptance confirmed the new interaction model on the deployed Admin application.
 
-### Employees
+## 🟡 Phase 4 — Policy/configuration interactions
 
-Target interaction model:
+This is the **active focused implementation block**.
 
-- move **Add employee** into a modal;
-- move **Edit employee** into a focused modal from the directory row;
-- retain **View order history** as a separate reporting/history flow rather than forcing it into the edit modal;
-- use consistent Lucide actions for Edit, History and Deactivate;
-- make deactivation visually secondary with a clear consequence message;
-- preserve employee filters, reporting date range, CSV import/export and backend-owned immutable order attribution;
-- keep Employee identity distinct from company-user/buyer identity.
-
-### Phase 3 acceptance
-
-- no GraphQL or backend changes;
-- no change to form field names or server-action payloads unless required solely for UI state restoration;
-- keyboard focus returns to the invoking row/action after modal close;
-- Escape and explicit Close/Cancel work consistently;
-- modal forms remain usable at narrow widths and 200% zoom;
-- filter/search state is preserved when practical;
-- destructive confirmation stays explicit;
-- run `yarn lint`, `yarn typecheck`, `yarn build` and live Admin regression.
-
-## ⬜ Phase 4 — Policy/configuration interactions
+A deliberate interaction choice for this phase: large catalogue pickers and long company-local configuration forms stay in the page flow rather than being moved into modals merely for consistency. They need width, scanning context and long-form usability. Compact create/edit tasks continue to use modals where appropriate.
 
 ### Catalogue policy
 
 - retain Company / Role tabs and backend-authoritative boundaries;
-- consider modal editing where it reduces long inline forms without hiding effective catalogue state;
-- standardise role row actions and editor headings;
+- standardise tab, status-card, row-action, search and save hierarchy with the wider Admin visual language;
+- keep company and role editors collapsible/full-width rather than squeezing category/product browsing into a modal;
+- make edit/restriction/reset actions easier to scan with Lucide-style affordances;
 - keep category/product independence explicit;
-- keep large category/product pickers viewport-bounded.
+- keep large category/product pickers viewport-bounded;
+- keep effective-product verification secondary to the actual policy editor.
 
 ### Payment configuration
 
 - standardise policy cards and save hierarchy;
+- replace bespoke mode glyphs with the installed Lucide icon language;
 - keep Platform default / All / Specific modes easy to distinguish;
+- improve search/select/clear affordances and selection feedback;
+- add pending save feedback to prevent accidental repeat submits;
 - use modal/help only for configuration semantics that are not obvious from the page;
 - never duplicate checkout/payment eligibility logic in the UI.
 
 ### Company settings
 
 - keep Company data read-only, Local settings editable, Danger zone isolated;
-- standardise tabs and destructive confirmation;
-- reduce visual competition between synced/OGL-owned identity fields and editable local configuration.
+- standardise tabs with clear data/local/danger iconography;
+- make synced/OGL-owned identity and hierarchy source-of-truth blocks easier to scan;
+- use compact summary cards rather than one heavy strip;
+- keep the long Local settings form full-width and give its save action the same sticky operational treatment as Payment configuration;
+- quieten the Danger zone surface while retaining exact-reference destructive confirmation.
+
+### Phase 4 acceptance
+
+- no GraphQL schema, server-action or backend changes;
+- no change to the meaning of catalogue, payment or company-setting form fields;
+- large policy editors remain usable at 200% zoom and narrow widths;
+- payment save visibly enters a pending state;
+- destructive company deletion remains explicitly confirmed and backend-authoritative;
+- run focused policy-polish tests plus `yarn lint`, `yarn typecheck`, `yarn build` and live Admin regression.
 
 ## ⬜ Phase 5 — Commercial and operational surfaces
 
@@ -205,7 +200,7 @@ Good candidates:
 - focused destructive confirmation;
 - compact help/guidance.
 
-Do **not** put long operational history, queues, reports or large browsing experiences into a modal just for consistency.
+Do **not** put long operational history, queues, reports, large browsing experiences or long configuration forms into a modal just for consistency.
 
 ### Actions
 
