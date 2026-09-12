@@ -78,76 +78,69 @@ Completed:
 
 Runtime acceptance confirmed the new interaction model on the deployed Admin application.
 
-## 🟡 Phase 4 — Policy/configuration interactions
+## ✅ Phase 4 — Policy/configuration interactions
+
+**PR #75 merged, deployed and visually accepted. PR #76 followed with the deployed Payment save-button contrast fix.**
+
+Completed:
+
+- Catalogue policy keeps Company / Role tabs and backend-authoritative boundaries while using clearer status, row-action, search, restriction and save hierarchy;
+- large catalogue pickers stay full-width rather than being forced into modals;
+- Payment configuration uses the shared Lucide language, clearer Default / All / Specific choices, better search/selection feedback and pending-save protection;
+- Company settings clearly separates read-only synced/OGL data, editable Magento-local settings and the destructive lifecycle area;
+- long local configuration remains full-width with a sticky save treatment;
+- destructive company deletion remains exact-reference-confirmed and backend-authoritative;
+- no GraphQL schema, server-action, ACL or backend rules were changed.
+
+Runtime acceptance confirmed the Phase 4 interaction model and the payment-action contrast follow-up on the deployed Admin application.
+
+## 🟡 Phase 5 — Commercial and operational surfaces
 
 This is the **active focused implementation block**.
 
-A deliberate interaction choice for this phase: large catalogue pickers and long company-local configuration forms stay in the page flow rather than being moved into modals merely for consistency. They need width, scanning context and long-form usability. Compact create/edit tasks continue to use modals where appropriate.
-
-### Catalogue policy
-
-- retain Company / Role tabs and backend-authoritative boundaries;
-- standardise tab, status-card, row-action, search and save hierarchy with the wider Admin visual language;
-- keep company and role editors collapsible/full-width rather than squeezing category/product browsing into a modal;
-- make edit/restriction/reset actions easier to scan with Lucide-style affordances;
-- keep category/product independence explicit;
-- keep large category/product pickers viewport-bounded;
-- keep effective-product verification secondary to the actual policy editor.
-
-### Payment configuration
-
-- standardise policy cards and save hierarchy;
-- replace bespoke mode glyphs with the installed Lucide icon language;
-- keep Platform default / All / Specific modes easy to distinguish;
-- improve search/select/clear affordances and selection feedback;
-- add pending save feedback to prevent accidental repeat submits;
-- use modal/help only for configuration semantics that are not obvious from the page;
-- never duplicate checkout/payment eligibility logic in the UI.
-
-### Company settings
-
-- keep Company data read-only, Local settings editable, Danger zone isolated;
-- standardise tabs with clear data/local/danger iconography;
-- make synced/OGL-owned identity and hierarchy source-of-truth blocks easier to scan;
-- use compact summary cards rather than one heavy strip;
-- keep the long Local settings form full-width and give its save action the same sticky operational treatment as Payment configuration;
-- quieten the Danger zone surface while retaining exact-reference destructive confirmation.
-
-### Phase 4 acceptance
-
-- no GraphQL schema, server-action or backend changes;
-- no change to the meaning of catalogue, payment or company-setting form fields;
-- large policy editors remain usable at 200% zoom and narrow widths;
-- payment save visibly enters a pending state;
-- destructive company deletion remains explicitly confirmed and backend-authoritative;
-- run focused policy-polish tests plus `yarn lint`, `yarn typecheck`, `yarn build` and live Admin regression.
-
-## ⬜ Phase 5 — Commercial and operational surfaces
+The emphasis here is operational clarity rather than more editing controls. Company Credit, Pricing and Finance remain read-only; Credit Orders continues to render only the actions Fluid authorizes for the selected real company-user actor.
 
 ### Company credit
 
-- refine metric/action hierarchy without turning read-only credit data into editable controls;
-- keep credit-limit / used / available / over-limit policy semantics explicit;
-- align links into Credit orders with the shared action language.
+- tighten the credit-limit / used / available hierarchy without turning the page into a large dashboard;
+- keep over-limit policy semantics and utilization obvious;
+- make the read-only/source-of-truth boundary visually explicit;
+- align links into Credit orders with the shared Admin action language.
 
 ### Pricing
 
-- standardise search/filter/pagination and product identity cells;
-- keep OGL custom price vs Magento fallback source highly visible;
-- preserve read-only behaviour and tier-price clarity.
+- reduce oversized source presentation and make OGL custom price vs Magento fallback easy to scan;
+- standardise search, result rows, pagination and tier-price hierarchy;
+- make import health/provenance secondary to the actual pricing source and rows;
+- preserve read-only behaviour and backend-authoritative pricing.
 
 ### Finance
 
-- align metric-card proportions and source/provenance treatment;
-- keep “spend” definition and OGL source unambiguous;
-- preserve dense operational chart readability.
+- align metric-card proportions with the newer Admin density;
+- strengthen OGL provenance without distracting from the monthly operational chart;
+- keep “spend” explicitly defined as OGL order value rather than an accounting-ledger balance;
+- preserve dense chart readability and read-only behaviour.
 
 ### Credit orders
 
-- align queue filters, row actions, status badges and detail tabs;
-- keep selected acting company user prominent because authorization is actor-specific;
-- standardise lifecycle action disclosures/confirmations;
-- never expose actions that Fluid does not return as authorized.
+- align queue filters, status badges, row focus/hover and right-side order actions;
+- make acting-company-user context visually prominent because lifecycle authorization is actor-specific;
+- make read-only mode equally explicit when no actor is selected;
+- strengthen detail tabs, actor context and lifecycle disclosures without hiding operational history in modals;
+- never expose lifecycle actions that Fluid does not return as authorized;
+- preserve the customer-owned `approved_pending_payment` boundary.
+
+### Phase 5 acceptance
+
+- visual/presentation changes only; no GraphQL, server-action, ACL or backend changes;
+- Company Credit, Pricing and Finance remain read-only;
+- Credit Orders still resolves actions exclusively from Fluid for the selected actor;
+- queues, reports, history and long operational records remain in-page;
+- check queue/detail behavior with no actor, approver actor and non-authorized actor;
+- check pricing source/fallback and no-custom-price states;
+- check credit normal/over-limit/no-account states;
+- check Finance data-present and backend-unavailable states;
+- run focused commercial-polish tests plus `yarn lint`, `yarn typecheck`, `yarn build` and live Admin regression.
 
 ## ⬜ Phase 6 — OGL + import workflows
 

@@ -601,6 +601,145 @@
   color: #765000;
 }
 
+/* Phase 5: make actor context and backend-authorized lifecycle state the visual centre of the workflow. */
+.toolbar {
+  border-color: #c9d8e4;
+  background: #fbfdff;
+  box-shadow: 0 1px 6px rgb(0 35 72 / 4%);
+}
+
+.field input:hover,
+.field select:hover,
+.actorForm select:hover {
+  border-color: #8da6ba;
+}
+
+.field input:focus,
+.field select:focus,
+.actorForm select:focus {
+  border-color: var(--css-primary);
+  box-shadow: 0 0 0 3px rgb(0 87 168 / 10%);
+  outline: none;
+}
+
+.toolbarActions button,
+.actorForm button {
+  min-height: 43px;
+  font-weight: 700;
+}
+
+.resetLink {
+  min-height: 40px;
+  justify-content: center;
+  padding: 0.55rem 0.65rem;
+  border-radius: 7px;
+}
+
+.resetLink:hover {
+  background: var(--css-primary-soft);
+  text-decoration: none;
+}
+
+.actorBadge,
+.readOnlyBadge {
+  border: 1px solid transparent;
+}
+
+.actorBadge {
+  border-color: #b7ebcf;
+}
+
+.readOnlyBadge {
+  border-color: #d8e1e8;
+}
+
+.queue {
+  box-shadow: 0 3px 14px rgb(0 35 72 / 4%);
+}
+
+.queueRow {
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.queueRow:hover,
+.queueRow:focus-within {
+  background: #f5faff;
+  box-shadow: inset 3px 0 var(--css-primary);
+}
+
+.actionPill {
+  border: 1px solid #cfe3f3;
+}
+
+.openLink {
+  margin-top: 0.3rem;
+  padding: 0.36rem 0.52rem;
+  border-radius: 7px;
+  background: var(--css-primary-soft);
+}
+
+.openLink:hover {
+  background: #dcecf8;
+  text-decoration: none;
+}
+
+.tabs {
+  position: sticky;
+  top: 88px;
+  z-index: 10;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 4px 14px rgb(0 35 72 / 6%);
+  backdrop-filter: blur(10px);
+}
+
+.tab {
+  min-height: 42px;
+}
+
+.actorPanel {
+  border-color: #b9d1e4;
+  border-left: 4px solid var(--css-primary);
+  background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 3px 12px rgb(0 35 72 / 5%);
+}
+
+.actorPanelText strong {
+  color: var(--css-primary);
+}
+
+.panel {
+  box-shadow: 0 2px 9px rgb(0 35 72 / 4%);
+}
+
+.actionDisclosure {
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.actionDisclosure summary:hover {
+  background: #f5f9fc;
+}
+
+.actionDisclosure[open] {
+  border-color: #b7c8d7;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 5%);
+}
+
+.actionDisclosure[open] summary {
+  box-shadow: inset 3px 0 var(--css-primary);
+}
+
+.actionForm button {
+  justify-self: start;
+}
+
+.warning {
+  border-left: 4px solid var(--css-warning);
+}
+
+.timelineItem {
+  padding: 0.9rem 0;
+}
+
 @media (max-width: 1180px) {
   .toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -697,6 +836,7 @@
   }
 
   .tabs {
+    top: 72px;
     width: 100%;
     overflow-x: auto;
   }
