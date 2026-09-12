@@ -2,18 +2,16 @@
 
 Last updated: 2026-09-12
 
-This document is the live tracker for the **Staff / Magento-admin** UI polish pass in `css_admin`.
+This is the live tracker for the **Staff / Magento-admin** UI polish pass in `css_admin`.
 
-It is deliberately separate from the functional product roadmap. The rules here are presentation and interaction rules only: Fluid/Magento remains authoritative for permissions, company scope, purchasing policy, pricing, credit, catalogue eligibility and every mutation outcome.
-
-Company Portal (`app/(portal)`) work is tracked separately and is **out of scope** for this pass unless explicitly stated.
+It is intentionally separate from the functional product roadmap. Fluid/Magento remains authoritative for permissions, company scope, purchasing policy, pricing, credit, catalogue eligibility and every mutation outcome. Company Portal (`app/(portal)`) is a separate UI surface and is out of scope unless explicitly stated.
 
 ## Status legend
 
-- ✅ **Complete** — merged into `main`; runtime acceptance recorded where applicable.
-- 🟡 **Next / active** — the next focused implementation block.
+- ✅ **Complete** — merged into `main`; deployed/runtime acceptance recorded where applicable.
+- 🟡 **Active** — current focused implementation block.
 - ⬜ **Planned** — agreed direction, not implemented yet.
-- 🔎 **Final acceptance** — cross-workspace regression/accessibility work after the focused passes.
+- 🔎 **Final acceptance** — cross-workspace accessibility/responsive regression after the focused passes.
 
 ## Current position
 
@@ -23,219 +21,187 @@ Established before this pass:
 
 - CSS Commerce brand tokens, typography, buttons, fields, cards, badges and notices;
 - Admin shell, company context and company sidebar;
-- responsive operational content width;
-- visible keyboard focus states;
-- company directory and overview hierarchy;
-- focused Users/Roles and Catalogue workspaces;
-- specialised commercial/OGL/credit-order layouts;
+- responsive operational content width and visible keyboard focus;
+- company directory/overview hierarchy;
+- specialised Users/Roles, Catalogue, commercial, OGL and Credit-order layouts;
 - Company Portal kept as a separate authenticated UI surface.
 
 Reference: `docs/ui-ux-foundation.md`.
 
 ### ✅ Phase 1 — Purchase-control UX hardening and polish
 
-Recent completed work:
+Completed through PRs **#69–#71**:
 
-- **PR #69** — quantity-allowance management feedback, validation and affected-buyer reporting;
-- **PR #70** — Lucide help/edit modals for purchase controls;
-- **PR #71** — purchase-control visual hierarchy, compact metrics and quieter operations;
-- purchase-control help remains the specialist explanation for buyer allowances, periods, resets and retained history.
+- clearer quantity-allowance management feedback and affected-buyer reporting;
+- Lucide help/edit modals;
+- compact metrics, quieter operations and stronger rule hierarchy;
+- specialist help for buyer allowances, periods, resets and retained history.
 
-The purchase-control workspace is now the reference interaction pattern for focused admin editing: concise overview first, detailed edit in a modal, destructive actions visually secondary, backend decisions left authoritative.
+Purchase Controls remains the reference pattern for focused Admin editing: state first, edit in a modal when appropriate, destructive actions secondary, backend decisions authoritative.
 
 ### ✅ Phase 2 — Admin visual system and contextual help
 
-**PR #72** merged.
+**PR #72 merged.**
 
 Completed:
 
-- Lucide icons across Admin sidebar navigation;
-- consistent admin-only hierarchy for headings, cards, tables, searches and notices;
-- route-aware `(i)` help for screens with non-obvious policy, identity, source-of-truth or workflow semantics;
-- all new visual rules scoped under `.admin-shell` so Company Portal is unaffected;
-- route-by-route info-icon decisions recorded in `docs/ADMIN_UI_POLISH_AUDIT.md`.
+- Lucide icons across Admin navigation;
+- consistent Admin-only headings, cards, tables, searches and notices;
+- selective route-aware `(i)` help for policy, identity, source-of-truth and workflow semantics;
+- decisions recorded in `docs/ADMIN_UI_POLISH_AUDIT.md`;
+- no generic help on Companies, Overview, Purchase Controls or Company Portal.
 
-Deliberately no generic info trigger on:
-
-- Companies directory;
-- Company overview;
-- Purchase controls (already has specialist help);
-- Company Portal routes.
-
-## ✅ Phase 3 — Interaction consistency: Users & roles + Employees
+### ✅ Phase 3 — Users & roles + Employees interaction consistency
 
 **PR #74 merged, deployed and visually accepted.**
 
 Completed:
 
-- Add user / Create role / Edit user / Edit role use focused Admin action modals;
-- protected roles use the same interaction language but remain read-only;
-- Add/Edit Employee uses the shared Admin modal pattern;
-- Employee History remains a separate reporting flow;
-- Lucide row actions and quieter destructive actions are consistent across both workspaces;
-- failed mutations can reopen the relevant modal while retaining practical search/filter/page state;
-- existing GraphQL payloads, Fluid ACL decisions and Employee-vs-buyer identity semantics remain unchanged.
+- Add/Edit User, Create/Edit Role and Add/Edit Employee use focused Admin action modals;
+- protected roles remain read-only;
+- Employee History stays a separate reporting flow;
+- Lucide row actions and quieter destructive actions are consistent;
+- practical filter/search/page state is retained around modal errors;
+- GraphQL payloads, Fluid ACL decisions and Employee-vs-buyer semantics are unchanged.
 
-Runtime acceptance confirmed the new interaction model on the deployed Admin application.
-
-## ✅ Phase 4 — Policy/configuration interactions
+### ✅ Phase 4 — Catalogue, Payment and Company settings
 
 **PR #75 merged, deployed and visually accepted. PR #76 followed with the deployed Payment save-button contrast fix.**
 
 Completed:
 
-- Catalogue policy keeps Company / Role tabs and backend-authoritative boundaries while using clearer status, row-action, search, restriction and save hierarchy;
-- large catalogue pickers stay full-width rather than being forced into modals;
-- Payment configuration uses the shared Lucide language, clearer Default / All / Specific choices, better search/selection feedback and pending-save protection;
-- Company settings clearly separates read-only synced/OGL data, editable Magento-local settings and the destructive lifecycle area;
-- long local configuration remains full-width with a sticky save treatment;
-- destructive company deletion remains exact-reference-confirmed and backend-authoritative;
-- no GraphQL schema, server-action, ACL or backend rules were changed.
+- Catalogue policy uses clearer tab/status/search/restriction/save hierarchy while retaining backend-authoritative Company/Role boundaries;
+- large catalogue pickers remain full-width;
+- Payment configuration uses the shared Lucide language, clearer Default/All/Specific choices, better selection feedback and pending-save protection;
+- Company settings cleanly separates OGL-owned read-only identity, Magento-local settings and destructive lifecycle controls;
+- long configuration forms remain full-width when width and scanning context matter;
+- no GraphQL, server-action, ACL or backend-rule changes.
 
-Runtime acceptance confirmed the Phase 4 interaction model and the payment-action contrast follow-up on the deployed Admin application.
+### ✅ Phase 5 — Commercial and operational surfaces
 
-## 🟡 Phase 5 — Commercial and operational surfaces
+**PR #77 merged, deployed and visually accepted.**
+
+Completed:
+
+- Company Credit has denser Credit limit / Used / Available hierarchy and clearer read-only/source-of-truth treatment;
+- Pricing makes OGL custom pricing vs Magento fallback obvious while keeping import health secondary;
+- Finance uses denser metrics, stronger OGL provenance and a clearer definition of “spend”;
+- Credit Orders has cleaner filters/rows/tabs, stronger acting-company-user context and clearer lifecycle disclosures;
+- queues, reports, history and lifecycle forms remain in-page;
+- Credit Order actions are still rendered only from Fluid-returned `can_*` decisions for the selected real company user.
+
+Runtime acceptance confirmed the deployed Phase 5 presentation across the Admin application.
+
+## 🟡 Phase 6 — OGL + import workflows
 
 This is the **active focused implementation block**.
 
-The emphasis here is operational clarity rather than more editing controls. Company Credit, Pricing and Finance remain read-only; Credit Orders continues to render only the actions Fluid authorizes for the selected real company-user actor.
+The interaction goal is operational confidence: make source ownership obvious, make registry/mapping actions easier to scan, and make **Choose → Preview → Apply** unmistakable without changing any import contract.
 
-### Company credit
+### OGL administration
 
-- tighten the credit-limit / used / available hierarchy without turning the page into a large dashboard;
-- keep over-limit policy semantics and utilization obvious;
-- make the read-only/source-of-truth boundary visually explicit;
-- align links into Credit orders with the shared Admin action language.
+- keep Companies / Rep mappings as the primary operational tabs;
+- strengthen connection/import health and source-of-truth presentation;
+- tighten registry filters, row actions and selected-company preview hierarchy;
+- make live OGL preview visibly distinct from cached Magento company data;
+- keep sync eligibility, importability, rep mappings and overrides backend-authoritative;
+- keep destructive or state-changing actions visually secondary unless they are the task’s explicit primary action.
 
-### Pricing
+### Representative profiles
 
-- reduce oversized source presentation and make OGL custom price vs Magento fallback easy to scan;
-- standardise search, result rows, pagination and tier-price hierarchy;
-- make import health/provenance secondary to the actual pricing source and rows;
-- preserve read-only behaviour and backend-authoritative pricing.
+- make mapped Admin identity, rep code, affected-company count and card visibility easier to scan;
+- make profile editing feel like a focused configuration surface rather than a loose form;
+- align Save / Upload photo / Remove photo actions with the shared Admin action language;
+- keep profile data presentation-only: it must never change which Magento administrator an OGL rep code maps to.
 
-### Finance
+### Bulk import + company Import / export
 
-- align metric-card proportions with the newer Admin density;
-- strengthen OGL provenance without distracting from the monthly operational chart;
-- keep “spend” explicitly defined as OGL order value rather than an accounting-ledger balance;
-- preserve dense chart readability and read-only behaviour.
+- make **Choose → Preview → Apply** the dominant workflow hierarchy;
+- strengthen active/completed step treatment;
+- standardise download, preview and apply affordances;
+- make preview counts and row results easier to scan without reducing row-level detail;
+- visually isolate the Apply stage after a clean preview;
+- keep Apply guarded when preview has errors or no actionable rows;
+- preserve exact `company_ref` / `company_reference` routing and safety semantics;
+- keep single-company and multi-company workspaces visually consistent while retaining their different routing rules.
 
-### Credit orders
+### Phase 6 acceptance
 
-- align queue filters, status badges, row focus/hover and right-side order actions;
-- make acting-company-user context visually prominent because lifecycle authorization is actor-specific;
-- make read-only mode equally explicit when no actor is selected;
-- strengthen detail tabs, actor context and lifecycle disclosures without hiding operational history in modals;
-- never expose lifecycle actions that Fluid does not return as authorized;
-- preserve the customer-owned `approved_pending_payment` boundary.
-
-### Phase 5 acceptance
-
-- visual/presentation changes only; no GraphQL, server-action, ACL or backend changes;
-- Company Credit, Pricing and Finance remain read-only;
-- Credit Orders still resolves actions exclusively from Fluid for the selected actor;
-- queues, reports, history and long operational records remain in-page;
-- check queue/detail behavior with no actor, approver actor and non-authorized actor;
-- check pricing source/fallback and no-custom-price states;
-- check credit normal/over-limit/no-account states;
-- check Finance data-present and backend-unavailable states;
-- run focused commercial-polish tests plus `yarn lint`, `yarn typecheck`, `yarn build` and live Admin regression.
-
-## ⬜ Phase 6 — OGL + import workflows
-
-### OGL administration / rep profiles
-
-- standardise registry/mapping tabs, status strips and row actions;
-- align rep-profile edit/media actions with the shared Admin interaction language;
-- keep OGL as the source of truth for onboarding and representative assignment.
-
-### Bulk import / company import-export
-
-- make **Choose → Preview → Apply** the unmistakable workflow hierarchy;
-- standardise download/upload/action icons;
-- strengthen preview error/success summaries without reducing row-level detail;
-- keep Apply guarded and separate from Preview;
-- preserve `company_ref` routing/safety semantics.
+- presentation/CSS-first changes only; no GraphQL, server-action, ACL or backend changes;
+- OGL remains the source of truth for onboarding and representative assignment;
+- representative profile data stays presentation-only;
+- Preview remains mandatory before Apply;
+- Apply remains disabled for preview errors or zero actionable changes;
+- company_ref/company_reference routing semantics remain unchanged;
+- check OGL enabled/disabled, importable/unavailable and imported/not-imported states;
+- check rep profile visible/hidden, active/inactive Admin and photo/no-photo states;
+- check all bulk-import datasets and all company-scoped import datasets;
+- check 200% zoom, narrow widths, keyboard focus and Company Portal smoke regression;
+- run focused Phase 6 source checks plus `yarn lint`, `yarn typecheck`, `yarn build` and live Admin regression.
 
 ## 🔎 Phase 7 — Final Admin accessibility and responsive pass
 
-Run after the focused workspace PRs so fixes are not repeatedly invalidated.
+Run after Phase 6 so fixes are not repeatedly invalidated.
 
 Check:
 
 - keyboard-only navigation and visible focus;
-- focus restoration for every modal;
-- Escape/backdrop rules;
+- modal focus restoration and Escape/Close/Cancel behaviour;
 - 200% browser zoom;
-- 360–390px mobile widths and tablet widths;
+- 360–390px mobile and tablet widths;
 - long company/product/user/role names;
-- horizontal table overflow and dense operational records;
+- dense table overflow;
 - empty, error and loading-state consistency;
 - destructive-action labelling;
 - reduced-motion behaviour;
-- route changes and session-expiry recovery;
-- representative Company Portal smoke regression to prove Admin-only changes did not leak across the auth/UI boundary.
+- route/session-expiry recovery;
+- representative Company Portal smoke regression proving Admin-only polish did not leak across the auth/UI boundary.
 
 ## Shared interaction rules
 
-These rules apply to every phase unless a screen has a documented reason to differ.
-
 ### Modal use
 
-Use a modal when the task is a focused create/edit/confirmation action and the user benefits from retaining the list or overview context behind it.
-
-Good candidates:
-
-- create/edit user;
-- create/edit role;
-- create/edit employee;
-- focused destructive confirmation;
-- compact help/guidance.
-
-Do **not** put long operational history, queues, reports, large browsing experiences or long configuration forms into a modal just for consistency.
+Use a modal for focused create/edit/confirmation tasks where retaining list/overview context helps. Do not move long queues, reports, history, large browsing experiences or long configuration/import flows into modals merely for consistency.
 
 ### Actions
 
 - one obvious primary action per task;
 - secondary actions stay visually quieter;
-- destructive actions use Lucide `Trash2`, `UserX` or equivalent and require explicit confirmation;
-- row actions sit in a consistent right-side action area;
-- use icons to improve scanning, not decorate every label.
+- destructive actions remain explicit and confirmed;
+- row actions use a consistent right-side action area;
+- icons improve scanning rather than decorate every label.
 
 ### Information hierarchy
 
 - overview/state before editing;
 - status badges describe backend-returned state, never frontend guesses;
-- compact metrics are preferred to oversized dashboard cards on dense operational screens;
+- dense operational screens favour compact metrics over oversized dashboard cards;
 - search/filter controls should look and behave consistently;
-- empty states should explain what the user can do next.
+- empty states should explain what can happen next.
 
 ### Contextual `(i)` help
 
-Add help only when the screen contains a non-obvious rule, ownership boundary or workflow. Do not add an icon merely because a page has a title.
-
-Canonical route decisions are in `docs/ADMIN_UI_POLISH_AUDIT.md`.
+Add help only for non-obvious rules, ownership boundaries or workflows. Canonical route decisions remain in `docs/ADMIN_UI_POLISH_AUDIT.md`.
 
 ## Backend / product boundaries
 
 The UI pass must **not**:
 
 - reproduce Fluid/Magento authorization;
-- add client-side purchasing, catalogue, pricing or credit business rules;
-- turn read-only OGL/credit/pricing surfaces into write surfaces;
-- change company-user Portal behaviour;
-- use REST shortcuts instead of the accepted GraphQL contracts;
+- add client-side purchasing, catalogue, pricing, credit or import business rules;
+- turn read-only OGL/credit/pricing surfaces into unsupported write surfaces;
+- change Company Portal behaviour;
+- use REST shortcuts instead of accepted GraphQL contracts;
 - conflate company users/buyers with beneficiary Employees.
 
-If UI work reveals a missing legitimate capability, record it separately and extend `Css/Commerce/**` first under the project’s backend golden rule.
+If UI work reveals a legitimate missing capability, record it separately and extend `Css/Commerce/**` first under the project backend golden rule.
 
 ## Update discipline
 
 After each Admin UI polish PR:
 
-1. update the relevant phase checkbox/status here;
-2. add the merged PR number and a short outcome;
-3. record any intentionally deferred item;
-4. keep runtime acceptance separate from source-level completion;
-5. do not mark a phase complete until the real application passes `yarn lint`, `yarn typecheck`, `yarn build` and the relevant browser/runtime checks.
+1. update the relevant phase status here;
+2. add the merged PR number and outcome;
+3. record intentionally deferred items;
+4. keep runtime acceptance separate from source completion;
+5. do not mark a phase complete until the real application passes `yarn lint`, `yarn typecheck`, `yarn build` and relevant browser/runtime checks.
