@@ -49,6 +49,12 @@
 .modeCard:hover {
   border-color: #9bb6cc;
   background: #f7fbff;
+  box-shadow: 0 3px 12px rgb(0 35 72 / 5%);
+}
+
+.modeCard:focus-within {
+  outline: 3px solid rgb(255 221 0 / 70%);
+  outline-offset: 2px;
 }
 
 .modeCardActive {
@@ -82,10 +88,7 @@
 .modeIcon {
   width: 20px;
   height: 20px;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  color: currentColor;
 }
 
 .modeCopy {
@@ -156,10 +159,25 @@
   font-weight: 600;
 }
 
+.searchInputWrap {
+  position: relative;
+  display: block;
+}
+
+.searchInputWrap > svg {
+  position: absolute;
+  top: 50%;
+  left: 0.82rem;
+  z-index: 1;
+  color: var(--css-muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
 .searchField input {
   width: 100%;
   min-height: 44px;
-  padding: 0.7rem 0.82rem;
+  padding: 0.7rem 0.82rem 0.7rem 2.35rem;
   border: 1px solid var(--css-border-strong);
   border-radius: 8px;
   background: #fff;
@@ -169,6 +187,14 @@
 .toolbarActions {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.toolbarActions button,
+.saveBar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.45rem;
 }
 
@@ -190,7 +216,7 @@
   padding: 0.78rem 0.9rem;
   border-bottom: 1px solid #e7edf2;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background 120ms ease, box-shadow 120ms ease;
 }
 
 .methodRow:nth-child(odd) {
@@ -201,13 +227,17 @@
   background: #f8fbfd;
 }
 
+.methodRow:focus-within {
+  box-shadow: inset 0 0 0 2px rgb(0 87 168 / 20%);
+}
+
 .methodRowSelected {
   background: #f1f8fe;
 }
 
 .methodRow input {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
 }
 
 .methodCopy {
@@ -267,6 +297,17 @@
   gap: 0.2rem;
 }
 
+.saveHeading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--css-text);
+}
+
+.saveHeading > svg {
+  color: var(--css-primary);
+}
+
 .saveBar strong {
   color: var(--css-text);
 }
@@ -274,6 +315,10 @@
 .saveBar span {
   color: var(--css-muted);
   font-size: 0.82rem;
+}
+
+.saveHeading strong {
+  color: var(--css-text);
 }
 
 @media (max-width: 980px) {
@@ -304,6 +349,11 @@
 
   .modeCard {
     min-height: auto;
+  }
+
+  .toolbarActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .saveBar button {

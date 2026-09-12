@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { CheckCheck, CircleCheckBig, Eraser, Globe2, ListChecks, Save, Search, SlidersHorizontal } from "lucide-react";
 import { saveCompanyPaymentConfigurationAction } from "@/app/(admin)/companies/[id]/payment/actions";
 import type { CompanyPaymentConfiguration, PaymentMethodOption } from "@/lib/graphql/payment-configuration";
 import styles from "./payment-configuration-workspace.module.css";
@@ -17,29 +19,18 @@ function initialMode(configuration: CompanyPaymentConfiguration): PaymentMode {
   return configuration.is_specific ? "specific" : "all";
 }
 
-function StrokeIcon({ kind }: { kind: PaymentMode }) {
-  if (kind === "default") {
-    return (
-      <svg aria-hidden="true" className={styles.modeIcon} fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
-      </svg>
-    );
-  }
+function ModeIcon({ kind }: { kind: PaymentMode }) {
+  const Icon = kind === "default" ? Globe2 : kind === "all" ? CircleCheckBig : SlidersHorizontal;
+  return <Icon aria-hidden="true" className={styles.modeIcon} size={20} strokeWidth={1.9} />;
+}
 
-  if (kind === "all") {
-    return (
-      <svg aria-hidden="true" className={styles.modeIcon} fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" />
-        <path d="m8 12 2.5 2.5L16 9" />
-      </svg>
-    );
-  }
-
+function PaymentSaveButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
   return (
-    <svg aria-hidden="true" className={styles.modeIcon} fill="none" viewBox="0 0 24 24">
-      <path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M8 14v6" />
-    </svg>
+    <button className="button" disabled={disabled || pending} type="submit">
+      <Save aria-hidden="true" size={16} />
+      <span>{pending ? "Saving payment policy…" : "Save payment policy"}</span>
+    </button>
   );
 }
 
@@ -151,7 +142,7 @@ export function PaymentConfigurationWorkspace({ companyId, configuration }: Prop
                   type="radio"
                   value={option.value}
                 />
-                <span className={styles.iconWrap}><StrokeIcon kind={option.value} /></span>
+                <span className={styles.iconWrap}><ModeIcon kind={option.value} /></span>
                 <span className={styles.modeCopy}>
                   <strong>{option.title}</strong>
                   <span>{option.description}</span>
@@ -172,7 +163,7 @@ export function PaymentConfigurationWorkspace({ companyId, configuration }: Prop
               <h2>Allowed payment methods</h2>
               <p className="muted">Only checked methods will remain available to this company.</p>
             </div>
-            <div className={styles.selectionCount}>
+            <div className={styles.selectionCount} aria-live="polite">
               <strong>{selected.size}</strong>
               <span>of {configuration.available_methods.length} selected</span>
             </div>
@@ -183,19 +174,24 @@ export function PaymentConfigurationWorkspace({ companyId, configuration }: Prop
               <div className={styles.methodToolbar}>
                 <label className={styles.searchField}>
                   <span>Find a method</span>
-                  <input
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search payment method or code"
-                    type="search"
-                    value={query}
-                  />
+                  <span className={styles.searchInputWrap}>
+                    <Search aria-hidden="true" size={17} />
+                    <input
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="Search payment method or code"
+                      type="search"
+                      value={query}
+                    />
+                  </span>
                 </label>
                 <div className={styles.toolbarActions}>
                   <button className="button button-secondary button-compact" onClick={selectVisible} type="button">
-                    Select visible
+                    <CheckCheck aria-hidden="true" size={15} />
+                    <span>Select visible</span>
                   </button>
                   <button className="button button-secondary button-compact" onClick={clearVisible} type="button">
-                    Clear visible
+                    <Eraser aria-hidden="true" size={15} />
+                    <span>Clear visible</span>
                   </button>
                 </div>
               </div>
@@ -234,7 +230,10 @@ export function PaymentConfigurationWorkspace({ companyId, configuration }: Prop
 
       <div className={styles.saveBar}>
         <div>
-          <strong>{modeOptions.find((option) => option.value === mode)?.title}</strong>
+          <span className={styles.saveHeading}>
+            <ListChecks aria-hidden="true" size={16} />
+            <strong>{modeOptions.find((option) => option.value === mode)?.title}</strong>
+          </span>
           <span>
             {mode === "specific"
               ? `${selected.size} payment method${selected.size === 1 ? "" : "s"} will be allowed.`
@@ -243,7 +242,7 @@ export function PaymentConfigurationWorkspace({ companyId, configuration }: Prop
                 : "Fluid's default payment configuration will apply."}
           </span>
         </div>
-        <button className="button" disabled={cannotSave} type="submit">Save payment policy</button>
+        <PaymentSaveButton disabled={cannotSave} />
       </div>
     </form>
   );
