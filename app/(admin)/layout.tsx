@@ -63,6 +63,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   return (
     <AppHeaderContextProvider>
       <div className="shell admin-shell">
+        <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
         <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
         <div className="app-workspace">
           <AppSidebar
@@ -71,7 +72,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
             companyNavigation={companyNavigation}
             sectionNavigation={sectionNavigation}
           />
-          <main className="content">{children}</main>
+          <main className="content" id="admin-main-content" tabIndex={-1}>{children}</main>
           <AdminContextHelp />
         </div>
       </div>
