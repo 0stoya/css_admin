@@ -1,0 +1,244 @@
+/* Final visual cleanup for Admin landing surfaces.
+   Scoped to existing company-directory / company-overview class contracts. */
+
+.company-directory-header {
+  gap: 1rem;
+  padding-bottom: 0.2rem;
+}
+
+.company-directory-key {
+  min-height: 34px;
+  padding: 0.45rem 0.68rem;
+  border-color: #cedbe5;
+  border-radius: 9px;
+  background: #f9fbfd;
+  font-size: 0.78rem;
+}
+
+.company-directory-toolbar {
+  gap: 0.8rem;
+  padding: 0.85rem 0.9rem;
+  border-color: #ccdbe6;
+  box-shadow: 0 3px 12px rgb(0 35 72 / 4%);
+}
+
+.company-directory-summary {
+  min-width: 120px;
+  padding-bottom: 0.66rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.company-group-list {
+  gap: 0.55rem;
+}
+
+.company-group {
+  border-color: #d1dee8;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 3%);
+}
+
+.company-group:hover,
+.company-group:focus-within {
+  border-color: #9fb8cb;
+  box-shadow: 0 5px 16px rgb(0 35 72 / 6%);
+}
+
+.company-group-row {
+  grid-template-columns: 32px 42px minmax(0, 1fr) auto;
+  gap: 0.72rem;
+  min-height: 70px;
+  padding: 0.68rem 0.9rem;
+}
+
+.company-structure-toggle {
+  width: 30px;
+  height: 30px;
+}
+
+.company-root-marker {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+}
+
+.company-group-title {
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.company-group-meta {
+  gap: 0.28rem 0.72rem;
+  margin-top: 0.22rem;
+  font-size: 0.76rem;
+}
+
+.company-parent-label {
+  padding: 0.18rem 0.42rem;
+  font-size: 0.64rem;
+}
+
+.company-group-actions {
+  gap: 0.4rem;
+}
+
+.company-group-actions > .badge {
+  font-size: 0.7rem;
+}
+
+.company-group-actions > .button::after {
+  width: 14px;
+  height: 14px;
+  margin-left: 0.28rem;
+  content: "";
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m9 18 6-6-6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.company-group-expanded .company-group-row {
+  background: #fbfdff;
+}
+
+.company-tree-panel {
+  padding-top: 0.82rem;
+  padding-bottom: 0.9rem;
+  background: #f7fafc;
+}
+
+.company-tree-row {
+  min-height: 42px;
+  padding-block: 0.38rem;
+}
+
+.company-overview {
+  gap: 1.1rem;
+}
+
+.company-overview-heading-row {
+  min-height: 22px;
+}
+
+.company-overview-header {
+  padding-bottom: 0;
+}
+
+.company-overview-stats {
+  gap: 0.65rem;
+}
+
+.company-overview-stat {
+  gap: 0.18rem;
+  min-height: 88px;
+  padding: 0.78rem 0.88rem;
+  border-color: #d0dde7;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 3%);
+}
+
+.company-overview-stat-value {
+  font-size: clamp(1.1rem, 1.8vw, 1.38rem);
+}
+
+.company-overview-stat-label {
+  font-size: 0.76rem;
+}
+
+.company-overview-stat-meta {
+  font-size: 0.7rem;
+}
+
+.company-overview-grid {
+  gap: 0.85rem;
+}
+
+.company-overview-rail {
+  gap: 0.8rem;
+}
+
+.company-overview-panel {
+  gap: 0.75rem;
+  border-color: #d1dee8;
+  box-shadow: 0 3px 12px rgb(0 35 72 / 4%);
+}
+
+.company-overview-rail > .company-overview-panel:nth-child(2) {
+  border-top: 3px solid #9fc4df;
+}
+
+.company-overview-panel h2 {
+  font-size: 1.02rem;
+}
+
+.company-overview-detail-list > div {
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+}
+
+.company-overview-detail-list dt {
+  font-size: 0.74rem;
+}
+
+.company-overview-detail-list dd {
+  font-size: 0.79rem;
+}
+
+.company-overview-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #c6d8e6;
+  border-radius: 7px;
+  background: #f8fbfd;
+  text-decoration: none;
+}
+
+.company-overview-text-link:hover {
+  border-color: #9fbdd4;
+  background: var(--css-primary-soft);
+  text-decoration: none;
+}
+
+.company-overview .company-detail-tree-panel {
+  max-height: min(56vh, 610px);
+  border-color: #d0dde7;
+  background: #f8fbfd;
+}
+
+.company-overview .company-tree-current {
+  border-radius: 8px;
+}
+
+@media (max-width: 820px) {
+  .company-group-row {
+    grid-template-columns: 30px 38px minmax(0, 1fr);
+  }
+
+  .company-group-actions {
+    grid-column: 3;
+  }
+}
+
+@media (max-width: 560px) {
+  .company-directory-toolbar {
+    padding: 0.75rem;
+  }
+
+  .company-group-row {
+    grid-template-columns: 28px 34px minmax(0, 1fr);
+    gap: 0.48rem;
+    padding: 0.65rem;
+  }
+
+  .company-root-marker {
+    width: 34px;
+    height: 34px;
+  }
+
+  .company-overview {
+    gap: 0.9rem;
+  }
+
+  .company-overview-stat {
+    min-height: 0;
+  }
+}
