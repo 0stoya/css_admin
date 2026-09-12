@@ -10,6 +10,7 @@ import "./company-overview.css";
 import "./catalogue-workspace.css";
 import "./catalogue-workspace-polish.css";
 import "./purchase-controls.css";
+import "./purchase-controls-visual-polish.css";
 import "./purchase-product-picker.css";
 import "./toggle-controls.css";
 
