@@ -4,6 +4,9 @@
 }
 
 .tabs {
+  position: sticky;
+  top: 88px;
+  z-index: 12;
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
@@ -12,8 +15,9 @@
   overflow-x: auto;
   border: 1px solid var(--css-border);
   border-radius: 12px;
-  background: #fff;
+  background: rgb(255 255 255 / 96%);
   box-shadow: 0 8px 24px rgba(0, 35, 72, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 .tab {
@@ -30,8 +34,29 @@
   white-space: nowrap;
 }
 
+.tab::before {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  content: "";
+  background: currentColor;
+}
+
+.tab:first-child::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 21h18 M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16 M9 7h2 M13 7h2 M9 11h2 M13 11h2 M9 15h2 M13 15h2'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.tab:nth-child(2)::before {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M5 7h14 M5 17h14 M8 4l-3 3 3 3 M16 14l3 3-3 3'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
 .tab:hover {
   background: #f5f9fc;
+}
+
+.tab:focus-visible {
+  outline: 3px solid rgb(255 221 0 / 72%);
+  outline-offset: 2px;
 }
 
 .tabActive {
@@ -60,9 +85,10 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   overflow: hidden;
-  border: 1px solid var(--css-border);
+  border: 1px solid #c7d8e5;
   border-radius: 12px;
   background: #fff;
+  box-shadow: 0 3px 14px rgb(0 35 72 / 4%);
 }
 
 .healthItem {
@@ -74,6 +100,10 @@
 
 .healthItem + .healthItem {
   border-left: 1px solid var(--css-border);
+}
+
+.healthItem:nth-child(-n + 2) {
+  background: #fbfdff;
 }
 
 .healthLabel {
@@ -100,14 +130,17 @@
   flex: 0 0 auto;
   border-radius: 999px;
   background: #9eabb6;
+  box-shadow: 0 0 0 3px rgb(158 171 182 / 14%);
 }
 
 .healthDotOk {
   background: #19a463;
+  box-shadow: 0 0 0 3px rgb(25 164 99 / 14%);
 }
 
 .healthDotBad {
   background: #c73535;
+  box-shadow: 0 0 0 3px rgb(199 53 53 / 13%);
 }
 
 .sectionHeader,
@@ -118,6 +151,11 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.sectionHeader {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--css-border);
 }
 
 .sectionHeader h2,
@@ -140,6 +178,15 @@
   align-items: center;
 }
 
+.headerActions :global(.button),
+.toolbarActions :global(.button),
+.rowActions :global(.button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
 .filterCard {
   display: grid;
   grid-template-columns: minmax(260px, 2fr) minmax(160px, 1fr) minmax(160px, 1fr) auto;
@@ -149,6 +196,15 @@
   border: 1px solid var(--css-border);
   border-radius: 12px;
   background: #fff;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 3%);
+}
+
+.filterCard input:focus,
+.filterCard select:focus,
+.mappingForm input:focus,
+.mappingForm select:focus {
+  border-color: var(--css-primary);
+  box-shadow: 0 0 0 3px rgb(0 87 168 / 10%);
 }
 
 .filterActions {
@@ -161,9 +217,16 @@
   display: grid;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid #bfd4e5;
+  border: 1px solid #a9c8df;
+  border-left: 4px solid var(--css-primary);
   border-radius: 12px;
-  background: #f8fbfd;
+  background: #f7fbfe;
+  box-shadow: 0 7px 22px rgb(0 35 72 / 6%);
+}
+
+.previewHeader {
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #d9e6ef;
 }
 
 .previewMeta {
@@ -171,6 +234,10 @@
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #d7e4ee;
+  border-radius: 9px;
+  background: #fff;
 }
 
 .previewGrid {
@@ -188,6 +255,7 @@
   border: 1px solid var(--css-border);
   border-radius: 10px;
   background: #fff;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 3%);
 }
 
 .previewCard h3 {
@@ -240,6 +308,7 @@
   border: 1px solid var(--css-border);
   border-radius: 12px;
   background: #fff;
+  box-shadow: 0 3px 14px rgb(0 35 72 / 4%);
 }
 
 .tableToolbar {
@@ -270,6 +339,15 @@
   margin: 0;
   border: 0;
   border-radius: 0;
+}
+
+.tableWrap tbody tr {
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.tableWrap tbody tr:hover {
+  background: #f7fbfe;
+  box-shadow: inset 3px 0 var(--css-primary);
 }
 
 .companyCell {
@@ -304,6 +382,13 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   align-items: center;
+  justify-content: flex-end;
+}
+
+.rowActions :global(.button) {
+  min-height: 36px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.82rem;
 }
 
 .pagination {
@@ -322,9 +407,10 @@
   gap: 0.75rem;
   align-items: end;
   padding: 1rem;
-  border: 1px solid var(--css-border);
+  border: 1px solid #c7d8e5;
   border-radius: 12px;
-  background: #fff;
+  background: #fbfdff;
+  box-shadow: 0 2px 8px rgb(0 35 72 / 3%);
 }
 
 .mappingName {
@@ -384,6 +470,7 @@
 
 @media (max-width: 700px) {
   .tabs {
+    position: static;
     display: flex;
     width: 100%;
   }
@@ -420,6 +507,10 @@
   .toolbarActions > *,
   .filterActions > * {
     flex: 1 1 auto;
+  }
+
+  .rowActions {
+    justify-content: flex-start;
   }
 
   .detailGrid {
