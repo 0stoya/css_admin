@@ -162,6 +162,76 @@
   font-size: 0.84rem;
 }
 
+/* Phase 5: compact finance metrics while making OGL provenance and the spend definition explicit. */
+.summaryGrid {
+  gap: 0.75rem;
+}
+
+.metricCard {
+  min-height: 108px;
+  align-content: center;
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+
+.metricCardPrimary {
+  border-top-width: 3px;
+  background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%);
+  padding-top: calc(1rem - 2px);
+}
+
+.metricValue {
+  font-size: clamp(1.2rem, 1.8vw, 1.58rem);
+}
+
+.chartCard {
+  border-top: 3px solid var(--css-primary);
+  padding-top: calc(1rem - 2px);
+  box-shadow: 0 4px 16px rgb(0 35 72 / 5%);
+}
+
+.barTrack {
+  background: #edf5fb;
+}
+
+.workspace > :global(.card.stack) {
+  gap: 0.85rem;
+  border-left: 3px solid #8fb8d8;
+  background: #fbfdff;
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+
+.workspace > :global(.card.stack) h2 {
+  margin-bottom: 0.2rem;
+}
+
+.detailGrid {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: var(--css-surface);
+}
+
+.detailItem {
+  min-height: 78px;
+  align-content: center;
+  padding: 0.85rem 0.95rem;
+}
+
+.detailItem + .detailItem {
+  border-left: 1px solid var(--css-border);
+}
+
+.readOnlyNote {
+  padding: 0.78rem 0.9rem;
+  border: 1px solid #cfe1ef;
+  border-left: 3px solid var(--css-primary);
+  border-radius: 8px;
+  background: #f7fbff;
+  color: #526b80;
+  line-height: 1.45;
+}
+
 @media (max-width: 1180px) {
   .summaryGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -170,12 +240,35 @@
   .detailGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .detailItem + .detailItem {
+    border-left: 0;
+  }
+
+  .detailItem:nth-child(even) {
+    border-left: 1px solid var(--css-border);
+  }
+
+  .detailItem:nth-child(n + 3) {
+    border-top: 1px solid var(--css-border);
+  }
 }
 
 @media (max-width: 720px) {
   .summaryGrid,
   .detailGrid {
     grid-template-columns: 1fr;
+  }
+
+  .detailItem,
+  .detailItem:nth-child(even),
+  .detailItem:nth-child(n + 3) {
+    border-left: 0;
+    border-top: 1px solid var(--css-border);
+  }
+
+  .detailItem:first-child {
+    border-top: 0;
   }
 
   .chartHeader {
