@@ -51,6 +51,12 @@ export default async function LoginPage({
             </div>
           ) : null}
 
+          {reason === "app-switch" ? (
+            <div className={styles.error} role="status">
+              The secure app switch expired or could not be verified. Sign in to continue.
+            </div>
+          ) : null}
+
           <LoginForm />
         </div>
       </section>

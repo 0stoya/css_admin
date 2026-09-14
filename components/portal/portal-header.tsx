@@ -1,6 +1,8 @@
+import { Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "@/components/portal/portal-shell.module.css";
+import { getStorefrontUrl } from "@/lib/config";
 
 export function PortalHeader() {
   return (
@@ -20,9 +22,15 @@ export function PortalHeader() {
           <span className={styles.brandLabel}>Company Portal</span>
         </Link>
 
-        <form className={styles.signoutForm} action="/api/auth/logout" method="post">
-          <button className={styles.signoutButton} type="submit">Sign out</button>
-        </form>
+        <div className={styles.headerActions}>
+          <a className={styles.appSwitchLink} href={`${getStorefrontUrl()}/api/auth/sso/start`}>
+            <Store size={17} strokeWidth={2.1} aria-hidden="true" />
+            <span>Shop</span>
+          </a>
+          <form className={styles.signoutForm} action="/api/auth/logout" method="post">
+            <button className={styles.signoutButton} type="submit">Sign out</button>
+          </form>
+        </div>
       </div>
     </header>
   );

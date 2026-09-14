@@ -74,7 +74,34 @@
   white-space: nowrap;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .signoutForm { margin: 0; }
+
+.appSwitchLink {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  border: 1px solid var(--css-primary);
+  border-radius: 8px;
+  padding: 0.58rem 0.82rem;
+  background: var(--css-primary);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: background 130ms ease, border-color 130ms ease;
+}
+
+.appSwitchLink:hover {
+  border-color: var(--css-primary-hover);
+  background: var(--css-primary-hover);
+}
 
 .signoutButton {
   min-height: 40px;
@@ -97,6 +124,7 @@
 }
 
 .brand:focus-visible,
+.appSwitchLink:focus-visible,
 .signoutButton:focus-visible,
 .sidebarLink:focus-visible {
   outline: 3px solid var(--css-secondary);

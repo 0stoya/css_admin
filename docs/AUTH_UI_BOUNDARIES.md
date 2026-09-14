@@ -89,6 +89,25 @@ Both authenticated surfaces return to the same sign-in page:
 
 The session itself remains principal-specific before it is cleared.
 
+### Company customer application switching
+
+The Company Portal header exposes **Shop** only inside the customer route
+group. Magento Staff/Admin pages do not expose or authorize the customer app
+switch. CSS Store exposes **Manage** for its authenticated company customer and
+returns to `/portal`, never to the Staff/Admin `/companies` area.
+
+The two applications do not share a parent-domain cookie. The destination
+creates a host-only HttpOnly state and PKCE verifier, then redirects to the
+source application. The source uses its existing customer cookie to request a
+60-second Fluid ticket bound to `STORE` or `PORTAL`. Fluid persists only the
+ticket hash, consumes it atomically once, and issues a fresh destination
+Magento customer token. The callback validates `customer` and
+`css_company_context` before accepting that token.
+
+Callback origins and paths are fixed from trusted environment configuration.
+Arbitrary return URLs are not accepted, and Magento bearer tokens must never
+appear in browser URLs, HTML or client JavaScript.
+
 ## 6. UI ownership
 
 ### Admin-owned files
@@ -143,3 +162,8 @@ Then verify on the real environment:
 9. `/portal` cannot use the admin session.
 10. Existing Staff/Admin navigation and visuals are unchanged by Portal UI work.
 11. Portal navigation still follows Fluid-returned capabilities.
+12. Portal **Shop** reaches CSS Store without another credential prompt.
+13. Store **Manage** reaches `/portal` without entering Staff/Admin scope.
+14. Magento Staff/Admin sessions cannot authorize a Store switch.
+15. Wrong-state, wrong-verifier, wrong-target, expired and replayed tickets fail closed.
+16. A destination session resolves the same customer and selected company context.
