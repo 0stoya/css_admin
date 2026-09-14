@@ -13,6 +13,12 @@ The sign-in UI is intentionally neutral. Email-shaped identifiers use Magento cu
 
 `/portal/login` is retained only as a compatibility redirect to `/login`.
 
+Company customers can move between the Company Portal and `css_store` through
+the **Shop** / **Manage** app switch without entering credentials again. Each
+application keeps its own host-only HttpOnly cookie. Fluid exchanges a
+60-second, one-use, PKCE-bound code for a fresh destination customer token; no
+Magento bearer token is exposed to the browser or shared across subdomains.
+
 ## UI status and boundary
 
 The Staff/Admin UI polish programme is **complete through PR #81** and is now the production management baseline.
@@ -51,6 +57,9 @@ No Apollo/client cache layer is included.
 4. Run `yarn dev`.
 5. Open `/login`.
 6. Sign in with either a Magento customer email address assigned to a Fluid company or a Magento administrator username.
+
+For local app-switch testing, also configure `CSS_STORE_URL` with the trusted
+`css_store` origin. Production uses `https://store.csscdn.co.uk`.
 
 ## Validation
 
