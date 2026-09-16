@@ -210,7 +210,7 @@ function controlsInput(
 }
 
 function cloneBundle(bundle: CompanyControlsBundle): CompanyControlsBundle {
-  return structuredClone(bundle);
+  return JSON.parse(JSON.stringify(bundle)) as CompanyControlsBundle;
 }
 
 function parsePurchaseControls(source: string, options: BulkPurchaseControlsOptions) {
@@ -403,7 +403,9 @@ async function planPurchaseControls(source: string, options: BulkPurchaseControl
     const message = !existing
       ? `Template will be created with ${template.rules.length} rule${template.rules.length === 1 ? "" : "s"} and ${template.assigned_role_names.length} role assignment${template.assigned_role_names.length === 1 ? "" : "s"}.`
       : unchanged
-        ? "Template is unchanged; it will be reapplied to assigned users."
+        ? (options.applyPurchaseTemplates
+          ? "Template is unchanged; it will be reapplied to assigned users."
+          : "No template changes detected.")
         : `Template rules/role assignments will be updated (${template.rules.length} rule${template.rules.length === 1 ? "" : "s"}).`;
 
     const row = plannedRow(template.declarationRow, company, template.name, status, message);
