@@ -4,11 +4,19 @@ import { readFileSync } from "node:fs";
 
 const source = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("admin graphql authorization redirects through one-shot session recovery", () => {
+test("admin graphql authorization uses one-shot session recovery without throwing NEXT_REDIRECT inside execute", () => {
   const client = source("lib/graphql/client.ts");
   assert.match(client, /graphql-authorization/);
   assert.match(client, /hasAdminAuthRetryMarker/);
+  assert.match(
+    client,
+    /if \(authorizationRejected && !\(await hasAdminAuthRetryMarker\(\)\)\) \{[\s\S]*throw new GraphQLRequestError/,
+  );
   assert.match(client, /session-expired\?reason=authorization/);
+  assert.doesNotMatch(
+    client,
+    /if \(authorizationRejected && !\(await hasAdminAuthRetryMarker\(\)\)\) \{\s*redirect\(/,
+  );
 });
 
 test("authorization-triggered session expiry leaves a short retry marker", () => {
