@@ -134,10 +134,89 @@ export async function getCompanyControlsBundle(companyId: number): Promise<Compa
   };
 }
 
-export async function importCompanyControls(input: CompanyControlsImportInput) {
+function normalizedSku(value: string) {
+  return value.trim().toLocaleLowerCase("en");
+}
+
+function isMissingProductError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  return /product that was requested (?:doesn't|does not) exist/i.test(message)
+    || /requested product.*(?:doesn't|does not) exist/i.test(message);
+}
+
+async function rawImportCompanyControls(input: CompanyControlsImportInput) {
   const data = await graphqlRequest<ImportData, { input: CompanyControlsImportInput }>(
     COMPANY_CONTROLS_IMPORT_MUTATION,
     { input },
   );
   return data.cssAdminImportCompanyControls;
+}
+
+async function diagnoseMissingCompanyCatalogSkus(input: CompanyControlsImportInput) {
+  if (!input.dry_run || !input.company_catalog.product_restriction) return [];
+
+  const desired = [...new Map(
+    input.company_catalog.allowed_product_skus
+      .map((sku) => sku.trim())
+      .filter(Boolean)
+      .map((sku) => [normalizedSku(sku), sku]),
+  ).values()];
+  if (!desired.length) return [];
+
+  const current = await getCompanyControlsBundle(input.company_id);
+  const currentSkus = new Set(current.company_catalog.allowed_product_skus.map(normalizedSku));
+  const candidates = desired.filter((sku) => !currentSkus.has(normalizedSku(sku)));
+  if (!candidates.length) return [];
+
+  async function subsetContainsMissingProduct(skus: string[]) {
+    const probe: CompanyControlsImportInput = {
+      ...input,
+      dry_run: true,
+      company_catalog: {
+        ...input.company_catalog,
+        product_restriction: true,
+        allowed_product_skus: skus,
+      },
+      role_controls: [],
+      ...(input.schema_version >= 2 ? { purchase_controls: { templates: [] } } : {}),
+    };
+
+    try {
+      await rawImportCompanyControls(probe);
+      return false;
+    } catch (error) {
+      if (isMissingProductError(error)) return true;
+      throw error;
+    }
+  }
+
+  async function findMissing(skus: string[]): Promise<string[]> {
+    if (!skus.length) return [];
+    const containsMissing = await subsetContainsMissingProduct(skus);
+    if (!containsMissing) return [];
+    if (skus.length === 1) return skus;
+
+    const middle = Math.ceil(skus.length / 2);
+    const left = await findMissing(skus.slice(0, middle));
+    const right = await findMissing(skus.slice(middle));
+    return [...left, ...right];
+  }
+
+  return findMissing(candidates);
+}
+
+export async function importCompanyControls(input: CompanyControlsImportInput) {
+  try {
+    return await rawImportCompanyControls(input);
+  } catch (error) {
+    if (input.dry_run && isMissingProductError(error)) {
+      const missing = await diagnoseMissingCompanyCatalogSkus(input).catch(() => [] as string[]);
+      if (missing.length) {
+        throw new Error(
+          `${missing.length === 1 ? "Product SKU" : "Product SKUs"} not found: ${missing.join(", ")}. Check the CSV SKU value${missing.length === 1 ? "" : "s"} and try Preview again.`,
+        );
+      }
+    }
+    throw error;
+  }
 }
