@@ -68,6 +68,19 @@ function retryCompanyRefs(formData: FormData, intent: ImportIntent) {
   return refs;
 }
 
+function mergeRetryRows(
+  previousRows: FlatCompanyImportState["rows"],
+  retryRows: FlatCompanyImportState["rows"],
+  refs: string[] | undefined,
+) {
+  if (!refs?.length) return retryRows;
+  const selected = new Set(refs.map((ref) => ref.trim().toLocaleLowerCase("en")));
+  return [
+    ...previousRows.filter((row) => !selected.has(row.company_ref.trim().toLocaleLowerCase("en"))),
+    ...retryRows,
+  ].sort((left, right) => left.row - right.row || left.company_ref.localeCompare(right.company_ref));
+}
+
 async function runBulkImport(previous: FlatCompanyImportState, formData: FormData, runner: Runner) {
   let source = previous.sourceCsv;
   const createMissingRoles = formData.get("createMissingRoles") === "true";
@@ -79,12 +92,16 @@ async function runBulkImport(previous: FlatCompanyImportState, formData: FormDat
     source = await sourceCsv(formData, intent);
     if (new TextEncoder().encode(source).byteLength > MAX_FILE_BYTES) throw new Error("CSV files are limited to 2 MB.");
 
-    const rows = await runner(source, intent !== "preview", {
+    const onlyCompanyRefs = retryCompanyRefs(formData, intent);
+    const resultRows = await runner(source, intent !== "preview", {
       createMissingRoles,
       createMissingTemplates,
       applyPurchaseTemplates,
-      onlyCompanyRefs: retryCompanyRefs(formData, intent),
+      onlyCompanyRefs,
     });
+    const rows = intent === "retry"
+      ? mergeRetryRows(previous.rows, resultRows, onlyCompanyRefs)
+      : resultRows;
 
     if (intent !== "preview") {
       revalidatePath("/companies");
