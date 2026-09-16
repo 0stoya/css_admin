@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import type { CompanyStructureNode } from "@/lib/company-structure";
 import { countStructureCompanies } from "@/lib/company-structure";
 
+type CompanyFilterMode = "enabled" | "all";
+
 function CrownIcon() {
   return (
     <svg className="company-crown" viewBox="0 0 24 24" aria-hidden="true">
@@ -57,6 +59,7 @@ function CompanyTree({
               <Link href={`/companies/${node.company.company_id}`}>{node.company.name}</Link>
               <span>{node.company.reference || `Company ${node.company.company_id}`}</span>
             </div>
+            {!node.company.status ? <span className="badge badge-restricted">Disabled</span> : null}
             {node.children.length ? (
               <span className="badge badge-neutral">
                 {countStructureCompanies(node)} in branch
@@ -70,7 +73,13 @@ function CompanyTree({
   );
 }
 
-export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
+export function CompanyDirectory({
+  roots,
+  filterMode,
+}: {
+  roots: CompanyStructureNode[];
+  filterMode: CompanyFilterMode;
+}) {
   const [query, setQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -100,6 +109,25 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by company name, reference or ID"
           />
+        </div>
+        <div className="field" role="group" aria-label="Company status filter">
+          <strong className="small-text">Show</strong>
+          <div className="button-row">
+            <Link
+              href="/companies"
+              className={`button button-link button-compact${filterMode === "enabled" ? "" : " button-secondary"}`}
+              aria-current={filterMode === "enabled" ? "page" : undefined}
+            >
+              Enabled
+            </Link>
+            <Link
+              href="/companies?status=all"
+              className={`button button-link button-compact${filterMode === "all" ? "" : " button-secondary"}`}
+              aria-current={filterMode === "all" ? "page" : undefined}
+            >
+              All
+            </Link>
+          </div>
         </div>
         <div className="company-directory-summary" aria-live="polite">
           {filteredRoots.length} visible structure{filteredRoots.length === 1 ? "" : "s"}
@@ -139,6 +167,7 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
                   <div className="company-group-title-row">
                     <Link className="company-group-title" href={`/companies/${company.company_id}`}>{company.name}</Link>
                     {hasChildren && isCanonicalRoot ? <span className="company-parent-label">Group head</span> : null}
+                    {!company.status ? <span className="badge badge-restricted">Disabled</span> : null}
                   </div>
                   <div className="company-group-meta">
                     <strong>{company.reference || `Company ${company.company_id}`}</strong>
@@ -183,8 +212,18 @@ export function CompanyDirectory({ roots }: { roots: CompanyStructureNode[] }) {
 
         {!filteredRoots.length ? (
           <div className="card company-directory-empty">
-            <strong>No companies match “{query.trim()}”.</strong>
-            <span>Try a company name, CREF/reference or Magento company ID.</span>
+            <strong>
+              {query.trim()
+                ? `No companies match “${query.trim()}”.`
+                : `No ${filterMode === "enabled" ? "enabled " : ""}companies are available.`}
+            </strong>
+            <span>
+              {query.trim()
+                ? "Try a company name, CREF/reference or Magento company ID."
+                : filterMode === "enabled"
+                  ? "Switch to All to include disabled companies."
+                  : "No companies are available in this admin scope."}
+            </span>
           </div>
         ) : null}
       </div>

@@ -3,6 +3,7 @@ import { graphqlRequest } from "@/lib/graphql/client";
 export type CompanySummary = {
   company_id: number;
   reference: string | null;
+  status: boolean;
   name: string;
   sales_representative_id: number | null;
   parent_company_id: number | null;
@@ -22,12 +23,13 @@ type CompanyListData = { css_admin_companies: CompanyList };
 type CompanyDetailData = { css_admin_company: CompanySummary };
 
 const COMPANY_LIST_QUERY = /* GraphQL */ `
-  query AdminCompanyList($currentPage: Int!, $pageSize: Int!) {
-    css_admin_companies(currentPage: $currentPage, pageSize: $pageSize) {
+  query AdminCompanyList($currentPage: Int!, $pageSize: Int!, $status: Boolean) {
+    css_admin_companies(currentPage: $currentPage, pageSize: $pageSize, status: $status) {
       total_count
       items {
         company_id
         reference
+        status
         name
         sales_representative_id
         parent_company_id
@@ -46,6 +48,7 @@ const COMPANY_DETAIL_QUERY = /* GraphQL */ `
     css_admin_company(company_id: $companyId) {
       company_id
       reference
+      status
       name
       sales_representative_id
       parent_company_id
@@ -53,21 +56,24 @@ const COMPANY_DETAIL_QUERY = /* GraphQL */ `
   }
 `;
 
-export async function getCompanies(currentPage = 1, pageSize = 100) {
-  const data = await graphqlRequest<CompanyListData, { currentPage: number; pageSize: number }>(
+export async function getCompanies(currentPage = 1, pageSize = 100, status?: boolean) {
+  const data = await graphqlRequest<
+    CompanyListData,
+    { currentPage: number; pageSize: number; status?: boolean }
+  >(
     COMPANY_LIST_QUERY,
-    { currentPage, pageSize },
+    { currentPage, pageSize, status },
   );
   return data.css_admin_companies;
 }
 
-export async function getAllCompanies(pageSize = 100) {
-  const firstPage = await getCompanies(1, pageSize);
+export async function getAllCompanies(pageSize = 100, status?: boolean) {
+  const firstPage = await getCompanies(1, pageSize, status);
   if (firstPage.page_info.total_pages <= 1) return firstPage.items;
 
   const remainingPages = await Promise.all(
     Array.from({ length: firstPage.page_info.total_pages - 1 }, (_, index) =>
-      getCompanies(index + 2, pageSize),
+      getCompanies(index + 2, pageSize, status),
     ),
   );
 

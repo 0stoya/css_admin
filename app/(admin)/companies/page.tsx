@@ -3,17 +3,33 @@ import { buildCompanyStructure } from "@/lib/company-structure";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getAllCompanies } from "@/lib/graphql/companies";
 
-async function loadCompanies() {
+type CompanyFilter = "enabled" | "all";
+
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function companyFilter(value: string | undefined): CompanyFilter {
+  return value === "all" ? "all" : "enabled";
+}
+
+async function loadCompanies(status?: boolean) {
   try {
-    const companies = await getAllCompanies();
+    const companies = await getAllCompanies(100, status);
     return { companies, error: null };
   } catch (error) {
     return { companies: null, error: graphQLErrorMessage(error) };
   }
 }
 
-export default async function CompaniesPage() {
-  const { companies, error } = await loadCompanies();
+export default async function CompaniesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const filter = companyFilter(firstParam(query.status));
+  const { companies, error } = await loadCompanies(filter === "enabled" ? true : undefined);
 
   if (!companies) {
     return (
@@ -37,7 +53,7 @@ export default async function CompaniesPage() {
           <p className="eyebrow">Authenticated Magento scope</p>
           <h1>Companies</h1>
           <p className="muted">
-            {companies.length} compan{companies.length === 1 ? "y" : "ies"} visible across {structures.length} company structure{structures.length === 1 ? "" : "s"}.
+            {companies.length} {filter === "enabled" ? "enabled " : ""}compan{companies.length === 1 ? "y" : "ies"} visible across {structures.length} company structure{structures.length === 1 ? "" : "s"}.
           </p>
         </div>
         {groupedCompanies ? (
@@ -47,13 +63,7 @@ export default async function CompaniesPage() {
         ) : null}
       </header>
 
-      {companies.length ? (
-        <CompanyDirectory roots={structures} />
-      ) : (
-        <section className="card">
-          <p className="muted">No companies are available in this admin scope.</p>
-        </section>
-      )}
+      <CompanyDirectory roots={structures} filterMode={filter} />
     </div>
   );
 }
