@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   bulkCompanyProductsImportAction,
   bulkCompanyStructureImportAction,
+  bulkPurchaseControlsImportAction,
   bulkRoleProductsImportAction,
   bulkRolesImportAction,
   bulkUsersImportAction,
@@ -17,11 +18,13 @@ const initialState: FlatCompanyImportState = {
   sourceCsv: "",
   rows: [],
   create_missing_roles: false,
+  create_missing_templates: false,
+  apply_purchase_templates: false,
   error: null,
 };
 
 type ImportAction = (state: FlatCompanyImportState, formData: FormData) => Promise<FlatCompanyImportState>;
-type BulkImportView = "structure" | "users" | "roles" | "role-products" | "company-products";
+type BulkImportView = "structure" | "users" | "roles" | "role-products" | "company-products" | "purchase-controls";
 
 type PanelProps = {
   title: string;
@@ -32,8 +35,10 @@ type PanelProps = {
   exampleHref: string;
   help: string;
   showCreateMissingRoles?: boolean;
+  showPurchaseControlOptions?: boolean;
   groupResultsByCompany?: boolean;
   applyConfirmation?: string;
+  allowRetryFailed?: boolean;
 };
 
 function statusBadge(status: ImportRowStatus) {
@@ -159,14 +164,21 @@ function BulkImportPanel({
   exampleHref,
   help,
   showCreateMissingRoles = false,
+  showPurchaseControlOptions = false,
   groupResultsByCompany = true,
   applyConfirmation,
+  allowRetryFailed = false,
 }: PanelProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [fileName, setFileName] = useState("");
   const fileInputId = useId();
   const errors = state.rows.filter((row) => row.status === "Error").length;
   const actionable = state.rows.filter((row) => row.status === "Created" || row.status === "Updated").length;
+  const failedCompanyRefs = [...new Set(
+    state.rows
+      .filter((row) => row.status === "Error" && row.company_ref.trim())
+      .map((row) => row.company_ref.trim()),
+  )];
 
   return (
     <section className={`card ${styles.panel}`}>
@@ -225,6 +237,25 @@ function BulkImportPanel({
           </label>
         ) : null}
 
+        {showPurchaseControlOptions ? (
+          <div className="stack">
+            <label className="check-field">
+              <input name="createMissingTemplates" type="checkbox" value="true" defaultChecked={state.create_missing_templates} />
+              <span>
+                <strong>Create missing templates</strong>
+                <small className="muted">Missing purchase-control templates are errors unless this is enabled.</small>
+              </span>
+            </label>
+            <label className="check-field">
+              <input name="applyPurchaseTemplates" type="checkbox" value="true" defaultChecked={state.apply_purchase_templates} />
+              <span>
+                <strong>Apply purchase templates to assigned users</strong>
+                <small className="muted">After saving each imported template, refresh its applied purchase allowances for users in the assigned roles.</small>
+              </span>
+            </label>
+          </div>
+        ) : null}
+
         <p className={styles.help}>{help}</p>
       </form>
 
@@ -244,6 +275,8 @@ function BulkImportPanel({
           <input name="intent" type="hidden" value="apply" />
           <input name="sourceCsv" type="hidden" value={state.sourceCsv} />
           <input name="createMissingRoles" type="hidden" value={state.create_missing_roles ? "true" : "false"} />
+          <input name="createMissingTemplates" type="hidden" value={state.create_missing_templates ? "true" : "false"} />
+          <input name="applyPurchaseTemplates" type="hidden" value={state.apply_purchase_templates ? "true" : "false"} />
 
           {applyConfirmation ? (
             <label className="check-field">
@@ -260,7 +293,27 @@ function BulkImportPanel({
           </div>
         </form>
       ) : state.phase === "applied" ? (
-        <div className="notice">Import finished. Results above reflect the apply attempt.</div>
+        <div className="stack">
+          <div className="notice">Import finished. Results above reflect the apply attempt.</div>
+          {allowRetryFailed && failedCompanyRefs.length ? (
+            <form action={formAction} className={styles.applyArea}>
+              <input name="intent" type="hidden" value="retry" />
+              <input name="sourceCsv" type="hidden" value={state.sourceCsv} />
+              <input name="createMissingRoles" type="hidden" value={state.create_missing_roles ? "true" : "false"} />
+              <input name="createMissingTemplates" type="hidden" value={state.create_missing_templates ? "true" : "false"} />
+              <input name="applyPurchaseTemplates" type="hidden" value={state.apply_purchase_templates ? "true" : "false"} />
+              <input name="retryCompanyRefs" type="hidden" value={JSON.stringify(failedCompanyRefs)} />
+              <p className={styles.help}>Retry reruns only the companies that failed this apply. Companies already applied successfully are left untouched.</p>
+              <div className="button-row">
+                <button className="button button-secondary" type="submit" disabled={pending}>
+                  {pending
+                    ? "Retrying…"
+                    : `Retry ${failedCompanyRefs.length} failed ${failedCompanyRefs.length === 1 ? "company" : "companies"}`}
+                </button>
+              </div>
+            </form>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );
@@ -272,6 +325,7 @@ const tabs: Array<{ id: BulkImportView; label: string }> = [
   { id: "roles", label: "Roles & permissions" },
   { id: "role-products", label: "Role products" },
   { id: "company-products", label: "Company products" },
+  { id: "purchase-controls", label: "Purchase controls" },
 ];
 
 function isBulkImportView(value: string | null): value is BulkImportView {
@@ -381,6 +435,21 @@ export function BulkImportWorkspace() {
           exportHref={`${base}/exports/company-products`}
           exampleHref={`${base}/examples/company-products`}
           help="Rows are grouped by company_ref. Category settings and unrelated company controls remain untouched."
+        />
+      </div>
+
+      <div hidden={view !== "purchase-controls"}>
+        <BulkImportPanel
+          eyebrow="Multi-company purchase allowances"
+          title="Purchase controls"
+          description="Create or update purchase-control templates, SKU limits and role assignments across several companies from one reviewed CSV."
+          action={bulkPurchaseControlsImportAction}
+          exportHref={`${base}/exports/purchase-controls`}
+          exampleHref={`${base}/examples/purchase-controls`}
+          showPurchaseControlOptions
+          allowRetryFailed
+          applyConfirmation="I have reviewed the purchase-control changes and understand that applying templates to users can overwrite their currently applied purchase allowances for the imported templates."
+          help="Columns: company_ref, record_type, template_name, sku, quantity_limit, duration_days, start_date, role_name. Use purchase_template once per template, purchase_rule for each SKU limit, and template_role for each role assignment. Each company is dry-run and applied independently."
         />
       </div>
     </div>
