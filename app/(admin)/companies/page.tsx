@@ -63,13 +63,7 @@ export default async function CompaniesPage({
         ) : null}
       </header>
 
-      {companies.length ? (
-        <CompanyDirectory roots={structures} filterMode={filter} />
-      ) : (
-        <section className="card">
-          <p className="muted">No {filter === "enabled" ? "enabled " : ""}companies are available in this admin scope.</p>
-        </section>
-      )}
+      <CompanyDirectory roots={structures} filterMode={filter} />
     </div>
   );
 }
