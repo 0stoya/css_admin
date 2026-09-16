@@ -72,7 +72,7 @@ export type FlatCompanyImportState = {
   sourceCsv: string;
   rows: FlatCompanyImportRow[];
   create_missing_roles: boolean;
-  create_missing_templates: boolean;
-  apply_purchase_templates: boolean;
+  create_missing_templates?: boolean;
+  apply_purchase_templates?: boolean;
   error: string | null;
 };
