@@ -182,8 +182,8 @@ async function diagnoseMissingCompanyCatalogSkus(input: CompanyControlsImportInp
     };
 
     try {
-      const result = await rawImportCompanyControls(probe);
-      return !result.valid;
+      await rawImportCompanyControls(probe);
+      return false;
     } catch (error) {
       if (isMissingProductError(error)) return true;
       throw error;
