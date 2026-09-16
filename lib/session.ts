@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 
 const ADMIN_TOKEN_COOKIE = "css_admin_token";
 const COMPANY_TOKEN_COOKIE = "css_company_token";
+const ADMIN_AUTH_RETRY_COOKIE = "css_admin_auth_retry";
+const ADMIN_AUTH_RETRY_SECONDS = 300;
 
 function cookieOptions() {
   return {
@@ -18,6 +20,17 @@ export async function getAdminToken() {
 
 export async function getCompanyToken() {
   return (await cookies()).get(COMPANY_TOKEN_COOKIE)?.value ?? null;
+}
+
+export async function hasAdminAuthRetryMarker() {
+  return (await cookies()).get(ADMIN_AUTH_RETRY_COOKIE)?.value === "1";
+}
+
+export async function setAdminAuthRetryMarker() {
+  (await cookies()).set(ADMIN_AUTH_RETRY_COOKIE, "1", {
+    ...cookieOptions(),
+    maxAge: ADMIN_AUTH_RETRY_SECONDS,
+  });
 }
 
 export async function setAdminToken(token: string) {
@@ -44,4 +57,5 @@ export async function clearSession() {
   const store = await cookies();
   store.set(ADMIN_TOKEN_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
   store.set(COMPANY_TOKEN_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
+  store.set(ADMIN_AUTH_RETRY_COOKIE, "", { ...cookieOptions(), maxAge: 0 });
 }

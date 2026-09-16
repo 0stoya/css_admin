@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getMagentoConfig } from "@/lib/config";
-import { getAdminToken } from "@/lib/session";
+import { getAdminToken, hasAdminAuthRetryMarker } from "@/lib/session";
 
 export type GraphQLErrorItem = {
   message: string;
@@ -55,6 +55,13 @@ async function execute<TData, TVariables extends Record<string, unknown>>(
   }
 
   const body = (await response.json()) as GraphQLResponse<TData>;
+  const authorizationRejected = body.errors?.some(
+    (error) => error.extensions?.category === "graphql-authorization",
+  );
+  if (authorizationRejected && !(await hasAdminAuthRetryMarker())) {
+    redirect("/api/auth/session-expired?reason=authorization");
+  }
+
   return body;
 }
 
