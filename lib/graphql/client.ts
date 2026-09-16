@@ -59,7 +59,12 @@ async function execute<TData, TVariables extends Record<string, unknown>>(
     (error) => error.extensions?.category === "graphql-authorization",
   );
   if (authorizationRejected && !(await hasAdminAuthRetryMarker())) {
-    redirect("/api/auth/session-expired?reason=authorization");
+    throw new GraphQLRequestError(
+      body.errors?.[0]?.message || "Admin authorization failed.",
+      body.errors ?? [],
+      401,
+      "admin",
+    );
   }
 
   return body;
@@ -91,7 +96,16 @@ export async function graphqlPartialRequest<TData, TVariables extends Record<str
 export function graphQLErrorMessage(error: unknown) {
   if (error instanceof GraphQLRequestError) {
     if (error.status === 401) {
-      redirect(error.sessionKind === "company" ? "/api/auth/session-expired?mode=company" : "/api/auth/session-expired");
+      const authorizationRejected = error.errors.some(
+        (item) => item.extensions?.category === "graphql-authorization",
+      );
+      redirect(
+        error.sessionKind === "company"
+          ? "/api/auth/session-expired?mode=company"
+          : authorizationRejected
+            ? "/api/auth/session-expired?reason=authorization"
+            : "/api/auth/session-expired",
+      );
     }
 
     const category = error.errors[0]?.extensions?.category;
