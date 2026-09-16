@@ -110,19 +110,19 @@ export function CompanyDirectory({
             placeholder="Search by company name, reference or ID"
           />
         </div>
-        <div className="company-directory-filter" role="group" aria-label="Company status filter">
-          <span className="company-directory-filter-label">Show</span>
-          <div className="company-directory-filter-options">
+        <div className="field" role="group" aria-label="Company status filter">
+          <strong className="small-text">Show</strong>
+          <div className="button-row">
             <Link
               href="/companies"
-              className={`company-directory-filter-link${filterMode === "enabled" ? " company-directory-filter-link-active" : ""}`}
+              className={`button button-compact${filterMode === "enabled" ? "" : " button-secondary"}`}
               aria-current={filterMode === "enabled" ? "page" : undefined}
             >
               Enabled
             </Link>
             <Link
               href="/companies?status=all"
-              className={`company-directory-filter-link${filterMode === "all" ? " company-directory-filter-link-active" : ""}`}
+              className={`button button-compact${filterMode === "all" ? "" : " button-secondary"}`}
               aria-current={filterMode === "all" ? "page" : undefined}
             >
               All
