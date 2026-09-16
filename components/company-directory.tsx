@@ -115,14 +115,14 @@ export function CompanyDirectory({
           <div className="button-row">
             <Link
               href="/companies"
-              className={`button button-compact${filterMode === "enabled" ? "" : " button-secondary"}`}
+              className={`button button-link button-compact${filterMode === "enabled" ? "" : " button-secondary"}`}
               aria-current={filterMode === "enabled" ? "page" : undefined}
             >
               Enabled
             </Link>
             <Link
               href="/companies?status=all"
-              className={`button button-compact${filterMode === "all" ? "" : " button-secondary"}`}
+              className={`button button-link button-compact${filterMode === "all" ? "" : " button-secondary"}`}
               aria-current={filterMode === "all" ? "page" : undefined}
             >
               All
