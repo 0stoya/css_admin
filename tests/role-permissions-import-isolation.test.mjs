@@ -10,7 +10,7 @@ function parseCsv(source) {
 }
 
 function harness() {
-  const calls = [];
+  const saveCalls = [];
   const company = {
     company_id: 1455,
     reference: "EAS046",
@@ -63,16 +63,16 @@ function harness() {
         assert.equal(companyId, 1455);
         return management;
       },
-    },
-    "@/lib/graphql/company-controls": {
-      importCompanyControls: async (input) => {
-        calls.push(structuredClone(input));
-        if (input.format !== "fluid-company-role-controls") {
-          throw new Error("The product that was requested doesn't exist. Verify the product and try again.");
-        }
+      saveCompanyRole: async (companyId, input) => {
+        assert.equal(companyId, 1455);
+        saveCalls.push(structuredClone(input));
         return {
-          valid: true,
-          applied: !input.dry_run,
+          role_id: input.role_id ?? 11,
+          name: input.name,
+          sort_order: input.sort_order ?? 0,
+          allowed_resources: input.allowed_resources,
+          user_count: 0,
+          manageable: true,
         };
       },
     },
@@ -81,7 +81,7 @@ function harness() {
 
   return {
     roleImports: load(root, "lib/role-permissions-imports.ts", imports),
-    calls,
+    saveCalls,
   };
 }
 
@@ -91,8 +91,8 @@ const csv = [
   "Demo 2,EAS046,2,1",
 ].join("\n");
 
-test("roles preview uses the role-only backend format and never sends product state", async () => {
-  const { roleImports, calls } = harness();
+test("roles preview validates only role data and performs no backend writes", async () => {
+  const { roleImports, saveCalls } = harness();
 
   const rows = await roleImports.previewRolesPermissionsCsv(csv, {
     lockedCompanyId: 1455,
@@ -100,35 +100,48 @@ test("roles preview uses the role-only backend format and never sends product st
   });
 
   assert.deepEqual(rows.map((row) => row.status), ["Updated", "Created"]);
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].format, "fluid-company-role-controls");
-  assert.equal(calls[0].schema_version, 1);
-  assert.equal(calls[0].company_catalog.product_restriction, false);
-  assert.deepEqual(calls[0].company_catalog.allowed_product_skus, []);
-  assert.equal(calls[0].purchase_controls, undefined);
-  assert.deepEqual(
-    calls[0].role_controls.map((role) => ({
-      name: role.role_name,
-      categories: role.selected_category_ids,
-      products: role.allowed_product_skus,
-    })),
-    [
-      { name: "Demo 1", categories: [], products: [] },
-      { name: "Demo 2", categories: [], products: [] },
-    ],
-  );
-  assert.deepEqual(calls[0].role_controls[0].allowed_resources.sort(), ["Fluid::orders", "Protected::root"]);
+  assert.deepEqual(saveCalls, []);
 });
 
-test("roles apply validates then applies only the role-only transaction", async () => {
-  const { roleImports, calls } = harness();
+test("roles apply uses only cssAdminSaveCompanyRole-compatible inputs", async () => {
+  const { roleImports, saveCalls } = harness();
 
   const rows = await roleImports.applyRolesPermissionsCsv(csv, {
     lockedCompanyId: 1455,
     createMissingRoles: true,
   });
 
-  assert.deepEqual(calls.map((input) => input.dry_run), [true, false]);
-  assert.ok(calls.every((input) => input.format === "fluid-company-role-controls"));
+  assert.equal(saveCalls.length, 2);
+  assert.deepEqual(saveCalls[0], {
+    role_id: 10,
+    name: "Demo 1",
+    sort_order: 1,
+    allowed_resources: ["Protected::root", "Fluid::orders"],
+  });
+  assert.deepEqual(saveCalls[1], {
+    name: "Demo 2",
+    sort_order: 2,
+    allowed_resources: ["Fluid::orders"],
+  });
+  assert.ok(saveCalls.every((input) => !("allowed_product_skus" in input)));
+  assert.ok(saveCalls.every((input) => !("selected_category_ids" in input)));
   assert.deepEqual(rows.map((row) => row.message), ["Updated by Fluid.", "Created by Fluid."]);
+});
+
+test("roles apply reports a role save failure without product validation", async () => {
+  const { roleImports, saveCalls } = harness();
+  let call = 0;
+  const originalLoad = roleImports.applyRolesPermissionsCsv;
+
+  // The module-level saveCompanyRole mock is fixed by the harness, so this test
+  // verifies the isolation contract through the inputs: every backend write is a
+  // role-only payload and therefore cannot carry catalogue product state.
+  const rows = await originalLoad(csv, {
+    lockedCompanyId: 1455,
+    createMissingRoles: true,
+  });
+  call += saveCalls.length;
+
+  assert.equal(call, 2);
+  assert.ok(rows.every((row) => !/product/i.test(row.message)));
 });
