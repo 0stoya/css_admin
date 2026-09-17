@@ -17,7 +17,7 @@ import {
 import {
   applyBulkPurchaseControlsCsv,
   previewBulkPurchaseControlsCsv,
-} from "@/lib/bulk-purchase-controls";
+} from "@/lib/bulk-purchase-controls-direct";
 import {
   applyCompanyStructureCsv,
   previewCompanyStructureCsv,
