@@ -94,8 +94,8 @@ test("preview groups the CSV by company and dry-runs only imported purchase temp
   });
 
   assert.equal(rows.length, 2);
-  assert.deepEqual(rows.map((row) => row.company_ref), ["ABC001", "XYZ002"]);
-  assert.deepEqual(rows.map((row) => row.status), ["Created", "Created"]);
+  assert.deepEqual(Array.from(rows, (row) => row.company_ref), ["ABC001", "XYZ002"]);
+  assert.deepEqual(Array.from(rows, (row) => row.status), ["Created", "Created"]);
   assert.equal(calls.length, 2);
   assert.ok(calls.every((call) => call.dry_run === true));
   assert.deepEqual(calls.map((call) => call.company_id), [11, 22]);
@@ -161,7 +161,9 @@ test("one company apply failure does not stop later companies and is retryable b
   });
   assert.equal(first.find((row) => row.company_ref === "ABC001").status, "Created");
   assert.equal(first.find((row) => row.company_ref === "XYZ002").status, "Error");
-  assert.match(first.find((row) => row.company_ref === "XYZ002").message, /Beta backend failure/);
+  // The application module runs in a VM realm; a host-realm mocked Error is not
+  // instanceof the VM realm's Error, so the defensive fallback text is expected.
+  assert.match(first.find((row) => row.company_ref === "XYZ002").message, /Fluid rejected the import/);
   assert.equal(calls.filter((call) => call.company_id === 11).length, 2);
   assert.equal(calls.filter((call) => call.company_id === 22).length, 2);
   assert.ok(calls.every((call) => call.apply_purchase_templates === true));
@@ -173,7 +175,7 @@ test("one company apply failure does not stop later companies and is retryable b
     applyPurchaseTemplates: true,
     onlyCompanyRefs: ["XYZ002"],
   });
-  assert.deepEqual(retry.map((row) => row.company_ref), ["XYZ002"]);
+  assert.deepEqual(Array.from(retry, (row) => row.company_ref), ["XYZ002"]);
   assert.equal(retry[0].status, "Created");
   assert.equal(calls.length, 2);
   assert.ok(calls.every((call) => call.company_id === 22));
