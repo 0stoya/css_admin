@@ -2,21 +2,17 @@ import { parseCsv } from "@/lib/csv";
 import { getCompanies, getCompany, type CompanySummary } from "@/lib/graphql/companies";
 import {
   getCompanyManagement,
+  saveCompanyRole,
   type CompanyAdminResource,
   type CompanyAdminRole,
   type CompanyManagement,
+  type SaveCompanyRoleInput,
 } from "@/lib/graphql/company-management";
-import {
-  importCompanyControls,
-  type CompanyControlsBundle,
-  type CompanyControlsImportInput,
-} from "@/lib/graphql/company-controls";
 import type { FlatCompanyImportRow, ImportRowStatus } from "@/lib/import-export-types";
 
 const MAX_ROWS = 5000;
 const TRUE_VALUES = new Set(["1", "true", "yes", "y"]);
 const FALSE_VALUES = new Set(["0", "false", "no", "n", ""]);
-const ROLE_CONTROLS_FORMAT = "fluid-company-role-controls";
 
 type ScopedImportOptions = {
   lockedCompanyId?: number | null;
@@ -27,17 +23,21 @@ export type RoleImportOptions = ScopedImportOptions & {
 };
 
 type ResolvedCompany = CompanySummary & { reference: string };
-type RoleControl = CompanyControlsBundle["role_controls"][number];
 
 type PlannedRow = FlatCompanyImportRow & {
   companyId: number | null;
 };
 
+type RoleChange = {
+  row: PlannedRow;
+  input: SaveCompanyRoleInput;
+};
+
 type RoleCompanyPlan = {
   company: ResolvedCompany;
   management: CompanyManagement;
-  roleControls: RoleControl[];
   rows: PlannedRow[];
+  changes: RoleChange[];
 };
 
 function normalized(value: string) {
@@ -224,32 +224,6 @@ function parseSortOrder(value: string, row: number) {
   return number;
 }
 
-function roleOnlyInput(
-  plan: RoleCompanyPlan,
-  dryRun: boolean,
-  createMissingRoles: boolean,
-): CompanyControlsImportInput {
-  return {
-    format: ROLE_CONTROLS_FORMAT,
-    schema_version: 1,
-    company_id: plan.company.company_id,
-    // Required by the shared GraphQL input shape, but deliberately ignored by
-    // Fluid for the role-only format so catalogue state is never revalidated.
-    company_catalog: {
-      allow_public_catalog: false,
-      category_restriction: false,
-      allowed_category_ids: [],
-      product_restriction: false,
-      allowed_product_skus: [],
-    },
-    role_controls: plan.roleControls,
-    create_missing_roles: createMissingRoles,
-    create_missing_templates: false,
-    apply_purchase_templates: false,
-    dry_run: dryRun,
-  };
-}
-
 async function planRolesPermissions(source: string, options: RoleImportOptions) {
   const raw = parseCsv(source).filter((row) => row.some((value) => value.trim() !== ""));
   if (!raw.length) throw new Error("The roles CSV file is empty.");
@@ -386,8 +360,8 @@ async function planRolesPermissions(source: string, options: RoleImportOptions) 
       plan = {
         company,
         management: context.management,
-        roleControls: [],
         rows: [],
+        changes: [],
       };
       plansByCompany.set(company.company_id, plan);
     }
@@ -440,63 +414,19 @@ async function planRolesPermissions(source: string, options: RoleImportOptions) 
     allRows.push(row);
 
     if (status === "Created" || status === "Updated") {
-      plan.roleControls.push({
-        role_name: parsedRow.roleName,
-        sort_order: parsedRow.sortOrder,
-        allowed_resources: desiredResources,
-        selected_category_ids: [],
-        preselect_all_products: false,
-        allowed_product_skus: [],
+      plan.changes.push({
+        row,
+        input: {
+          ...(existing ? { role_id: existing.role_id } : {}),
+          name: parsedRow.roleName,
+          sort_order: parsedRow.sortOrder,
+          allowed_resources: desiredResources,
+        },
       });
     }
   }
 
   return { rows: allRows, plans: [...plansByCompany.values()] };
-}
-
-async function dryRunRolePlans(plans: RoleCompanyPlan[], createMissingRoles: boolean) {
-  for (const plan of plans) {
-    const actionable = plan.rows.filter(
-      (row) => row.status === "Created" || row.status === "Updated",
-    );
-    if (!actionable.length) continue;
-
-    try {
-      const result = await importCompanyControls(roleOnlyInput(plan, true, createMissingRoles));
-      if (!result.valid) throw new Error("Fluid did not accept the dry run.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Fluid rejected the dry run.";
-      actionable.forEach((row) => {
-        row.status = "Error";
-        row.message = `Dry run rejected: ${message}`;
-      });
-    }
-  }
-}
-
-async function applyRolePlans(plans: RoleCompanyPlan[], createMissingRoles: boolean) {
-  for (const plan of plans) {
-    const actionable = plan.rows.filter(
-      (row) => row.status === "Created" || row.status === "Updated",
-    );
-    if (!actionable.length) continue;
-
-    try {
-      const dryRun = await importCompanyControls(roleOnlyInput(plan, true, createMissingRoles));
-      if (!dryRun.valid) throw new Error("Fluid did not accept the dry run.");
-      const result = await importCompanyControls(roleOnlyInput(plan, false, createMissingRoles));
-      if (!result.applied) throw new Error("Fluid did not report the import as applied.");
-      actionable.forEach((row) => {
-        row.message = row.status === "Created" ? "Created by Fluid." : "Updated by Fluid.";
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Fluid rejected the import.";
-      actionable.forEach((row) => {
-        row.status = "Error";
-        row.message = `Apply failed: ${message}`;
-      });
-    }
-  }
 }
 
 function assertNoErrors(rows: PlannedRow[]) {
@@ -505,15 +435,28 @@ function assertNoErrors(rows: PlannedRow[]) {
   }
 }
 
+async function applyRolePlans(plans: RoleCompanyPlan[]) {
+  for (const plan of plans) {
+    for (const change of plan.changes) {
+      try {
+        await saveCompanyRole(plan.company.company_id, change.input);
+        change.row.message = change.row.status === "Created" ? "Created by Fluid." : "Updated by Fluid.";
+      } catch (error) {
+        change.row.status = "Error";
+        change.row.message = `Apply failed: ${error instanceof Error ? error.message : "Fluid rejected the role update."}`;
+      }
+    }
+  }
+}
+
 export async function previewRolesPermissionsCsv(source: string, options: RoleImportOptions) {
   const plan = await planRolesPermissions(source, options);
-  await dryRunRolePlans(plan.plans, options.createMissingRoles);
   return plan.rows.map(publicRow);
 }
 
 export async function applyRolesPermissionsCsv(source: string, options: RoleImportOptions) {
   const plan = await planRolesPermissions(source, options);
   assertNoErrors(plan.rows);
-  await applyRolePlans(plan.plans, options.createMissingRoles);
+  await applyRolePlans(plan.plans);
   return plan.rows.map(publicRow);
 }
