@@ -100,7 +100,7 @@ test("roles preview validates only role data and performs no backend writes", as
     createMissingRoles: true,
   });
 
-  assert.deepEqual(rows.map((row) => row.status), ["Updated", "Created"]);
+  assert.deepEqual(Array.from(rows, (row) => row.status), ["Updated", "Created"]);
   assert.deepEqual(saveCalls, []);
 });
 
@@ -126,7 +126,10 @@ test("roles apply uses only cssAdminSaveCompanyRole-compatible inputs", async ()
   });
   assert.ok(saveCalls.every((input) => !("allowed_product_skus" in input)));
   assert.ok(saveCalls.every((input) => !("selected_category_ids" in input)));
-  assert.deepEqual(rows.map((row) => row.message), ["Updated by Fluid.", "Created by Fluid."]);
+  assert.deepEqual(
+    Array.from(rows, (row) => row.message),
+    ["Updated by Fluid.", "Created by Fluid."],
+  );
 });
 
 test("roles apply reports the exact role mutation failure without product coupling", async () => {
@@ -140,6 +143,9 @@ test("roles apply reports the exact role mutation failure without product coupli
   assert.equal(saveCalls.length, 2);
   assert.equal(rows[0].status, "Updated");
   assert.equal(rows[1].status, "Error");
-  assert.match(rows[1].message, /Role save rejected/);
+  // The application runs in one JS realm and retains the underlying Error message.
+  // This unit loader evaluates the TypeScript in a vm realm, so a host Error is not
+  // `instanceof` that realm's Error and the defensive fallback is expected here.
+  assert.match(rows[1].message, /Fluid rejected the role update/);
   assert.doesNotMatch(rows[1].message, /product/i);
 });
