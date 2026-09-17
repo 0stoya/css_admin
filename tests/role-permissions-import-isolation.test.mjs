@@ -9,7 +9,7 @@ function parseCsv(source) {
   return source.trim().split(/\r?\n/).map((line) => line.split(","));
 }
 
-function harness() {
+function harness({ failAt = null } = {}) {
   const saveCalls = [];
   const company = {
     company_id: 1455,
@@ -66,6 +66,7 @@ function harness() {
       saveCompanyRole: async (companyId, input) => {
         assert.equal(companyId, 1455);
         saveCalls.push(structuredClone(input));
+        if (failAt === saveCalls.length) throw new Error("Role save rejected.");
         return {
           role_id: input.role_id ?? 11,
           name: input.name,
@@ -128,20 +129,17 @@ test("roles apply uses only cssAdminSaveCompanyRole-compatible inputs", async ()
   assert.deepEqual(rows.map((row) => row.message), ["Updated by Fluid.", "Created by Fluid."]);
 });
 
-test("roles apply reports a role save failure without product validation", async () => {
-  const { roleImports, saveCalls } = harness();
-  let call = 0;
-  const originalLoad = roleImports.applyRolesPermissionsCsv;
+test("roles apply reports the exact role mutation failure without product coupling", async () => {
+  const { roleImports, saveCalls } = harness({ failAt: 2 });
 
-  // The module-level saveCompanyRole mock is fixed by the harness, so this test
-  // verifies the isolation contract through the inputs: every backend write is a
-  // role-only payload and therefore cannot carry catalogue product state.
-  const rows = await originalLoad(csv, {
+  const rows = await roleImports.applyRolesPermissionsCsv(csv, {
     lockedCompanyId: 1455,
     createMissingRoles: true,
   });
-  call += saveCalls.length;
 
-  assert.equal(call, 2);
-  assert.ok(rows.every((row) => !/product/i.test(row.message)));
+  assert.equal(saveCalls.length, 2);
+  assert.equal(rows[0].status, "Updated");
+  assert.equal(rows[1].status, "Error");
+  assert.match(rows[1].message, /Role save rejected/);
+  assert.doesNotMatch(rows[1].message, /product/i);
 });
