@@ -6,12 +6,14 @@ import {
   applyCompanyProductsCsv,
   applyCompanyUsersFlatCsv,
   applyRoleProductsCsv,
-  applyRolesPermissionsCsv,
   previewCompanyProductsCsv,
   previewCompanyUsersFlatCsv,
   previewRoleProductsCsv,
-  previewRolesPermissionsCsv,
 } from "@/lib/flat-company-imports";
+import {
+  applyRolesPermissionsCsv,
+  previewRolesPermissionsCsv,
+} from "@/lib/role-permissions-imports";
 import type { FlatCompanyImportState } from "@/lib/import-export-types";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
