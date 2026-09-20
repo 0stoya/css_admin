@@ -4,6 +4,8 @@ export type PurchaseRuleInput = {
   quantity_limit: number;
   duration_days: number;
   start_date: string;
+  short_term_quantity_limit?: number;
+  short_term_duration_days?: number;
 };
 
 const MAX_GRAPHQL_INT = 2_147_483_647;
@@ -25,29 +27,71 @@ export function checkboxChecked(formData: FormData, key: string): boolean {
   return ["on", "yes", "true", "1"].includes(String(formData.get(key) ?? ""));
 }
 
+function positiveRuleInteger(raw: string, index: number, label: string): number {
+  const value = Number(raw);
+  if (!/^\d+$/.test(raw) || !Number.isInteger(value) || value < 1 || value > MAX_GRAPHQL_INT) {
+    throw new Error(`Rule ${index + 1} ${label} must be a positive GraphQL integer.`);
+  }
+  return value;
+}
+
 export function parsePurchaseRules(raw: string): PurchaseRuleInput[] {
   const seen = new Set<string>();
   return raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line, index) => {
-    const [sku, quantityRaw, durationRaw, startDate, ...extra] = line.split("|").map((value) => value.trim());
+    const [
+      sku,
+      quantityRaw,
+      durationRaw,
+      startDate,
+      shortQuantityRaw = "",
+      shortDurationRaw = "",
+      ...extra
+    ] = line.split("|").map((value) => value.trim());
+
     if (extra.length || !sku || !quantityRaw || !durationRaw || !startDate) {
-      throw new Error(`Rule ${index + 1} must use: SKU | quantity limit | duration days | YYYY-MM-DD.`);
+      throw new Error(
+        `Rule ${index + 1} must use: SKU | quantity limit | duration days | YYYY-MM-DD | optional short-term max | optional rolling days.`,
+      );
     }
-    const quantity = Number(quantityRaw);
-    const duration = Number(durationRaw);
-    if (!/^\d+$/.test(quantityRaw) || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_GRAPHQL_INT) {
-      throw new Error(`Rule ${index + 1} quantity must be a positive GraphQL integer.`);
-    }
-    if (!/^\d+$/.test(durationRaw) || !Number.isInteger(duration) || duration < 1 || duration > MAX_GRAPHQL_INT) {
-      throw new Error(`Rule ${index + 1} duration must be a positive GraphQL integer.`);
-    }
+
+    const quantity = positiveRuleInteger(quantityRaw, index, "quantity");
+    const duration = positiveRuleInteger(durationRaw, index, "duration");
     const date = new Date(`${startDate}T00:00:00.000Z`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== startDate) {
       throw new Error(`Rule ${index + 1} start date must be a real date in YYYY-MM-DD format.`);
     }
+
+    const shortQuantitySupplied = shortQuantityRaw !== "";
+    const shortDurationSupplied = shortDurationRaw !== "";
+    if (shortQuantitySupplied !== shortDurationSupplied) {
+      throw new Error(`Rule ${index + 1} short-term max and rolling days must both be supplied or both left blank.`);
+    }
+
+    const tier = shortQuantitySupplied
+      ? {
+          short_term_quantity_limit: positiveRuleInteger(shortQuantityRaw, index, "short-term max"),
+          short_term_duration_days: positiveRuleInteger(shortDurationRaw, index, "rolling duration"),
+        }
+      : {};
+
+    if (
+      "short_term_duration_days" in tier
+      && tier.short_term_duration_days >= duration
+    ) {
+      throw new Error(`Rule ${index + 1} rolling duration must be shorter than the main duration.`);
+    }
+
     const key = sku.toLowerCase();
     if (seen.has(key)) throw new Error(`Rule ${index + 1} repeats SKU ${sku}. Keep one rule per SKU.`);
     seen.add(key);
-    return { sku, quantity_limit: quantity, duration_days: duration, start_date: startDate };
+
+    return {
+      sku,
+      quantity_limit: quantity,
+      duration_days: duration,
+      start_date: startDate,
+      ...tier,
+    };
   });
 }
 
