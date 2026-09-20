@@ -623,7 +623,7 @@ export default async function CompanyEmployeesPage({
                     <strong>{employeePurchaseControl.purchase_control_role_name ?? "None"}</strong>
                   </div>
                   <div className="purchase-summary-item">
-                    <span>Effective template</span>
+                    <span>Purchase-control template</span>
                     <strong>{employeePurchaseControl.template_name ?? "None"}</strong>
                   </div>
                   <div className="purchase-summary-item">
@@ -642,39 +642,20 @@ export default async function CompanyEmployeesPage({
                   </div>
                 </div>
 
-                <section className="employee-purchase-section">
-                  <div className="employee-purchase-section-heading">
-                    <div>
-                      <p className="eyebrow">Assigned policy</p>
-                      <h3>
-                        {employeePurchaseControl.purchase_control_role_name && employeePurchaseControl.template_name
-                          ? `${employeePurchaseControl.purchase_control_role_name} → ${employeePurchaseControl.template_name}`
-                          : employeePurchaseControl.template_name ?? "No purchase-control template"}
-                      </h3>
-                    </div>
-                    <span className="badge badge-neutral">
-                      {employeePurchaseControl.assignment_source === "ROLE"
-                        ? "Inherited from role"
-                        : employeePurchaseControl.assignment_source === "DIRECT"
-                          ? "Direct assignment"
-                          : "No policy"}
-                    </span>
-                  </div>
+                <div className="employee-purchase-policy-note">
                   <p className="muted small-text">
                     Purchase-control assignment is read-only here. Change the Employee&apos;s Purchase Role in Edit Employee,
                     or change the template assigned to that role in Purchase Controls.
                   </p>
                   {employeePurchaseControl.purchase_control_role_id ? (
-                    <div className="employee-purchase-policy-actions">
-                      <Link
-                        className="button button-secondary button-link"
-                        href={`/companies/${companyId}/purchase-controls?view=assignments&roleId=${employeePurchaseControl.purchase_control_role_id}`}
-                      >
-                        Open role purchase controls
-                      </Link>
-                    </div>
+                    <Link
+                      className="button button-secondary button-link button-compact"
+                      href={`/companies/${companyId}/purchase-controls?view=assignments&roleId=${employeePurchaseControl.purchase_control_role_id}`}
+                    >
+                      Open role purchase controls
+                    </Link>
                   ) : null}
-                </section>
+                </div>
 
                 <section className="employee-purchase-section">
                   <div className="employee-purchase-section-heading">
