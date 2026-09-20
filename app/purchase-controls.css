@@ -541,6 +541,96 @@
   font-size: 0.78rem;
 }
 
+
+.employee-purchase-control-content {
+  display: grid;
+  min-width: 0;
+}
+
+.employee-purchase-feedback {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem 1.25rem 0;
+}
+
+.employee-purchase-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.employee-purchase-summary .purchase-summary-item {
+  min-height: 76px;
+}
+
+.employee-purchase-section {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--css-border);
+}
+
+.employee-purchase-section:last-child {
+  border-bottom: 0;
+}
+
+.employee-purchase-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.employee-purchase-section-heading > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.employee-purchase-section-heading .eyebrow {
+  margin: 0;
+}
+
+.employee-purchase-section-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.employee-purchase-override-form {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.employee-purchase-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.employee-purchase-form-actions p {
+  flex: 1 1 360px;
+  min-width: 220px;
+}
+
+.employee-purchase-operations .purchase-operation-card {
+  min-height: 190px;
+  grid-template-rows: auto 1fr auto;
+}
+
+.employee-purchase-operations .purchase-operation-card > div:last-child {
+  align-self: end;
+}
+
+@media (max-width: 900px) {
+  .employee-purchase-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .employee-purchase-summary .purchase-summary-item:nth-child(2) {
+    border-right: 0;
+  }
+}
+
 @media (max-width: 1000px) {
   .purchase-rule-head,
   .purchase-rule-row {
@@ -575,8 +665,30 @@
 
   .purchase-summary-strip,
   .purchase-operation-grid,
-  .purchase-assignment-form {
+  .purchase-assignment-form,
+  .employee-purchase-summary {
     grid-template-columns: 1fr;
+  }
+
+  .employee-purchase-section {
+    padding: 1rem;
+  }
+
+  .employee-purchase-section-heading,
+  .employee-purchase-form-actions {
+    align-items: stretch;
+  }
+
+  .employee-purchase-section-heading {
+    display: grid;
+  }
+
+  .employee-purchase-form-actions {
+    display: grid;
+  }
+
+  .employee-purchase-form-actions .button {
+    width: 100%;
   }
 
   .purchase-summary-item {
