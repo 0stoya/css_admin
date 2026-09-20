@@ -273,6 +273,23 @@
   min-height: 4rem;
 }
 
+.purchaseRoleField {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+.purchaseRoleField :global(.small-text) {
+  max-width: 100%;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.activeField {
+  align-self: stretch;
+  min-height: 0;
+  height: 100%;
+}
+
 .employeeTable,
 .orderTable {
   border: 1px solid var(--css-border);
@@ -390,6 +407,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .purchaseRoleField,
+  .activeField {
+    grid-column: 1 / -1;
+  }
+
   .tableHeader {
     display: none;
   }
@@ -421,6 +443,11 @@
 
   .formGrid {
     grid-template-columns: 1fr;
+  }
+
+  .purchaseRoleField,
+  .activeField {
+    grid-column: 1;
   }
 
   .employeeRow,
