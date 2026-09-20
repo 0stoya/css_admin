@@ -156,15 +156,15 @@ export async function assignEmployeePurchaseControlAction(formData: FormData) {
 
   if (applyNow && templateId === null) {
     return runMutation(companyId, "", formData, async () => {
-      throw new Error("Select a template before applying Employee purchase controls.");
+      throw new Error("Select an override template before applying it immediately. To apply an inherited Purchase Role template, save the override first and use Apply.");
     });
   }
 
   const notice = templateId === null
-    ? "Template unassigned from the Employee. Existing applied allowances were not removed."
+    ? "Direct override removed. Purchase Role inheritance is now effective when configured. Existing applied allowances were not changed."
     : applyNow
-      ? "Template assigned and applied to the Employee. Main allowance periods restarted; rolling usage was retained from purchase history."
-      : "Template assigned to the Employee. Existing applied allowances were not changed; use Apply when ready.";
+      ? "Override template assigned and applied. Main allowance periods restarted; rolling usage was retained from purchase history."
+      : "Override template assigned. Existing applied allowances were not changed; use Apply when ready.";
 
   return runMutation(companyId, notice, formData, () =>
     assignCompanyEmployeePurchaseControl(companyId, employeeId, templateId, applyNow),
@@ -176,13 +176,13 @@ export async function applyEmployeePurchaseControlAction(formData: FormData) {
   const employeeId = positiveInt(formData, "employeeId");
   if (formData.get("confirmApply") !== "yes") {
     return runMutation(companyId, "", formData, async () => {
-      throw new Error("Confirm that applying the template will replace this Employee's applied allowances and restart main allowance periods.");
+      throw new Error("Confirm that applying the effective template will replace this Employee's applied allowances and restart main allowance periods.");
     });
   }
 
   return runMutation(
     companyId,
-    "Employee purchase controls applied. Main allowance periods restarted; rolling usage remains based on purchase history.",
+    "Effective Employee purchase controls applied. Main allowance periods restarted; rolling usage remains based on purchase history.",
     formData,
     () => applyCompanyEmployeePurchaseControl(companyId, employeeId),
   );
