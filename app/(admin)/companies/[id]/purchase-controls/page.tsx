@@ -459,9 +459,9 @@ export default async function PurchaseControlsPage({
                       <input type="hidden" name="companyId" value={companyId} />
                       <input type="hidden" name="templateId" value={selectedTemplate.template_id} />
                       <div>
-                        <strong>Apply to assigned users</strong>
+                        <strong>Apply to assigned subjects</strong>
                         <p className="muted small-text">
-                          Replace eligible users&apos; current allowances with this template.
+                          Replace eligible buyers&apos; and inheriting Employees&apos; current allowances with this template.
                         </p>
                       </div>
                       <label className="purchase-check-field">
@@ -473,7 +473,7 @@ export default async function PurchaseControlsPage({
                       </label>
                       <div>
                         <button className="button" type="submit" disabled={!selectedTemplate.assigned_roles.length}>
-                          Apply to users
+                          Apply to buyers + Employees
                         </button>
                       </div>
                     </form>
@@ -484,7 +484,7 @@ export default async function PurchaseControlsPage({
                       <div>
                         <strong>Reset consumed counters</strong>
                         <p className="muted small-text">
-                          Clear usage counters for users currently governed by this template.
+                          Clear main-period usage for buyers and inheriting Employees currently governed by this template.
                         </p>
                       </div>
                       <label className="purchase-check-field">
@@ -557,7 +557,7 @@ export default async function PurchaseControlsPage({
                 <PurchaseControlGuidance iconOnly />
               </div>
               <p className="muted">
-                Each role can have one purchase-control template. Applying immediately updates eligible users.
+                Each role can have one purchase-control template. Employees may inherit that policy through their Purchase Role without becoming role members or receiving permissions.
               </p>
             </div>
           </div>
@@ -582,7 +582,8 @@ export default async function PurchaseControlsPage({
                 <thead>
                   <tr>
                     <th>Role</th>
-                    <th>Users</th>
+                    <th>Buyers</th>
+                    <th>Employees</th>
                     <th>Current template</th>
                     <th>Rules</th>
                     <th aria-label="Action" />
@@ -601,6 +602,7 @@ export default async function PurchaseControlsPage({
                           </div>
                         </td>
                         <td>{role.user_count}</td>
+                        <td>{role.purchase_employee_count}</td>
                         <td>
                           {assignment ? (
                             <div className="purchase-status-badges">
@@ -649,7 +651,8 @@ export default async function PurchaseControlsPage({
                   <p className="eyebrow">Selected role</p>
                   <h2>{selectedRole.name}</h2>
                   <p className="muted">
-                    {selectedRole.user_count} user{selectedRole.user_count === 1 ? "" : "s"}
+                    {selectedRole.user_count} buyer{selectedRole.user_count === 1 ? "" : "s"}
+                    {` · ${selectedRole.purchase_employee_count} Employee${selectedRole.purchase_employee_count === 1 ? "" : "s"}`}
                     {selectedRoleTemplate ? ` · ${selectedRoleTemplate.name}` : " · no template assigned"}
                   </p>
                 </div>
@@ -685,9 +688,9 @@ export default async function PurchaseControlsPage({
                     <label className="purchase-check-field">
                       <input type="checkbox" name="applyToUsers" />
                       <span>
-                        <strong>Apply immediately to eligible users</strong>
+                        <strong>Apply immediately to buyers + inheriting Employees</strong>
                         <span className="muted small-text">
-                          Overwrite their current purchase-control allowances after saving this role assignment.
+                          Overwrite eligible buyer allowances and Employee allowances inherited from this Purchase Role. Direct Employee overrides are left alone.
                         </span>
                       </span>
                     </label>
