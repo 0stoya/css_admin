@@ -22,6 +22,7 @@ export type CompanyEmployee = {
   department: string | null;
   cost_centre: string | null;
   manager_company_user_id: number | null;
+  purchase_control_role_id: number | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -40,6 +41,7 @@ export type CompanyEmployeeInput = {
   department: string | null;
   cost_centre: string | null;
   manager_company_user_id: number | null;
+  purchase_control_role_id: number | null;
   active: boolean;
 };
 
@@ -59,6 +61,7 @@ export type CompanyEmployeeExportRow = {
   department: string | null;
   cost_centre: string | null;
   manager_company_user_id: number | null;
+  purchase_control_role_id: number | null;
   active: boolean;
 };
 
@@ -119,6 +122,11 @@ export type CompanyEmployeePurchaseControl = {
   employee_id: number;
   employee_code: string | null;
   employee_name: string;
+  purchase_control_role_id: number | null;
+  purchase_control_role_name: string | null;
+  assignment_source: "DIRECT" | "ROLE" | "NONE";
+  direct_template_id: number | null;
+  direct_template_name: string | null;
   template_id: number | null;
   template_name: string | null;
   assigned: boolean;
@@ -167,6 +175,7 @@ const EMPLOYEE_FIELDS = /* GraphQL */ `
   department
   cost_centre
   manager_company_user_id
+  purchase_control_role_id
   active
   created_at
   updated_at
@@ -221,6 +230,7 @@ const EXPORT_QUERY = /* GraphQL */ `
       department
       cost_centre
       manager_company_user_id
+      purchase_control_role_id
       active
     }
   }
@@ -301,6 +311,11 @@ const PURCHASE_CONTROL_FIELDS = /* GraphQL */ `
   employee_id
   employee_code
   employee_name
+  purchase_control_role_id
+  purchase_control_role_name
+  assignment_source
+  direct_template_id
+  direct_template_name
   template_id
   template_name
   assigned
