@@ -42,9 +42,12 @@ function managementActions(overrides = {}) {
 
 function employeeActions(overrides = {}) {
   const defaults = {
+    applyCompanyEmployeePurchaseControl: async () => {},
+    assignCompanyEmployeePurchaseControl: async () => {},
     createCompanyEmployee: async () => {},
     deactivateCompanyEmployee: async () => {},
     importCompanyEmployees: async () => ({ failed: 0, errors: [] }),
+    resetCompanyEmployeePurchaseControl: async () => {},
     saveCompanyEmployeeConfiguration: async () => {},
     updateCompanyEmployee: async () => {},
   };
@@ -87,6 +90,8 @@ test("employee source keeps history separate while create/edit move to modals", 
   assert.match(page, /admin-employee-history-link/);
   assert.match(page, /id="employee-history"/);
   assert.match(page, /Deactivate employee/);
+  assert.match(page, /Purchase controls/);
+  assert.match(page, /purchase-control-\$\{employee\.employee_id\}/);
   assert.doesNotMatch(page, /<details className=\{styles\.employeeRecord\}/);
   assert.doesNotMatch(page, /className=\{styles\.createPanel\}/);
 });
@@ -158,3 +163,63 @@ test("employee backend error reopens edit modal, preserves filters and preserves
   }]]));
   assert.equal(h.invalidations.length, 0);
 });
+
+test("Employee purchase-control assignment stays separate from Apply and closes on success", async () => {
+  const calls = [];
+  const h = employeeActions({
+    assignCompanyEmployeePurchaseControl: async (...args) => { calls.push(args); },
+  });
+  const data = form({
+    companyId: 4, employeeId: 21, templateId: 9, applyNow: "false",
+    returnModal: "purchase-control-21", returnQ: "ada", returnStatus: "all", returnPage: 2,
+  });
+  const url = await redirectFrom(() => h.actions.assignEmployeePurchaseControlAction(data));
+  assert.deepEqual(calls, [[4, 21, 9, false]]);
+  assert.match(url.searchParams.get("notice"), /not changed/);
+  assert.equal(url.searchParams.get("modal"), null);
+  assert.equal(url.searchParams.get("q"), "ada");
+  assert.equal(url.searchParams.get("page"), "2");
+});
+
+test("Employee purchase-control backend error reopens the same routed modal", async () => {
+  const h = employeeActions({
+    assignCompanyEmployeePurchaseControl: async () => { throw new Error("employee control denied"); },
+  });
+  const data = form({
+    companyId: 4, employeeId: 21, templateId: 9,
+    returnModal: "purchase-control-21", returnQ: "ada",
+  });
+  const url = await redirectFrom(() => h.actions.assignEmployeePurchaseControlAction(data));
+  assert.equal(url.searchParams.get("error"), "employee control denied");
+  assert.equal(url.searchParams.get("modal"), "purchase-control-21");
+});
+
+test("Employee Apply and Reset require explicit confirmation and keep rolling-reset copy honest", async () => {
+  const applyCalls = [];
+  const applyHarness = employeeActions({
+    applyCompanyEmployeePurchaseControl: async (...args) => { applyCalls.push(args); },
+  });
+  const base = {
+    companyId: 4, employeeId: 21, returnModal: "purchase-control-21",
+  };
+  let url = await redirectFrom(() => applyHarness.actions.applyEmployeePurchaseControlAction(form(base)));
+  assert.match(url.searchParams.get("error"), /Confirm/);
+  assert.equal(applyCalls.length, 0);
+
+  url = await redirectFrom(() => applyHarness.actions.applyEmployeePurchaseControlAction(form({
+    ...base, confirmApply: "yes",
+  })));
+  assert.deepEqual(applyCalls, [[4, 21]]);
+  assert.match(url.searchParams.get("notice"), /rolling usage remains based on purchase history/i);
+
+  const resetCalls = [];
+  const resetHarness = employeeActions({
+    resetCompanyEmployeePurchaseControl: async (...args) => { resetCalls.push(args); },
+  });
+  url = await redirectFrom(() => resetHarness.actions.resetEmployeePurchaseControlAction(form({
+    ...base, confirmReset: "yes",
+  })));
+  assert.deepEqual(resetCalls, [[4, 21]]);
+  assert.match(url.searchParams.get("notice"), /Rolling-window usage was not reset/);
+});
+
