@@ -193,6 +193,7 @@ const SAVE_COMPANY_ROLE_MUTATION = /* GraphQL */ `
       sort_order
       allowed_resources
       user_count
+      purchase_employee_count
       manageable
     }
   }
