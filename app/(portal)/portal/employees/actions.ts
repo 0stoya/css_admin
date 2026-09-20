@@ -47,6 +47,7 @@ function employeeInput(formData: FormData): CompanyEmployeeInput {
     department: optional("department"),
     cost_centre: optional("costCentre"),
     manager_company_user_id: optionalPositiveInt(stringValue(formData, "managerCompanyUserId"), "Manager"),
+    purchase_control_role_id: optionalPositiveInt(stringValue(formData, "purchaseControlRoleId"), "Purchase role"),
     active: formData.get("active") === "on",
   };
 }
