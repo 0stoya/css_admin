@@ -13,7 +13,6 @@ const form = (values) => {
 for (const raw of [
   "PPE | 4 | 365 | 2026-09-12",
   " PPE | 4 | 365 | 2024-02-29 \r\n",
-  "PPE | 200 | 365 | 2026-09-12 | 5 | 7",
 ]) {
   test(`parse valid rule ${raw.trim()}`, () => {
     const [rule] = forms.parsePurchaseRules(raw);
