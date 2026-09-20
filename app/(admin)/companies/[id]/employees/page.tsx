@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { History, UserMinus } from "lucide-react";
+import { History, ShieldCheck, UserMinus } from "lucide-react";
 import { AdminActionModal, AdminFormFooter } from "@/components/admin-action-modal";
+import { EmployeePurchaseControlModal } from "@/components/employee-purchase-control-modal";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { EMPLOYEE_IMPORT_TEMPLATE } from "@/lib/company-employees-csv";
@@ -10,16 +11,22 @@ import {
   getCompanyEmployee,
   getCompanyEmployeeConfiguration,
   getCompanyEmployeeOrders,
+  getCompanyEmployeePurchaseControl,
   getCompanyEmployees,
   getCompanyEmployeeSpend,
   type CompanyEmployee,
   type CompanyEmployeeOrderSearchResult,
+  type CompanyEmployeePurchaseControl,
   type CompanyEmployeeSpendResult,
 } from "@/lib/graphql/company-employees";
+import { getPurchaseControls, type PurchaseControlTemplate } from "@/lib/graphql/purchase-controls";
 import {
+  applyEmployeePurchaseControlAction,
+  assignEmployeePurchaseControlAction,
   createEmployeeAction,
   deactivateEmployeeAction,
   importEmployeesCsvAction,
+  resetEmployeePurchaseControlAction,
   saveEmployeeConfigurationAction,
   updateEmployeeAction,
 } from "./actions";
@@ -277,6 +284,8 @@ export default async function CompanyEmployeesPage({
   const from = firstParam(paramsValue.from)?.trim() ?? "";
   const to = firstParam(paramsValue.to)?.trim() ?? "";
   const modal = firstParam(paramsValue.modal)?.trim() ?? "";
+  const purchaseControlMatch = modal.match(/^purchase-control-(\d+)$/);
+  const purchaseControlEmployeeId = purchaseControlMatch ? Number(purchaseControlMatch[1]) : 0;
   const notice = firstParam(paramsValue.notice);
   const mutationError = firstParam(paramsValue.error);
   const modalStateKey = [modal, q, status, from, to, String(page), notice ?? "", mutationError ?? ""].join("|");
@@ -335,6 +344,24 @@ export default async function CompanyEmployeesPage({
     orders = ordersResult.status === "fulfilled" ? ordersResult.value : null;
     if (employeeResult.status === "rejected") orderError = graphQLErrorMessage(employeeResult.reason);
     else if (ordersResult.status === "rejected") orderError = graphQLErrorMessage(ordersResult.reason);
+  }
+
+  let employeePurchaseControl: CompanyEmployeePurchaseControl | null = null;
+  let purchaseTemplates: PurchaseControlTemplate[] = [];
+  let purchaseControlError: string | null = null;
+
+  if (Number.isInteger(purchaseControlEmployeeId) && purchaseControlEmployeeId > 0) {
+    const [purchaseControlResult, templatesResult] = await Promise.allSettled([
+      getCompanyEmployeePurchaseControl(companyId, purchaseControlEmployeeId),
+      getPurchaseControls(companyId),
+    ]);
+    employeePurchaseControl = purchaseControlResult.status === "fulfilled" ? purchaseControlResult.value : null;
+    purchaseTemplates = templatesResult.status === "fulfilled" ? templatesResult.value.templates : [];
+    if (purchaseControlResult.status === "rejected") {
+      purchaseControlError = graphQLErrorMessage(purchaseControlResult.reason);
+    } else if (templatesResult.status === "rejected") {
+      purchaseControlError = graphQLErrorMessage(templatesResult.reason);
+    }
   }
 
   const exportHref = `/api/companies/${companyId}/employees/export${status === "all" ? "" : `?active=${status === "active" ? "1" : "0"}`}`;
@@ -470,6 +497,10 @@ export default async function CompanyEmployeesPage({
             const manager = managers.find((user) => user.user_id === employee.manager_company_user_id);
             const employeeSpend = spendByEmployee.get(employee.employee_id);
             const modalKey = `edit-employee-${employee.employee_id}`;
+            const purchaseModalKey = `purchase-control-${employee.employee_id}`;
+            const purchaseControlHref = withQuery(companyId, {
+              q, status, from, to, page, modal: purchaseModalKey,
+            });
             const historyHref = `${withQuery(companyId, {
               q, status, from, to, page,
               employee: employee.employee_id,
@@ -514,6 +545,10 @@ export default async function CompanyEmployeesPage({
                         </details>
                       ) : null}
                     </AdminActionModal>
+                    <Link className="admin-employee-history-link" href={purchaseControlHref}>
+                      <ShieldCheck size={16} aria-hidden="true" />
+                      <span>Purchase controls</span>
+                    </Link>
                     <Link className="admin-employee-history-link" href={historyHref}>
                       <History size={16} aria-hidden="true" />
                       <span>History</span>
