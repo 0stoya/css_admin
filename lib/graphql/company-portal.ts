@@ -25,6 +25,7 @@ export type CompanyPortalRole = {
   sort_order: number;
   allowed_resources: string[];
   user_count: number;
+  purchase_employee_count: number;
   manageable: boolean;
 };
 
@@ -172,6 +173,7 @@ const ADMINISTRATION_QUERY = /* GraphQL */ `
           sort_order
           allowed_resources
           user_count
+          purchase_employee_count
           manageable
         }
       }
@@ -207,6 +209,8 @@ const SAVE_ROLE_MUTATION = /* GraphQL */ `
       sort_order
       allowed_resources
       user_count
+      purchase_employee_count
+      purchase_employee_count
       manageable
     }
   }
