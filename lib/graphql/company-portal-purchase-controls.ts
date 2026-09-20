@@ -104,7 +104,7 @@ const ASSIGN_TEMPLATE_MUTATION = /* GraphQL */ `
 const APPLY_TEMPLATE_MUTATION = /* GraphQL */ `
   mutation CompanyPortalApplyPurchaseControlTemplate($templateId: Int!) {
     cssApplyCompanyPurchaseControlTemplate(template_id: $templateId) {
-      company_id template_id affected_users affected_employees affected_employees
+      company_id template_id affected_users affected_employees
     }
   }
 `;
@@ -112,7 +112,7 @@ const APPLY_TEMPLATE_MUTATION = /* GraphQL */ `
 const RESET_COUNTERS_MUTATION = /* GraphQL */ `
   mutation CompanyPortalResetPurchaseControlCounters($templateId: Int!) {
     cssResetCompanyPurchaseControlCounters(template_id: $templateId) {
-      company_id template_id affected_users
+      company_id template_id affected_users affected_employees
     }
   }
 `;
