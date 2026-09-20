@@ -6,15 +6,18 @@ import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { parseEmployeeCsv, resolveEmployeeCsvManagers } from "@/lib/company-employees-csv";
 import { getCompanyManagement } from "@/lib/graphql/company-management";
 import {
+  applyCompanyEmployeePurchaseControl,
+  assignCompanyEmployeePurchaseControl,
   createCompanyEmployee,
   deactivateCompanyEmployee,
   importCompanyEmployees,
+  resetCompanyEmployeePurchaseControl,
   saveCompanyEmployeeConfiguration,
   updateCompanyEmployee,
   type CompanyEmployeeInput,
 } from "@/lib/graphql/company-employees";
 
-const MODAL_PATTERN = /^(add-employee|edit-employee-\d+)$/;
+const MODAL_PATTERN = /^(add-employee|edit-employee-\d+|purchase-control-\d+)$/;
 
 function employeesPath(companyId: number) {
   return `/companies/${companyId}/employees`;
@@ -140,6 +143,64 @@ export async function deactivateEmployeeAction(formData: FormData) {
   const employeeId = positiveInt(formData, "employeeId");
   return runMutation(companyId, "Employee deactivated. Historical order attribution remains available.", formData, () =>
     deactivateCompanyEmployee(companyId, employeeId),
+  );
+}
+
+
+export async function assignEmployeePurchaseControlAction(formData: FormData) {
+  const companyId = positiveInt(formData, "companyId");
+  const employeeId = positiveInt(formData, "employeeId");
+  const templateId = optionalPositiveInt(stringValue(formData, "templateId"), "Template");
+  const applyNow = formData.get("applyNow") === "on";
+
+  if (applyNow && templateId === null) {
+    return runMutation(companyId, "", formData, async () => {
+      throw new Error("Select a template before applying Employee purchase controls.");
+    });
+  }
+
+  const notice = templateId === null
+    ? "Template unassigned from the Employee. Existing applied allowances were not removed."
+    : applyNow
+      ? "Template assigned and applied to the Employee. Main allowance periods restarted; rolling usage was retained from purchase history."
+      : "Template assigned to the Employee. Existing applied allowances were not changed; use Apply when ready.";
+
+  return runMutation(companyId, notice, formData, () =>
+    assignCompanyEmployeePurchaseControl(companyId, employeeId, templateId, applyNow),
+  );
+}
+
+export async function applyEmployeePurchaseControlAction(formData: FormData) {
+  const companyId = positiveInt(formData, "companyId");
+  const employeeId = positiveInt(formData, "employeeId");
+  if (formData.get("confirmApply") !== "yes") {
+    return runMutation(companyId, "", formData, async () => {
+      throw new Error("Confirm that applying the template will replace this Employee's applied allowances and restart main allowance periods.");
+    });
+  }
+
+  return runMutation(
+    companyId,
+    "Employee purchase controls applied. Main allowance periods restarted; rolling usage remains based on purchase history.",
+    formData,
+    () => applyCompanyEmployeePurchaseControl(companyId, employeeId),
+  );
+}
+
+export async function resetEmployeePurchaseControlAction(formData: FormData) {
+  const companyId = positiveInt(formData, "companyId");
+  const employeeId = positiveInt(formData, "employeeId");
+  if (formData.get("confirmReset") !== "yes") {
+    return runMutation(companyId, "", formData, async () => {
+      throw new Error("Confirm that resetting will clear this Employee's main-period counters.");
+    });
+  }
+
+  return runMutation(
+    companyId,
+    "Employee main allowance counters reset. Rolling-window usage was not reset and remains based on purchase history.",
+    formData,
+    () => resetCompanyEmployeePurchaseControl(companyId, employeeId),
   );
 }
 
