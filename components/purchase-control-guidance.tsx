@@ -22,7 +22,7 @@ export function PurchaseControlGuidance({ iconOnly = false }: { iconOnly?: boole
         <section className={styles.guideCard}>
           <h3><CalendarDays size={19} aria-hidden="true" /> Main + rolling limits</h3>
           <p>Every product has a main quantity and period, such as 200 items in 365 days. A product may also have one tighter rolling cap, such as no more than 5 items in any trailing 7 days.</p>
-          <p>Both limits must pass. Fluid calculates rolling usage from durable purchase history; it is not a weekly calendar reset.</p>
+          <p>Fluid calculates rolling usage from durable purchase history; it is not a weekly calendar reset. For buyers, exceeding either limit follows the existing approval path. Applied Employee limits are beneficiary hard constraints and cannot be overridden by approving the purchasing user.</p>
         </section>
         <section className={styles.guideCard}>
           <h3><RotateCcw size={19} aria-hidden="true" /> Reset counters</h3>
