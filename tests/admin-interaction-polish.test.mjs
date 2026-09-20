@@ -98,6 +98,21 @@ test("employee source keeps history separate while create/edit move to modals", 
   assert.doesNotMatch(page, /className=\{styles\.createPanel\}/);
 });
 
+test("portal Employee forms expose Purchase Role as policy-only metadata", () => {
+  const page = source("app/(portal)/portal/employees/page.tsx");
+  const actions = source("app/(portal)/portal/employees/actions.ts");
+  assert.match(page, /Purchase role/);
+  assert.match(page, /purchaseControlRoleId/);
+  assert.match(page, /does not create a login or grant role permissions/);
+  assert.match(actions, /purchase_control_role_id/);
+});
+
+test("Employee CSV preserves Purchase Role IDs", () => {
+  const csv = source("lib/company-employees-csv.ts");
+  assert.match(csv, /purchase_control_role_id/);
+  assert.match(csv, /CSV row \$\{rowNumber\} purchase_control_role_id/);
+});
+
 test("shared admin modal resets from server state and keeps native dialog semantics", () => {
   const modal = source("components/admin-action-modal.tsx");
   assert.doesNotMatch(modal, /useSearchParams/);
