@@ -52,11 +52,12 @@ test("checkbox false is not treated as apply-to-users", () => {
   assert.equal(forms.checkboxChecked(form({ applyToUsers: "false" }), "applyToUsers"), false);
   assert.equal(forms.checkboxChecked(form({ applyToUsers: "on" }), "applyToUsers"), true);
 });
-test("zero affected users is not advertised as a successful reset", () => {
-  assert.match(forms.affectedUsersNotice("reset", 0), /No eligible buyers/);
-  assert.match(forms.affectedUsersNotice("reset", 2), /2 eligible buyers/);
-  assert.match(forms.assignmentNotice(7, false, 0), /not changed/);
-  assert.match(forms.assignmentNotice(null, false, 0), /not removed/);
+test("buyer and Employee affected counts come from Magento", () => {
+  assert.match(forms.affectedUsersNotice("reset", 0, 0), /No eligible buyers or Employees/);
+  assert.match(forms.affectedUsersNotice("reset", 2, 3), /2 eligible buyers and 3 Employees/);
+  assert.match(forms.affectedUsersNotice("applied", 1, 1), /1 eligible buyer and 1 Employee/);
+  assert.match(forms.assignmentNotice(7, false, 0, 0), /not changed/);
+  assert.match(forms.assignmentNotice(null, false, 0, 0), /not removed/);
 });
 
 class Navigation extends Error {
@@ -123,9 +124,18 @@ for (const portal of [false, true]) {
   }
   test(`${prefix}: the mutation's zero count is surfaced`, async () => {
     const field = portal ? "cssApplyCompanyPurchaseControlTemplate" : "cssAdminApplyPurchaseControlTemplate";
-    const h = harness(portal, { [field]: { affected_users: 0 } });
+    const h = harness(portal, { [field]: { affected_users: 0, affected_employees: 0 } });
     const url = await redirectFrom(() => h.exports[names.apply](form({ companyId: 3, templateId: 7, confirmApply: "yes" })));
     assert.match(url.searchParams.get("notice"), /No eligible buyers/);
+    assert.equal(h.calls.length, 1);
+  });
+  test(`${prefix}: backend buyer and Employee counts are surfaced`, async () => {
+    const field = portal ? "cssApplyCompanyPurchaseControlTemplate" : "cssAdminApplyPurchaseControlTemplate";
+    const h = harness(portal, { [field]: { affected_users: 2, affected_employees: 3 } });
+    const url = await redirectFrom(() => h.exports[names.apply](form({
+      companyId: 3, templateId: 7, confirmApply: "yes",
+    })));
+    assert.match(url.searchParams.get("notice"), /2 eligible buyers and 3 Employees/);
     assert.equal(h.calls.length, 1);
   });
   test(`${prefix}: assignment does not silently apply on a false checkbox`, async () => {

@@ -83,6 +83,13 @@ test("management source uses modal create/edit interactions instead of expandabl
   assert.doesNotMatch(page, /management-create-panel management-create-inline/);
 });
 
+test("role management protects roles referenced by Employee Purchase Role", () => {
+  const page = source("app/(admin)/companies/[id]/management/page.tsx");
+  assert.match(page, /role\.purchase_employee_count/);
+  assert.match(page, /no Employees using the role as their Purchase Role/);
+  assert.match(page, /role\.user_count > 0 \|\| role\.purchase_employee_count > 0/);
+});
+
 test("employee source keeps history separate while create/edit move to modals", () => {
   const page = source("app/(admin)/companies/[id]/employees/page.tsx");
   assert.match(page, /title="Add employee"/);
@@ -91,9 +98,26 @@ test("employee source keeps history separate while create/edit move to modals", 
   assert.match(page, /id="employee-history"/);
   assert.match(page, /Deactivate employee/);
   assert.match(page, /Purchase controls/);
+  assert.match(page, /Purchase role/);
+  assert.match(page, /does not create a login or grant role permissions/);
   assert.match(page, /purchase-control-\$\{employee\.employee_id\}/);
   assert.doesNotMatch(page, /<details className=\{styles\.employeeRecord\}/);
   assert.doesNotMatch(page, /className=\{styles\.createPanel\}/);
+});
+
+test("portal Employee forms expose Purchase Role as policy-only metadata", () => {
+  const page = source("app/(portal)/portal/employees/page.tsx");
+  const actions = source("app/(portal)/portal/employees/actions.ts");
+  assert.match(page, /Purchase role/);
+  assert.match(page, /purchaseControlRoleId/);
+  assert.match(page, /does not create a login or grant role permissions/);
+  assert.match(actions, /purchase_control_role_id/);
+});
+
+test("Employee CSV preserves Purchase Role IDs", () => {
+  const csv = source("lib/company-employees-csv.ts");
+  assert.match(csv, /purchase_control_role_id/);
+  assert.match(csv, /CSV row \$\{rowNumber\} purchase_control_role_id/);
 });
 
 test("shared admin modal resets from server state and keeps native dialog semantics", () => {
@@ -148,7 +172,7 @@ test("employee backend error reopens edit modal, preserves filters and preserves
   });
   const data = form({
     companyId: 4, employeeId: 21, firstName: " Ada ", lastName: " Lovelace ", employeeCode: "AL-1",
-    department: "Engineering", costCentre: "CC1", managerCompanyUserId: 8, active: "on",
+    department: "Engineering", costCentre: "CC1", managerCompanyUserId: 8, purchaseControlRoleId: 6, active: "on",
     returnModal: "edit-employee-21", returnQ: "ada", returnStatus: "all", returnFrom: "2026-01-01", returnTo: "2026-09-12", returnPage: 2,
   });
   const url = await redirectFrom(() => h.actions.updateEmployeeAction(data));
@@ -159,9 +183,18 @@ test("employee backend error reopens edit modal, preserves filters and preserves
   assert.equal(url.searchParams.get("page"), "2");
   assert.equal(JSON.stringify(calls), JSON.stringify([[4, 21, {
     employee_code: "AL-1", first_name: "Ada", last_name: "Lovelace", department: "Engineering",
-    cost_centre: "CC1", manager_company_user_id: 8, active: true,
+    cost_centre: "CC1", manager_company_user_id: 8, purchase_control_role_id: 6, active: true,
   }]]));
   assert.equal(h.invalidations.length, 0);
+});
+
+test("Employee source shows inherited policy and direct override semantics", () => {
+  const page = source("app/(admin)/companies/[id]/employees/page.tsx");
+  assert.match(page, /Effective template/);
+  assert.match(page, /Inherited from role/);
+  assert.match(page, /Direct override/);
+  assert.match(page, /Override template/);
+  assert.match(page, /No override \(inherit Purchase Role\)/);
 });
 
 test("Employee purchase-control assignment stays separate from Apply and closes on success", async () => {

@@ -10,8 +10,8 @@ export type EmployeeCsvManager = {
 };
 
 export const EMPLOYEE_IMPORT_TEMPLATE =
-  "employee_code,first_name,last_name,department,cost_centre,manager_email,manager_company_user_id,active\n" +
-  "EMP001,Spencer,Surname,Warehouse,CC100,manager@example.com,,true\n";
+  "employee_code,first_name,last_name,department,cost_centre,manager_email,manager_company_user_id,purchase_control_role_id,active\n" +
+  "EMP001,Spencer,Surname,Warehouse,CC100,manager@example.com,,,true\n";
 
 function optionalPositiveInt(value: string, label: string) {
   const raw = value.trim();
@@ -100,6 +100,10 @@ export function parseEmployeeCsv(text: string): EmployeeCsvImportRow[] {
         valueAt(values, "manager_company_user_id"),
         `CSV row ${rowNumber} manager_company_user_id`,
       ),
+      purchase_control_role_id: optionalPositiveInt(
+        valueAt(values, "purchase_control_role_id"),
+        `CSV row ${rowNumber} purchase_control_role_id`,
+      ),
       active: importBoolean(valueAt(values, "active"), rowNumber),
     };
   });
@@ -148,6 +152,7 @@ export function resolveEmployeeCsvManagers(
       department: row.department,
       cost_centre: row.cost_centre,
       manager_company_user_id: managerCompanyUserId,
+      purchase_control_role_id: row.purchase_control_role_id,
       active: row.active,
     };
   });
@@ -171,6 +176,7 @@ export function employeeExportCsv(
     "cost_centre",
     "manager_email",
     "manager_company_user_id",
+    "purchase_control_role_id",
     "active",
   ];
 
@@ -184,6 +190,7 @@ export function employeeExportCsv(
       row.cost_centre,
       row.manager_company_user_id === null ? null : managerEmailById.get(row.manager_company_user_id) ?? null,
       row.manager_company_user_id,
+      row.purchase_control_role_id,
       row.active,
     ].map(csvCell).join(",")),
   ].join("\r\n");

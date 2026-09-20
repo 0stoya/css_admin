@@ -196,9 +196,21 @@ test("help explains main plus rolling limits and Employee controls without inven
   assert.match(text, /trailing 7 days/);
   assert.match(text, /Rolling-cap usage therefore does <strong>not<\/strong> reset/);
   assert.match(text, /beneficiary hard constraints/);
+  assert.match(text, /Purchase Role/);
+  assert.match(text, /policy inheritance only/);
+  assert.match(text, /direct Employee override takes precedence/);
   assert.match(text, /same product rule/);
   assert.match(text, /PurchaseControlHelp iconOnly=\{iconOnly\}/);
 });
+test("role assignment UI shows buyer and Employee inheritance counts", () => {
+  const page = source("app/(admin)/companies/[id]/purchase-controls/page.tsx");
+  assert.match(page, /<th>Buyers<\/th>/);
+  assert.match(page, /<th>Employees<\/th>/);
+  assert.match(page, /role\.purchase_employee_count/);
+  assert.match(page, /Apply immediately to buyers \+ inheriting Employees/);
+  assert.match(page, /Direct Employee overrides are left alone/);
+});
+
 test("new edit action has no apply/reset mutation or template-creation fallback", () => {
   const text = source("app/(admin)/companies/[id]/purchase-controls/edit-actions.ts");
   assert.doesNotMatch(text, /applyPurchaseControlTemplate|resetPurchaseControlCounters|optionalId/);

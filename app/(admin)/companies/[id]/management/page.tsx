@@ -222,7 +222,9 @@ export default async function CompanyManagementPage({
   });
 
   const companyAdminCount = management.users.filter((user) => user.is_company_admin).length;
-  const roleInUseCount = management.roles.filter((role) => role.user_count > 0).length;
+  const roleInUseCount = management.roles.filter(
+    (role) => role.user_count > 0 || role.purchase_employee_count > 0,
+  ).length;
   const assignableResourceCount = assignableResourceIds.size;
 
   return (
@@ -501,14 +503,19 @@ export default async function CompanyManagementPage({
                       <strong>{role.name}</strong>
                       <span className={`badge ${role.manageable ? "badge-ok" : "badge-neutral"}`}>{role.manageable ? "Manageable" : "Protected"}</span>
                     </span>
-                    <span className="management-record-cell" data-label="Users"><strong>{role.user_count}</strong></span>
+                    <span className="management-record-cell" data-label="Users">
+                      <strong>{role.user_count}</strong>
+                      {role.purchase_employee_count > 0
+                        ? <span className="muted small-text">{role.purchase_employee_count} Purchase Role Employee{role.purchase_employee_count === 1 ? "" : "s"}</span>
+                        : null}
+                    </span>
                     <span className="management-record-cell" data-label="Sort">{role.sort_order}</span>
                     <span className="management-record-cell" data-label="Permissions"><strong>{permissionCount}</strong> <span className="muted small-text">assignable selected</span></span>
                     <div className="management-record-action">
                       <AdminActionModal
                         title={role.manageable ? `Edit ${role.name}` : role.name}
                         description={role.manageable
-                          ? `Role #${role.role_id} · ${role.user_count} assigned user${role.user_count === 1 ? "" : "s"}.`
+                          ? `Role #${role.role_id} · ${role.user_count} assigned user${role.user_count === 1 ? "" : "s"} · ${role.purchase_employee_count} Purchase Role Employee${role.purchase_employee_count === 1 ? "" : "s"}.`
                           : `Role #${role.role_id} is protected by Fluid and is read-only in Admin.`}
                         triggerLabel={role.manageable ? "Edit" : "View"}
                         triggerIcon={role.manageable ? "edit" : "view"}
@@ -540,10 +547,21 @@ export default async function CompanyManagementPage({
                                 <input name="expectedName" type="hidden" value={role.name} />
                                 <input name="returnView" type="hidden" value="roles" />
                                 <ReturnStateFields modal={modalKey} roleSearch={roleSearch} />
-                                <p className="muted small-text">Fluid only deletes roles with no assigned users.</p>
+                                <p className="muted small-text">Fluid only deletes roles with no assigned users and no Employees using the role as their Purchase Role.</p>
                                 <div className="field"><label>Type {role.name} to confirm</label><input name="confirmName" autoComplete="off" required /></div>
-                                <button className="button button-danger" type="submit" disabled={role.user_count > 0}>Delete role</button>
+                                <button
+                                  className="button button-danger"
+                                  type="submit"
+                                  disabled={role.user_count > 0 || role.purchase_employee_count > 0}
+                                >
+                                  Delete role
+                                </button>
                                 {role.user_count > 0 ? <p className="muted small-text">Move the {role.user_count} assigned user{role.user_count === 1 ? "" : "s"} first.</p> : null}
+                                {role.purchase_employee_count > 0 ? (
+                                  <p className="muted small-text">
+                                    Move the {role.purchase_employee_count} Employee{role.purchase_employee_count === 1 ? "" : "s"} using this Purchase Role first.
+                                  </p>
+                                ) : null}
                               </form>
                             </details>
                           </>

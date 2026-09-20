@@ -25,6 +25,7 @@ export type CompanyPortalRole = {
   sort_order: number;
   allowed_resources: string[];
   user_count: number;
+  purchase_employee_count: number;
   manageable: boolean;
 };
 
@@ -172,6 +173,7 @@ const ADMINISTRATION_QUERY = /* GraphQL */ `
           sort_order
           allowed_resources
           user_count
+          purchase_employee_count
           manageable
         }
       }
@@ -181,6 +183,7 @@ const ADMINISTRATION_QUERY = /* GraphQL */ `
         sort_order
         allowed_resources
         user_count
+        purchase_employee_count
         manageable
       }
       control_roles {
@@ -207,6 +210,7 @@ const SAVE_ROLE_MUTATION = /* GraphQL */ `
       sort_order
       allowed_resources
       user_count
+      purchase_employee_count
       manageable
     }
   }
@@ -233,7 +237,7 @@ const UPDATE_USER_MUTATION = /* GraphQL */ `
       can_checkout
       can_approve_credit_orders
       can_auto_approve_credit_order
-      roles { role_id name sort_order allowed_resources user_count manageable }
+      roles { role_id name sort_order allowed_resources user_count purchase_employee_count manageable }
     }
   }
 `;

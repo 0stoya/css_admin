@@ -71,7 +71,12 @@ export async function assignPurchaseControlTemplateAction(formData: FormData) {
     const applyToUsers = checkboxChecked(formData, "applyToUsers");
     if (applyToUsers && templateId === null) throw new Error("Select a template before choosing to apply it to users.");
     const result = await assignPurchaseControlTemplate(companyId, roleId, templateId, applyToUsers);
-    return assignmentNotice(templateId, applyToUsers, result.cssAdminAssignPurchaseControlTemplate.applied_users);
+    return assignmentNotice(
+      templateId,
+      applyToUsers,
+      result.cssAdminAssignPurchaseControlTemplate.applied_users,
+      result.cssAdminAssignPurchaseControlTemplate.applied_employees,
+    );
   }, state);
 }
 
@@ -83,7 +88,11 @@ export async function applyPurchaseControlTemplateAction(formData: FormData) {
     state.templateId = templateId;
     requireAcknowledgement(formData, "confirmApply");
     const result = await applyPurchaseControlTemplate(companyId, templateId);
-    return affectedUsersNotice("applied", result.cssAdminApplyPurchaseControlTemplate.affected_users);
+    return affectedUsersNotice(
+      "applied",
+      result.cssAdminApplyPurchaseControlTemplate.affected_users,
+      result.cssAdminApplyPurchaseControlTemplate.affected_employees,
+    );
   }, state);
 }
 
@@ -95,7 +104,11 @@ export async function resetPurchaseControlCountersAction(formData: FormData) {
     state.templateId = templateId;
     requireAcknowledgement(formData, "confirmReset");
     const result = await resetPurchaseControlCounters(companyId, templateId);
-    return affectedUsersNotice("reset", result.cssAdminResetPurchaseControlCounters.affected_users);
+    return affectedUsersNotice(
+      "reset",
+      result.cssAdminResetPurchaseControlCounters.affected_users,
+      result.cssAdminResetPurchaseControlCounters.affected_employees,
+    );
   }, state);
 }
 

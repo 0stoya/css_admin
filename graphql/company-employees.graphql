@@ -29,6 +29,7 @@ query AdminCompanyEmployees($companyId: Int!, $currentPage: Int!, $pageSize: Int
       department
       cost_centre
       manager_company_user_id
+      purchase_control_role_id
       active
       created_at
       updated_at
@@ -138,6 +139,11 @@ query AdminCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
     employee_id
     employee_code
     employee_name
+    purchase_control_role_id
+    purchase_control_role_name
+    assignment_source
+    direct_template_id
+    direct_template_name
     template_id
     template_name
     assigned

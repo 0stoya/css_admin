@@ -89,6 +89,7 @@ export default async function CompanyPortalPurchaseControlsPage({
     template.assigned_roles.forEach((role) => assignedTemplateByRole.set(role.role_id, { template_id: template.template_id, name: template.name }));
   });
   const assignedRoleCount = assignedTemplateByRole.size;
+  const roleDetailsById = new Map(administration.roles.map((role) => [role.role_id, role]));
 
   return (
     <div className={styles.workspace}>
@@ -270,7 +271,7 @@ export default async function CompanyPortalPurchaseControlsPage({
             <div>
               <p className="eyebrow">Assignments</p>
               <h2>Which roles use which template?</h2>
-              <p className="muted">Each company role can have one purchase-control template. Changing an assignment does not have to overwrite current user allowances unless you choose Apply immediately.</p>
+              <p className="muted">Each company role can have one purchase-control template. Employees may inherit that policy through their Purchase Role without becoming role members or receiving permissions.</p>
             </div>
           </div>
 
@@ -280,6 +281,7 @@ export default async function CompanyPortalPurchaseControlsPage({
             <div className={styles.assignmentGrid}>
               {administration.control_roles.map((role) => {
                 const current = assignedTemplateByRole.get(role.role_id);
+                const roleDetails = roleDetailsById.get(role.role_id);
                 const currentTemplate = current ? controls.templates.find((template) => template.template_id === current.template_id) : undefined;
                 return (
                   <article className={styles.assignmentCard} key={role.role_id}>
@@ -290,7 +292,13 @@ export default async function CompanyPortalPurchaseControlsPage({
                     <div className={styles.assignmentBody}>
                       <span>Current template</span>
                       <strong>{current?.name ?? "No purchase-control template"}</strong>
-                      <small>{currentTemplate ? `${currentTemplate.rules.length} product rule${currentTemplate.rules.length === 1 ? "" : "s"}` : "This role currently has no template assignment."}</small>
+                      <small>
+                        {roleDetails
+                          ? `${roleDetails.user_count} buyer${roleDetails.user_count === 1 ? "" : "s"} · ${roleDetails.purchase_employee_count} Employee${roleDetails.purchase_employee_count === 1 ? "" : "s"}`
+                          : currentTemplate
+                            ? `${currentTemplate.rules.length} product rule${currentTemplate.rules.length === 1 ? "" : "s"}`
+                            : "This role currently has no template assignment."}
+                      </small>
                     </div>
                     <div className={styles.assignmentFooter}>
                       <span>Role #{role.role_id}</span>
@@ -314,7 +322,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                               {controls.templates.map((template) => <option value={template.template_id} key={template.template_id}>{template.name} · {template.rules.length} rules</option>)}
                             </select>
                           </div>
-                          <label className={styles.confirmRow}><input type="checkbox" name="applyToUsers" /><span><strong>Apply immediately to eligible users</strong><small>Overwrite current user allowances after saving this assignment.</small></span></label>
+                          <label className={styles.confirmRow}><input type="checkbox" name="applyToUsers" /><span><strong>Apply immediately to buyers + inheriting Employees</strong><small>Overwrite eligible buyer allowances and Employee allowances inherited from this Purchase Role. Direct Employee overrides are left alone.</small></span></label>
                           <div><button className="button" type="submit">Save assignment</button></div>
                         </form>
                       </PortalModal>

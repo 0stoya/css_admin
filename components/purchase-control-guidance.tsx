@@ -14,8 +14,8 @@ export function PurchaseControlGuidance({ iconOnly = false }: { iconOnly?: boole
         <h3><ClipboardList size={19} aria-hidden="true" /> From template to allowance</h3>
         <div className={styles.steps}>
           <article><span className={styles.stepNumber}>1</span><div><h4>Save the rules</h4><p>Changes the template definition only. Existing applied buyer or Employee allowances are unchanged.</p></div></article>
-          <article><span className={styles.stepNumber}>2</span><div><h4>Assign the template</h4><p>Roles govern eligible buyers. Employees are assigned from the Employees workspace. Assignment or unassignment alone does not clear applied allowances.</p></div></article>
-          <article><span className={styles.stepNumber}>3</span><div><h4>Apply when ready</h4><p>Materialises the current template. For buyers this applies across assigned roles; for an Employee it restarts that Employee&apos;s main allowance periods.</p></div></article>
+          <article><span className={styles.stepNumber}>2</span><div><h4>Assign the template</h4><p>Roles govern eligible buyers and can also act as an Employee <strong>Purchase Role</strong>. Purchase Role is policy inheritance only: it does not create a login or grant role permissions. Assignment changes do not clear applied allowances.</p></div></article>
+          <article><span className={styles.stepNumber}>3</span><div><h4>Apply when ready</h4><p>Materialises the current template. Role Apply covers eligible buyers plus Employees inheriting that Purchase Role. A direct Employee override takes precedence and is left alone by role Apply.</p></div></article>
         </div>
       </section>
       <div className={styles.guideGrid}>
@@ -33,6 +33,10 @@ export function PurchaseControlGuidance({ iconOnly = false }: { iconOnly?: boole
         <h3><History size={19} aria-hidden="true" /> History stays with the purchase</h3>
         <p>History is retained after reapplication and resets. Refunds and cancellations adjust the original period and rolling usage. Imported legacy buyer purchases keep the existing conservative reconciliation policy.</p>
       </section>
+      <aside className={styles.note}>
+        <strong>Employee inheritance</strong>
+        <p>Employee policy resolves direct override first, then Purchase Role inheritance. Removing an override reveals the role template but does not rewrite currently applied allowances until Apply is used.</p>
+      </aside>
       <aside className={styles.note}>
         <strong>One SKU rule, two tiers</strong>
         <p>Do not add the same SKU twice to represent the second limit. Configure the optional Short-term max and Rolling days on the same product rule.</p>

@@ -16,8 +16,9 @@ const PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
         name
         rules {
           rule_id product_id sku product_name quantity_limit duration_days start_date
+          short_term_quantity_limit short_term_duration_days
         }
-        assigned_roles { role_id role_name }
+        assigned_roles { role_id role_name employee_count }
       }
     }
   }
@@ -38,6 +39,8 @@ const APPLIED_PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
       items {
         applied_id user_id customer_id email product_id sku product_name
         quantity_limit duration_days start_date purchases_so_far remaining_quantity
+        short_term_quantity_limit short_term_duration_days
+        short_term_purchases_so_far short_term_remaining_quantity
       }
       page_info { page_size current_page total_pages }
     }
@@ -96,7 +99,7 @@ const ASSIGN_TEMPLATE_MUTATION = /* GraphQL */ `
       template_id: $templateId
       apply_to_users: $applyToUsers
     ) {
-      company_id role_id role_name template_id template_name applied_users
+      company_id role_id role_name template_id template_name applied_users applied_employees
     }
   }
 `;
@@ -104,7 +107,7 @@ const ASSIGN_TEMPLATE_MUTATION = /* GraphQL */ `
 const APPLY_TEMPLATE_MUTATION = /* GraphQL */ `
   mutation CompanyPortalApplyPurchaseControlTemplate($templateId: Int!) {
     cssApplyCompanyPurchaseControlTemplate(template_id: $templateId) {
-      company_id template_id affected_users
+      company_id template_id affected_users affected_employees
     }
   }
 `;
@@ -112,7 +115,7 @@ const APPLY_TEMPLATE_MUTATION = /* GraphQL */ `
 const RESET_COUNTERS_MUTATION = /* GraphQL */ `
   mutation CompanyPortalResetPurchaseControlCounters($templateId: Int!) {
     cssResetCompanyPurchaseControlCounters(template_id: $templateId) {
-      company_id template_id affected_users
+      company_id template_id affected_users affected_employees
     }
   }
 `;
@@ -182,21 +185,21 @@ export async function assignCompanyPortalPurchaseControlTemplate(
   applyToUsers: boolean,
 ) {
   return customerGraphqlRequest<
-    { cssAssignCompanyPurchaseControlTemplate: { applied_users: number } },
+    { cssAssignCompanyPurchaseControlTemplate: { applied_users: number; applied_employees: number } },
     { roleId: number; templateId: number | null; applyToUsers: boolean }
   >(ASSIGN_TEMPLATE_MUTATION, { roleId, templateId, applyToUsers });
 }
 
 export async function applyCompanyPortalPurchaseControlTemplate(templateId: number) {
   return customerGraphqlRequest<
-    { cssApplyCompanyPurchaseControlTemplate: { affected_users: number } },
+    { cssApplyCompanyPurchaseControlTemplate: { affected_users: number; affected_employees: number } },
     { templateId: number }
   >(APPLY_TEMPLATE_MUTATION, { templateId });
 }
 
 export async function resetCompanyPortalPurchaseControlCounters(templateId: number) {
   return customerGraphqlRequest<
-    { cssResetCompanyPurchaseControlCounters: { affected_users: number } },
+    { cssResetCompanyPurchaseControlCounters: { affected_users: number; affected_employees: number } },
     { templateId: number }
   >(RESET_COUNTERS_MUTATION, { templateId });
 }
