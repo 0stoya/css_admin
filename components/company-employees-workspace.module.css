@@ -325,6 +325,10 @@
   padding: 0.85rem 1rem;
 }
 
+.actionsHeader {
+  text-align: right;
+}
+
 .tableHeader {
   font-size: 0.75rem;
   color: var(--css-muted);
