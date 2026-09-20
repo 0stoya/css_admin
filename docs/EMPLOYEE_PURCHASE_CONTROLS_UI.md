@@ -58,6 +58,8 @@ Employee remains a non-login beneficiary identity. Do not reuse company-user IDs
 - Apply: materialises the assigned template and restarts main allowance periods.
 - Unassign: removes future assignment only; existing applied allowances remain until another template is applied.
 - Reset: resets main-period counters; rolling usage is based on purchase history and therefore does not reset.
+- Buyer/company-user limits keep the existing approval model: exceeding the main or rolling limit routes the buyer decision to approval.
+- Applied Employee limits are beneficiary entitlement constraints: approving the purchasing user does not override an Employee main or rolling limit.
 - A rolling cap is shown as, for example, “4 of 5 in rolling 7 days”.
 - Main allowance is shown independently, for example, “42 of 200 in current 365-day period”.
 
