@@ -516,7 +516,7 @@ export default async function CompanyEmployeesPage({
 
         <div className={styles.employeeTable}>
           <div className={`${styles.employeeRow} ${styles.tableHeader}`} aria-hidden="true">
-            <span>Employee</span><span>Department</span><span>Manager</span><span>Orders</span><span>Product spend</span><span>Status</span><span />
+            <span>Employee</span><span>Department</span><span>Manager</span><span>Orders</span><span>Product spend</span><span>Status</span><span className={styles.actionsHeader}>Actions</span>
           </div>
           {employees.items.map((employee) => {
             const manager = managers.find((user) => user.user_id === employee.manager_company_user_id);
@@ -574,13 +574,21 @@ export default async function CompanyEmployeesPage({
                         </details>
                       ) : null}
                     </AdminActionModal>
-                    <Link className="admin-employee-history-link" href={purchaseControlHref}>
+                    <Link
+                      className="admin-employee-icon-link"
+                      href={purchaseControlHref}
+                      aria-label={`Purchase controls for ${employeeName(employee)}`}
+                      title="Purchase controls"
+                    >
                       <ShieldCheck size={16} aria-hidden="true" />
-                      <span>Purchase controls</span>
                     </Link>
-                    <Link className="admin-employee-history-link" href={historyHref}>
+                    <Link
+                      className="admin-employee-icon-link"
+                      href={historyHref}
+                      aria-label={`Order history for ${employeeName(employee)}`}
+                      title="History"
+                    >
                       <History size={16} aria-hidden="true" />
-                      <span>History</span>
                     </Link>
                   </div>
                 </div>
