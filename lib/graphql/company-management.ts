@@ -6,6 +6,7 @@ export type CompanyAdminRole = {
   sort_order: number;
   allowed_resources: string[];
   user_count: number;
+  purchase_employee_count: number;
   manageable: boolean;
 };
 
@@ -139,6 +140,7 @@ const COMPANY_MANAGEMENT_QUERY = /* GraphQL */ `
         sort_order
         allowed_resources
         user_count
+        purchase_employee_count
         manageable
       }
       resources {
