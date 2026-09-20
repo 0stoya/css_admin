@@ -131,3 +131,73 @@ mutation AdminImportCompanyEmployees($companyId: Int!, $rows: [CssCompanyEmploye
     errors { row message }
   }
 }
+
+query AdminCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
+  css_admin_company_employee_purchase_control(company_id: $companyId, employee_id: $employeeId) {
+    company_id
+    employee_id
+    employee_code
+    employee_name
+    template_id
+    template_name
+    assigned
+    allowances {
+      applied_id
+      product_id
+      sku
+      product_name
+      quantity_limit
+      duration_days
+      start_date
+      purchases_so_far
+      remaining_quantity
+      active
+      short_term_quantity_limit
+      short_term_duration_days
+      short_term_purchases_so_far
+      short_term_remaining_quantity
+    }
+  }
+}
+
+mutation AdminAssignCompanyEmployeePurchaseControl(
+  $companyId: Int!
+  $employeeId: Int!
+  $templateId: Int
+  $apply: Boolean!
+) {
+  cssAdminAssignCompanyEmployeePurchaseControl(
+    company_id: $companyId
+    employee_id: $employeeId
+    template_id: $templateId
+    apply: $apply
+  ) {
+    company_id
+    employee_id
+    template_id
+    template_name
+    assigned
+  }
+}
+
+mutation AdminApplyCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
+  cssAdminApplyCompanyEmployeePurchaseControl(company_id: $companyId, employee_id: $employeeId) {
+    company_id
+    employee_id
+    template_id
+    template_name
+    assigned
+    allowances { applied_id sku remaining_quantity }
+  }
+}
+
+mutation AdminResetCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
+  cssAdminResetCompanyEmployeePurchaseControl(company_id: $companyId, employee_id: $employeeId) {
+    company_id
+    employee_id
+    template_id
+    template_name
+    assigned
+    allowances { applied_id sku purchases_so_far remaining_quantity }
+  }
+}
