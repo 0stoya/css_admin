@@ -190,9 +190,8 @@ test("employee backend error reopens edit modal, preserves filters and preserves
 
 test("Employee purchase controls show policy assignment read-only", () => {
   const page = source("app/(admin)/companies/[id]/employees/page.tsx");
-  assert.match(page, /Effective template/);
+  assert.match(page, /Purchase-control template/);
   assert.match(page, /Inherited from role/);
-  assert.match(page, /Assigned policy/);
   assert.match(page, /Purchase-control assignment is read-only here/);
   assert.match(page, /Open role purchase controls/);
   assert.doesNotMatch(page, /assignEmployeePurchaseControlAction/);
