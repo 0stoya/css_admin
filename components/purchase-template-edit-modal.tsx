@@ -70,7 +70,7 @@ function EditDialog({ companyId, template, saveAction, close, saved }: Props & {
             </div>
             <PurchaseRuleEditor companyId={companyId} initialRules={template.rules} label="Product rules" />
           </fieldset>
-          <p className={styles.saveNote}>Saving changes the template only. Existing buyer allowances and usage are unchanged until you apply it separately.</p>
+          <p className={styles.saveNote}>New products sync automatically to Employees inheriting this template through Purchase Role. Existing buyer allowances and existing SKU limits/counters stay unchanged until Apply is used.</p>
         </div>
         <footer className={styles.footer}>
           <span className={styles.footerHint}>One quantity/time-window rule per product.</span>
