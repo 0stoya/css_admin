@@ -329,7 +329,7 @@ export default async function PurchaseControlsPage({
                         <td>{template.assigned_roles.length}</td>
                         <td>
                           <span className={`badge ${template.assigned_roles.length ? "badge-ok" : "badge-neutral"}`}>
-                            {template.assigned_roles.length ? "Assigned" : "Unassigned"}
+                            {template.assigned_roles.length ? "Role assigned" : "No role assignment"}
                           </span>
                         </td>
                         <td>
@@ -372,7 +372,7 @@ export default async function PurchaseControlsPage({
                 </div>
                 <div className="purchase-heading-actions">
                   <span className={`badge ${selectedTemplate.assigned_roles.length ? "badge-ok" : "badge-neutral"}`}>
-                    {selectedTemplate.assigned_roles.length ? "Assigned" : "Unassigned"}
+                    {selectedTemplate.assigned_roles.length ? "Role assigned" : "No role assignment"}
                   </span>
                   <PurchaseTemplateEditModal
                     key={selectedTemplate.template_id}
@@ -507,7 +507,7 @@ export default async function PurchaseControlsPage({
                   <summary>
                     <span>
                       <strong>Delete template</strong>
-                      <small>Only unassigned templates can be deleted.</small>
+                      <small>Templates assigned to a role or Employee cannot be deleted.</small>
                     </span>
                   </summary>
                   <form className="purchase-operation-body" action={deletePurchaseControlTemplateAction}>
@@ -536,7 +536,9 @@ export default async function PurchaseControlsPage({
                     </div>
                     {selectedTemplate.assigned_roles.length ? (
                       <p className="muted small-text">Unassign this template from every role first.</p>
-                    ) : null}
+                    ) : (
+                      <p className="muted small-text">Fluid will also reject deletion if this template is assigned to an Employee.</p>
+                    )}
                   </form>
                 </details>
               </div>
