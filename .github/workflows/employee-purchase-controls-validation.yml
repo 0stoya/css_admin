@@ -1,6 +1,9 @@
 name: Employee Purchase Controls Validation
 
 on:
+  push:
+    branches:
+      - feature/employee-purchase-controls-tiered-limits-20260920
   pull_request:
 
 jobs:
