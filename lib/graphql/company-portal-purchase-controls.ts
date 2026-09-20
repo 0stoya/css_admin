@@ -16,6 +16,7 @@ const PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
         name
         rules {
           rule_id product_id sku product_name quantity_limit duration_days start_date
+          short_term_quantity_limit short_term_duration_days
         }
         assigned_roles { role_id role_name employee_count }
       }
@@ -38,6 +39,8 @@ const APPLIED_PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
       items {
         applied_id user_id customer_id email product_id sku product_name
         quantity_limit duration_days start_date purchases_so_far remaining_quantity
+        short_term_quantity_limit short_term_duration_days
+        short_term_purchases_so_far short_term_remaining_quantity
       }
       page_info { page_size current_page total_pages }
     }
