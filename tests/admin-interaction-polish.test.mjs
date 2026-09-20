@@ -188,13 +188,16 @@ test("employee backend error reopens edit modal, preserves filters and preserves
   assert.equal(h.invalidations.length, 0);
 });
 
-test("Employee source shows inherited policy and direct override semantics", () => {
+test("Employee purchase controls show policy assignment read-only", () => {
   const page = source("app/(admin)/companies/[id]/employees/page.tsx");
   assert.match(page, /Effective template/);
   assert.match(page, /Inherited from role/);
-  assert.match(page, /Direct override/);
-  assert.match(page, /Override template/);
-  assert.match(page, /No override \(inherit Purchase Role\)/);
+  assert.match(page, /Assigned policy/);
+  assert.match(page, /Purchase-control assignment is read-only here/);
+  assert.match(page, /Open role purchase controls/);
+  assert.doesNotMatch(page, /assignEmployeePurchaseControlAction/);
+  assert.doesNotMatch(page, /Override template/);
+  assert.doesNotMatch(page, /Save override/);
 });
 
 test("Employee purchase-control assignment stays separate from Apply and closes on success", async () => {
