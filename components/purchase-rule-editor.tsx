@@ -12,6 +12,8 @@ export type PurchaseRuleEditorValue = {
   quantity_limit: number;
   duration_days: number;
   start_date: string;
+  short_term_quantity_limit?: number | null;
+  short_term_duration_days?: number | null;
 };
 
 type DraftRule = {
@@ -19,6 +21,8 @@ type DraftRule = {
   sku: string;
   quantity: string;
   duration: string;
+  shortQuantity: string;
+  shortDuration: string;
   startDate: string;
 };
 
@@ -28,6 +32,8 @@ function toDraft(rule: PurchaseRuleEditorValue, key: number): DraftRule {
     sku: rule.sku,
     quantity: String(rule.quantity_limit),
     duration: String(rule.duration_days),
+    shortQuantity: rule.short_term_quantity_limit == null ? "" : String(rule.short_term_quantity_limit),
+    shortDuration: rule.short_term_duration_days == null ? "" : String(rule.short_term_duration_days),
     startDate: rule.start_date,
   };
 }
@@ -36,7 +42,14 @@ function serialize(rows: DraftRule[]) {
   return rows
     .map(
       (row) =>
-        `${row.sku.trim()} | ${row.quantity.trim()} | ${row.duration.trim()} | ${row.startDate.trim()}`,
+        [
+          row.sku.trim(),
+          row.quantity.trim(),
+          row.duration.trim(),
+          row.startDate.trim(),
+          row.shortQuantity.trim(),
+          row.shortDuration.trim(),
+        ].join(" | "),
     )
     .join("\n");
 }
@@ -104,6 +117,8 @@ export function PurchaseRuleEditor({
           sku: product.sku,
           quantity: "1",
           duration: "30",
+          shortQuantity: "",
+          shortDuration: "",
           startDate: "",
         }));
       setNextKey(key);
@@ -117,7 +132,15 @@ export function PurchaseRuleEditor({
     setNextKey((current) => current + 1);
     setRows((current) => [
       ...current,
-      { key, sku: "", quantity: "1", duration: "30", startDate: "" },
+      {
+        key,
+        sku: "",
+        quantity: "1",
+        duration: "30",
+        shortQuantity: "",
+        shortDuration: "",
+        startDate: "",
+      },
     ]);
   }
 
@@ -170,13 +193,16 @@ export function PurchaseRuleEditor({
         <div className="purchase-rule-grid" role="group" aria-label={label}>
           <div className="purchase-rule-head" aria-hidden="true">
             <span>SKU</span>
-            <span>Quantity limit</span>
-            <span>Duration</span>
+            <span>Main limit</span>
+            <span>Main period</span>
+            <span>Short-term max</span>
+            <span>Rolling days</span>
             <span>Start date</span>
             <span />
           </div>
           {rows.map((row, index) => {
             const prefix = `${editorId}-${row.key}`;
+            const shortPairRequired = Boolean(row.shortQuantity || row.shortDuration);
             return (
               <div className="purchase-rule-row" key={row.key}>
                 <div className="field purchase-rule-field">
@@ -195,7 +221,7 @@ export function PurchaseRuleEditor({
                   />
                 </div>
                 <div className="field purchase-rule-field">
-                  <label htmlFor={`${prefix}-quantity`}>Quantity limit</label>
+                  <label htmlFor={`${prefix}-quantity`}>Main quantity limit</label>
                   <input
                     id={`${prefix}-quantity`}
                     type="number"
@@ -207,7 +233,7 @@ export function PurchaseRuleEditor({
                   />
                 </div>
                 <div className="field purchase-rule-field">
-                  <label htmlFor={`${prefix}-duration`}>Duration days</label>
+                  <label htmlFor={`${prefix}-duration`}>Main duration days</label>
                   <input
                     id={`${prefix}-duration`}
                     type="number"
@@ -216,6 +242,32 @@ export function PurchaseRuleEditor({
                     value={row.duration}
                     required
                     onChange={(event) => updateRow(row.key, "duration", event.target.value)}
+                  />
+                </div>
+                <div className="field purchase-rule-field">
+                  <label htmlFor={`${prefix}-short-quantity`}>Short-term max</label>
+                  <input
+                    id={`${prefix}-short-quantity`}
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={row.shortQuantity}
+                    required={shortPairRequired}
+                    placeholder="Optional"
+                    onChange={(event) => updateRow(row.key, "shortQuantity", event.target.value)}
+                  />
+                </div>
+                <div className="field purchase-rule-field">
+                  <label htmlFor={`${prefix}-short-duration`}>Rolling window days</label>
+                  <input
+                    id={`${prefix}-short-duration`}
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={row.shortDuration}
+                    required={shortPairRequired}
+                    placeholder="Optional"
+                    onChange={(event) => updateRow(row.key, "shortDuration", event.target.value)}
                   />
                 </div>
                 <div className="field purchase-rule-field">
@@ -253,9 +305,8 @@ export function PurchaseRuleEditor({
       )}
 
       <p className="muted small-text">
-        {resolvedCompanyId
-          ? "Products are chosen from the company catalogue. Fluid validates every SKU, quantity, duration and start date when the template is saved."
-          : "Fluid validates every SKU, quantity, duration and start date when the template is saved."}
+        Main allowance fields are required. Short-term max and rolling days are optional but must be supplied together;
+        Fluid enforces the rolling cap in addition to the main allowance.
       </p>
     </div>
   );
