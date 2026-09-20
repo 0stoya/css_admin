@@ -21,6 +21,7 @@ const EMPLOYEE_FIELDS = /* GraphQL */ `
   department
   cost_centre
   manager_company_user_id
+  purchase_control_role_id
   active
   created_at
   updated_at
@@ -61,6 +62,7 @@ const EXPORT_QUERY = /* GraphQL */ `
       department
       cost_centre
       manager_company_user_id
+      purchase_control_role_id
       active
     }
   }
