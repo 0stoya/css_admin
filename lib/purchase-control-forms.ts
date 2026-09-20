@@ -67,18 +67,17 @@ export function parsePurchaseRules(raw: string): PurchaseRuleInput[] {
       throw new Error(`Rule ${index + 1} short-term max and rolling days must both be supplied or both left blank.`);
     }
 
-    const tier = shortQuantitySupplied
-      ? {
-          short_term_quantity_limit: positiveRuleInteger(shortQuantityRaw, index, "short-term max"),
-          short_term_duration_days: positiveRuleInteger(shortDurationRaw, index, "rolling duration"),
-        }
-      : {};
-
-    if (
-      "short_term_duration_days" in tier
-      && tier.short_term_duration_days >= duration
-    ) {
-      throw new Error(`Rule ${index + 1} rolling duration must be shorter than the main duration.`);
+    let tier: Pick<PurchaseRuleInput, "short_term_quantity_limit" | "short_term_duration_days"> | undefined;
+    if (shortQuantitySupplied) {
+      const shortQuantity = positiveRuleInteger(shortQuantityRaw, index, "short-term max");
+      const shortDuration = positiveRuleInteger(shortDurationRaw, index, "rolling duration");
+      if (shortDuration >= duration) {
+        throw new Error(`Rule ${index + 1} rolling duration must be shorter than the main duration.`);
+      }
+      tier = {
+        short_term_quantity_limit: shortQuantity,
+        short_term_duration_days: shortDuration,
+      };
     }
 
     const key = sku.toLowerCase();
@@ -90,7 +89,7 @@ export function parsePurchaseRules(raw: string): PurchaseRuleInput[] {
       quantity_limit: quantity,
       duration_days: duration,
       start_date: startDate,
-      ...tier,
+      ...(tier ?? {}),
     };
   });
 }
