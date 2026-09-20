@@ -149,7 +149,7 @@ function EmployeeFields({
         <label htmlFor={`${prefix}-manager`}>Manager</label>
         <ManagerSelect id={`${prefix}-manager`} users={managers} defaultValue={employee?.manager_company_user_id} />
       </div>
-      <div className="field">
+      <div className={`field ${styles.purchaseRoleField}`}>
         <label htmlFor={`${prefix}-purchase-role`}>Purchase role</label>
         <select
           id={`${prefix}-purchase-role`}
@@ -165,7 +165,7 @@ function EmployeeFields({
           Controls purchase-policy inheritance only. It does not create a login or grant role permissions.
         </span>
       </div>
-      <label className={styles.checkboxField} htmlFor={`${prefix}-active`}>
+      <label className={`${styles.checkboxField} ${styles.activeField}`} htmlFor={`${prefix}-active`}>
         <input id={`${prefix}-active`} name="active" type="checkbox" defaultChecked={employee?.active ?? true} />
         <span><strong>Active</strong><small>Active employees can be assigned to new basket lines.</small></span>
       </label>
@@ -611,15 +611,19 @@ export default async function CompanyEmployeesPage({
           description="Review the Employee's inherited purchase policy, optional direct override, and currently applied allowances."
           returnHref={withQuery(companyId, { q, status, from, to, page })}
         >
-          <div className="stack">
-            {mutationError && modal === `purchase-control-${purchaseControlEmployeeId}`
-              ? <div className="error" role="alert">{mutationError}</div>
-              : null}
-            {purchaseControlError ? <div className="error" role="alert">{purchaseControlError}</div> : null}
+          <div className="employee-purchase-control-content">
+            {(mutationError && modal === `purchase-control-${purchaseControlEmployeeId}`) || purchaseControlError ? (
+              <div className="employee-purchase-feedback">
+                {mutationError && modal === `purchase-control-${purchaseControlEmployeeId}`
+                  ? <div className="error" role="alert">{mutationError}</div>
+                  : null}
+                {purchaseControlError ? <div className="error" role="alert">{purchaseControlError}</div> : null}
+              </div>
+            ) : null}
 
             {employeePurchaseControl ? (
               <>
-                <div className="purchase-summary-strip">
+                <div className="purchase-summary-strip employee-purchase-summary">
                   <div className="purchase-summary-item">
                     <span>Purchase role</span>
                     <strong>{employeePurchaseControl.purchase_control_role_name ?? "None"}</strong>
@@ -644,7 +648,21 @@ export default async function CompanyEmployeesPage({
                   </div>
                 </div>
 
-                <form className="stack" action={assignEmployeePurchaseControlAction}>
+                <section className="employee-purchase-section">
+                  <div className="employee-purchase-section-heading">
+                    <div>
+                      <p className="eyebrow">Policy source</p>
+                      <h3>Direct override</h3>
+                    </div>
+                    <span className="badge badge-neutral">
+                      {employeePurchaseControl.assignment_source === "DIRECT"
+                        ? "Override active"
+                        : employeePurchaseControl.assignment_source === "ROLE"
+                          ? "Role inherited"
+                          : "No policy"}
+                    </span>
+                  </div>
+                  <form className="employee-purchase-override-form" action={assignEmployeePurchaseControlAction}>
                   <input type="hidden" name="companyId" value={companyId} />
                   <input type="hidden" name="employeeId" value={purchaseControlEmployeeId} />
                   <EmployeeReturnState
@@ -684,18 +702,27 @@ export default async function CompanyEmployeesPage({
                       </span>
                     </span>
                   </label>
-                  <div>
+                  <div className="employee-purchase-form-actions">
                     <button className="button" type="submit" disabled={Boolean(purchaseControlError)}>
                       Save override
                     </button>
+                    <p className="muted small-text">
+                      Saving or removing an override does not change current applied allowances. Removing it falls back to the Purchase Role template when one is configured; use Apply when ready.
+                    </p>
                   </div>
-                  <p className="muted small-text">
-                    Saving or removing an override does not change current applied allowances. Removing it falls back to the Purchase Role template when one is configured; use Apply when ready.
-                  </p>
-                </form>
+                  </form>
+                </section>
 
-                <div>
-                  <p className="eyebrow">Current applied allowances</p>
+                <section className="employee-purchase-section">
+                  <div className="employee-purchase-section-heading">
+                    <div>
+                      <p className="eyebrow">Current state</p>
+                      <h3>Applied allowances</h3>
+                    </div>
+                    <span className="badge badge-neutral">
+                      {employeePurchaseControl.allowances.length} product{employeePurchaseControl.allowances.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
                   {employeePurchaseControl.allowances.length ? (
                     <div className="table-wrap purchase-rule-table">
                       <table>
@@ -760,11 +787,16 @@ export default async function CompanyEmployeesPage({
                       </span>
                     </div>
                   )}
-                </div>
+                </section>
 
-                <div>
-                  <p className="eyebrow">Operations</p>
-                  <div className="purchase-operation-grid">
+                <section className="employee-purchase-section">
+                  <div className="employee-purchase-section-heading">
+                    <div>
+                      <p className="eyebrow">Operations</p>
+                      <h3>Allowance actions</h3>
+                    </div>
+                  </div>
+                  <div className="purchase-operation-grid employee-purchase-operations">
                     <form className="purchase-operation-card" action={applyEmployeePurchaseControlAction}>
                       <input type="hidden" name="companyId" value={companyId} />
                       <input type="hidden" name="employeeId" value={purchaseControlEmployeeId} />
@@ -831,7 +863,7 @@ export default async function CompanyEmployeesPage({
                       </div>
                     </form>
                   </div>
-                </div>
+                </section>
               </>
             ) : null}
           </div>
