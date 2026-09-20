@@ -23,10 +23,8 @@ import {
   type CompanyEmployeePurchaseControl,
   type CompanyEmployeeSpendResult,
 } from "@/lib/graphql/company-employees";
-import { getPurchaseControls, type PurchaseControlTemplate } from "@/lib/graphql/purchase-controls";
 import {
   applyEmployeePurchaseControlAction,
-  assignEmployeePurchaseControlAction,
   createEmployeeAction,
   deactivateEmployeeAction,
   importEmployeesCsvAction,
@@ -378,20 +376,16 @@ export default async function CompanyEmployeesPage({
   }
 
   let employeePurchaseControl: CompanyEmployeePurchaseControl | null = null;
-  let purchaseTemplates: PurchaseControlTemplate[] = [];
   let purchaseControlError: string | null = null;
 
   if (Number.isInteger(purchaseControlEmployeeId) && purchaseControlEmployeeId > 0) {
-    const [purchaseControlResult, templatesResult] = await Promise.allSettled([
-      getCompanyEmployeePurchaseControl(companyId, purchaseControlEmployeeId),
-      getPurchaseControls(companyId),
-    ]);
-    employeePurchaseControl = purchaseControlResult.status === "fulfilled" ? purchaseControlResult.value : null;
-    purchaseTemplates = templatesResult.status === "fulfilled" ? templatesResult.value.templates : [];
-    if (purchaseControlResult.status === "rejected") {
-      purchaseControlError = graphQLErrorMessage(purchaseControlResult.reason);
-    } else if (templatesResult.status === "rejected") {
-      purchaseControlError = graphQLErrorMessage(templatesResult.reason);
+    try {
+      employeePurchaseControl = await getCompanyEmployeePurchaseControl(
+        companyId,
+        purchaseControlEmployeeId,
+      );
+    } catch (error) {
+      purchaseControlError = graphQLErrorMessage(error);
     }
   }
 
@@ -608,7 +602,7 @@ export default async function CompanyEmployeesPage({
       {purchaseControlEmployeeId > 0 ? (
         <EmployeePurchaseControlModal
           title={`Purchase controls · ${employeePurchaseControl?.employee_name ?? `Employee #${purchaseControlEmployeeId}`}`}
-          description="Review the Employee's inherited purchase policy, optional direct override, and currently applied allowances."
+          description="Review the purchase policy inherited from this Employee's Purchase Role and the allowances currently applied."
           returnHref={withQuery(companyId, { q, status, from, to, page })}
         >
           <div className="employee-purchase-control-content">
@@ -651,66 +645,35 @@ export default async function CompanyEmployeesPage({
                 <section className="employee-purchase-section">
                   <div className="employee-purchase-section-heading">
                     <div>
-                      <p className="eyebrow">Policy source</p>
-                      <h3>Direct override</h3>
+                      <p className="eyebrow">Assigned policy</p>
+                      <h3>
+                        {employeePurchaseControl.purchase_control_role_name && employeePurchaseControl.template_name
+                          ? `${employeePurchaseControl.purchase_control_role_name} → ${employeePurchaseControl.template_name}`
+                          : employeePurchaseControl.template_name ?? "No purchase-control template"}
+                      </h3>
                     </div>
                     <span className="badge badge-neutral">
-                      {employeePurchaseControl.assignment_source === "DIRECT"
-                        ? "Override active"
-                        : employeePurchaseControl.assignment_source === "ROLE"
-                          ? "Role inherited"
+                      {employeePurchaseControl.assignment_source === "ROLE"
+                        ? "Inherited from role"
+                        : employeePurchaseControl.assignment_source === "DIRECT"
+                          ? "Direct assignment"
                           : "No policy"}
                     </span>
                   </div>
-                  <form className="employee-purchase-override-form" action={assignEmployeePurchaseControlAction}>
-                  <input type="hidden" name="companyId" value={companyId} />
-                  <input type="hidden" name="employeeId" value={purchaseControlEmployeeId} />
-                  <EmployeeReturnState
-                    modal={`purchase-control-${purchaseControlEmployeeId}`}
-                    q={q}
-                    status={status}
-                    from={from}
-                    to={to}
-                    page={page}
-                  />
-                  <div className="field">
-                    <label htmlFor={`employee-purchase-template-${purchaseControlEmployeeId}`}>Override template</label>
-                    <select
-                      id={`employee-purchase-template-${purchaseControlEmployeeId}`}
-                      name="templateId"
-                      defaultValue={employeePurchaseControl.direct_template_id ?? ""}
-                      disabled={Boolean(purchaseControlError)}
-                    >
-                      <option value="">
-                        {employeePurchaseControl.purchase_control_role_id
-                          ? "No override (inherit Purchase Role)"
-                          : "No direct override"}
-                      </option>
-                      {purchaseTemplates.map((template) => (
-                        <option value={template.template_id} key={template.template_id}>
-                          {template.name} · {template.rules.length} rule{template.rules.length === 1 ? "" : "s"}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <label className="purchase-check-field">
-                    <input type="checkbox" name="applyNow" />
-                    <span>
-                      <strong>Apply override immediately</strong>
-                      <span className="muted small-text">
-                        Restarts this Employee&apos;s main allowance periods. Rolling usage remains based on purchase history.
-                      </span>
-                    </span>
-                  </label>
-                  <div className="employee-purchase-form-actions">
-                    <button className="button" type="submit" disabled={Boolean(purchaseControlError)}>
-                      Save override
-                    </button>
-                    <p className="muted small-text">
-                      Saving or removing an override does not change current applied allowances. Removing it falls back to the Purchase Role template when one is configured; use Apply when ready.
-                    </p>
-                  </div>
-                  </form>
+                  <p className="muted small-text">
+                    Purchase-control assignment is read-only here. Change the Employee&apos;s Purchase Role in Edit Employee,
+                    or change the template assigned to that role in Purchase Controls.
+                  </p>
+                  {employeePurchaseControl.purchase_control_role_id ? (
+                    <div className="employee-purchase-policy-actions">
+                      <Link
+                        className="button button-secondary button-link"
+                        href={`/companies/${companyId}/purchase-controls?view=assignments&roleId=${employeePurchaseControl.purchase_control_role_id}`}
+                      >
+                        Open role purchase controls
+                      </Link>
+                    </div>
+                  ) : null}
                 </section>
 
                 <section className="employee-purchase-section">
