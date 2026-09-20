@@ -137,6 +137,7 @@ mutation AdminAssignPurchaseControlTemplate(
     template_id
     template_name
     applied_users
+    applied_employees
   }
 }
 
@@ -145,6 +146,7 @@ mutation AdminApplyPurchaseControlTemplate($companyId: Int!, $templateId: Int!) 
     company_id
     template_id
     affected_users
+    affected_employees
   }
 }
 
@@ -153,5 +155,6 @@ mutation AdminResetPurchaseControlCounters($companyId: Int!, $templateId: Int!) 
     company_id
     template_id
     affected_users
+    affected_employees
   }
 }
