@@ -195,6 +195,7 @@ test("help explains main plus rolling limits and Employee controls without inven
   assert.match(text, /beneficiary <strong>Employee<\/strong>/);
   assert.match(text, /trailing 7 days/);
   assert.match(text, /Rolling-cap usage therefore does <strong>not<\/strong> reset/);
+  assert.match(text, /beneficiary hard constraints/);
   assert.match(text, /same product rule/);
   assert.match(text, /PurchaseControlHelp iconOnly=\{iconOnly\}/);
 });
