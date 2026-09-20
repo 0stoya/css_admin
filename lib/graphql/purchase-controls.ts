@@ -8,6 +8,8 @@ export type PurchaseControlRule = {
   quantity_limit: number;
   duration_days: number;
   start_date: string;
+  short_term_quantity_limit: number | null;
+  short_term_duration_days: number | null;
 };
 
 export type PurchaseControlRole = {
@@ -46,6 +48,10 @@ export type AppliedPurchaseControl = {
   start_date: string;
   purchases_so_far: number;
   remaining_quantity: number;
+  short_term_quantity_limit: number | null;
+  short_term_duration_days: number | null;
+  short_term_purchases_so_far: number | null;
+  short_term_remaining_quantity: number | null;
 };
 
 export type AppliedPurchaseControlSearchResult = {
@@ -80,6 +86,8 @@ export type SavePurchaseControlRuleInput = {
   quantity_limit: number;
   duration_days: number;
   start_date: string;
+  short_term_quantity_limit?: number;
+  short_term_duration_days?: number;
 };
 
 export type SavePurchaseControlTemplateInput = {
@@ -103,6 +111,8 @@ const PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
           quantity_limit
           duration_days
           start_date
+          short_term_quantity_limit
+          short_term_duration_days
         }
         assigned_roles {
           role_id
@@ -140,6 +150,10 @@ const APPLIED_PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
         start_date
         purchases_so_far
         remaining_quantity
+        short_term_quantity_limit
+        short_term_duration_days
+        short_term_purchases_so_far
+        short_term_remaining_quantity
       }
       page_info {
         page_size

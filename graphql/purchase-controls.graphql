@@ -12,6 +12,8 @@ query AdminPurchaseControls($companyId: Int!) {
         quantity_limit
         duration_days
         start_date
+        short_term_quantity_limit
+        short_term_duration_days
       }
       assigned_roles {
         role_id
@@ -47,6 +49,10 @@ query AdminAppliedPurchaseControls(
       start_date
       purchases_so_far
       remaining_quantity
+      short_term_quantity_limit
+      short_term_duration_days
+      short_term_purchases_so_far
+      short_term_remaining_quantity
     }
     page_info {
       page_size

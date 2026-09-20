@@ -97,6 +97,34 @@ export type CompanyEmployeeOrderSpend = {
   product_spend: number;
 };
 
+export type CompanyEmployeePurchaseAllowance = {
+  applied_id: number;
+  product_id: number;
+  sku: string;
+  product_name: string;
+  quantity_limit: number;
+  duration_days: number;
+  start_date: string;
+  purchases_so_far: number;
+  remaining_quantity: number;
+  active: boolean;
+  short_term_quantity_limit: number | null;
+  short_term_duration_days: number | null;
+  short_term_purchases_so_far: number | null;
+  short_term_remaining_quantity: number | null;
+};
+
+export type CompanyEmployeePurchaseControl = {
+  company_id: number;
+  employee_id: number;
+  employee_code: string | null;
+  employee_name: string;
+  template_id: number | null;
+  template_name: string | null;
+  assigned: boolean;
+  allowances: CompanyEmployeePurchaseAllowance[];
+};
+
 export type CompanyEmployeeOrderSearchResult = {
   company_id: number;
   employee_id: number;
@@ -115,6 +143,12 @@ type EmployeeData = { css_admin_company_employee: CompanyEmployee };
 type ExportData = { css_admin_company_employee_export: CompanyEmployeeExportRow[] };
 type SpendData = { css_admin_company_employee_spend: CompanyEmployeeSpendResult };
 type OrdersData = { css_admin_company_employee_orders: CompanyEmployeeOrderSearchResult };
+type PurchaseControlData = { css_admin_company_employee_purchase_control: CompanyEmployeePurchaseControl };
+type SavePurchaseControlData = {
+  cssAdminAssignCompanyEmployeePurchaseControl?: CompanyEmployeePurchaseControl;
+  cssAdminApplyCompanyEmployeePurchaseControl?: CompanyEmployeePurchaseControl;
+  cssAdminResetCompanyEmployeePurchaseControl?: CompanyEmployeePurchaseControl;
+};
 type SaveConfigurationData = { cssAdminSaveCompanyEmployeeConfiguration: CompanyEmployeeConfiguration };
 type SaveEmployeeData = {
   cssAdminCreateCompanyEmployee?: CompanyEmployee;
@@ -262,6 +296,74 @@ const ORDERS_QUERY = /* GraphQL */ `
   }
 `;
 
+const PURCHASE_CONTROL_FIELDS = /* GraphQL */ `
+  company_id
+  employee_id
+  employee_code
+  employee_name
+  template_id
+  template_name
+  assigned
+  allowances {
+    applied_id
+    product_id
+    sku
+    product_name
+    quantity_limit
+    duration_days
+    start_date
+    purchases_so_far
+    remaining_quantity
+    active
+    short_term_quantity_limit
+    short_term_duration_days
+    short_term_purchases_so_far
+    short_term_remaining_quantity
+  }
+`;
+
+const PURCHASE_CONTROL_QUERY = /* GraphQL */ `
+  query AdminCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
+    css_admin_company_employee_purchase_control(company_id: $companyId, employee_id: $employeeId) {
+      ${PURCHASE_CONTROL_FIELDS}
+    }
+  }
+`;
+
+const ASSIGN_PURCHASE_CONTROL_MUTATION = /* GraphQL */ `
+  mutation AdminAssignCompanyEmployeePurchaseControl(
+    $companyId: Int!
+    $employeeId: Int!
+    $templateId: Int
+    $apply: Boolean!
+  ) {
+    cssAdminAssignCompanyEmployeePurchaseControl(
+      company_id: $companyId
+      employee_id: $employeeId
+      template_id: $templateId
+      apply: $apply
+    ) {
+      ${PURCHASE_CONTROL_FIELDS}
+    }
+  }
+`;
+
+const APPLY_PURCHASE_CONTROL_MUTATION = /* GraphQL */ `
+  mutation AdminApplyCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
+    cssAdminApplyCompanyEmployeePurchaseControl(company_id: $companyId, employee_id: $employeeId) {
+      ${PURCHASE_CONTROL_FIELDS}
+    }
+  }
+`;
+
+const RESET_PURCHASE_CONTROL_MUTATION = /* GraphQL */ `
+  mutation AdminResetCompanyEmployeePurchaseControl($companyId: Int!, $employeeId: Int!) {
+    cssAdminResetCompanyEmployeePurchaseControl(company_id: $companyId, employee_id: $employeeId) {
+      ${PURCHASE_CONTROL_FIELDS}
+    }
+  }
+`;
+
 const SAVE_CONFIGURATION_MUTATION = /* GraphQL */ `
   mutation AdminSaveCompanyEmployeeConfiguration(
     $companyId: Int!
@@ -385,6 +487,56 @@ export async function getCompanyEmployeeOrders(input: {
   };
   const data = await graphqlRequest<OrdersData, typeof variables>(ORDERS_QUERY, variables);
   return data.css_admin_company_employee_orders;
+}
+
+export async function getCompanyEmployeePurchaseControl(companyId: number, employeeId: number) {
+  const variables = { companyId, employeeId };
+  const data = await graphqlRequest<PurchaseControlData, typeof variables>(
+    PURCHASE_CONTROL_QUERY,
+    variables,
+  );
+  return data.css_admin_company_employee_purchase_control;
+}
+
+export async function assignCompanyEmployeePurchaseControl(
+  companyId: number,
+  employeeId: number,
+  templateId: number | null,
+  apply: boolean,
+) {
+  const variables = { companyId, employeeId, templateId, apply };
+  const data = await graphqlRequest<SavePurchaseControlData, typeof variables>(
+    ASSIGN_PURCHASE_CONTROL_MUTATION,
+    variables,
+  );
+  if (!data.cssAdminAssignCompanyEmployeePurchaseControl) {
+    throw new Error("Magento returned no Employee purchase-control assignment.");
+  }
+  return data.cssAdminAssignCompanyEmployeePurchaseControl;
+}
+
+export async function applyCompanyEmployeePurchaseControl(companyId: number, employeeId: number) {
+  const variables = { companyId, employeeId };
+  const data = await graphqlRequest<SavePurchaseControlData, typeof variables>(
+    APPLY_PURCHASE_CONTROL_MUTATION,
+    variables,
+  );
+  if (!data.cssAdminApplyCompanyEmployeePurchaseControl) {
+    throw new Error("Magento returned no applied Employee purchase controls.");
+  }
+  return data.cssAdminApplyCompanyEmployeePurchaseControl;
+}
+
+export async function resetCompanyEmployeePurchaseControl(companyId: number, employeeId: number) {
+  const variables = { companyId, employeeId };
+  const data = await graphqlRequest<SavePurchaseControlData, typeof variables>(
+    RESET_PURCHASE_CONTROL_MUTATION,
+    variables,
+  );
+  if (!data.cssAdminResetCompanyEmployeePurchaseControl) {
+    throw new Error("Magento returned no reset Employee purchase controls.");
+  }
+  return data.cssAdminResetCompanyEmployeePurchaseControl;
 }
 
 export async function saveCompanyEmployeeConfiguration(

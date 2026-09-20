@@ -10,7 +10,10 @@ const form = (values) => {
   return data;
 };
 
-for (const raw of ["PPE | 4 | 365 | 2026-09-12", " PPE | 4 | 365 | 2024-02-29 \r\n"]) {
+for (const raw of [
+  "PPE | 4 | 365 | 2026-09-12",
+  " PPE | 4 | 365 | 2024-02-29 \r\n",
+]) {
   test(`parse valid rule ${raw.trim()}`, () => {
     const [rule] = forms.parsePurchaseRules(raw);
     assert.equal(rule.quantity_limit, 4);
@@ -18,12 +21,28 @@ for (const raw of ["PPE | 4 | 365 | 2026-09-12", " PPE | 4 | 365 | 2024-02-29 \r
     assert.equal(rule.sku, "PPE");
   });
 }
+test("parse rolling cap on the same SKU rule", () => {
+  const [rule] = forms.parsePurchaseRules("DUST | 200 | 365 | 2026-09-12 | 5 | 7");
+  // load-typescript.mjs evaluates the helper in a separate VM realm. Spread
+  // the returned value into this realm before a strict structural comparison.
+  assert.deepEqual({ ...rule }, {
+    sku: "DUST",
+    quantity_limit: 200,
+    duration_days: 365,
+    start_date: "2026-09-12",
+    short_term_quantity_limit: 5,
+    short_term_duration_days: 7,
+  });
+});
+
 for (const raw of [
   "PPE | 0 | 365 | 2026-09-12", "PPE | 1.5 | 365 | 2026-09-12",
   "PPE | 4 | -1 | 2026-09-12", "PPE | 4 | 365 | 2026-02-29",
   "PPE | 4 | 365 | 2026-04-31", "PPE | 4 | 365 | 2026-9-12",
   "PPE | 2147483648 | 365 | 2026-09-12", "PPE | 4 | 2147483648 | 2026-09-12",
   "PPE | Infinity | 365 | 2026-09-12", "PPE | 4 | 365 | 2026-09-12 | extra",
+  "PPE | 200 | 365 | 2026-09-12 | 5 |", "PPE | 200 | 365 | 2026-09-12 | | 7",
+  "PPE | 200 | 365 | 2026-09-12 | 0 | 7", "PPE | 200 | 365 | 2026-09-12 | 5 | 365",
   "PPE | 4 | 365 | 2026-09-12\nppe | 2 | 30 | 2026-09-12",
 ]) {
   test(`reject invalid rule ${raw}`, () => assert.throws(() => forms.parsePurchaseRules(raw)));

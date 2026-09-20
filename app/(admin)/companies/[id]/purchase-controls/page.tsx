@@ -329,7 +329,7 @@ export default async function PurchaseControlsPage({
                         <td>{template.assigned_roles.length}</td>
                         <td>
                           <span className={`badge ${template.assigned_roles.length ? "badge-ok" : "badge-neutral"}`}>
-                            {template.assigned_roles.length ? "Assigned" : "Unassigned"}
+                            {template.assigned_roles.length ? "Role assigned" : "No role assignment"}
                           </span>
                         </td>
                         <td>
@@ -372,7 +372,7 @@ export default async function PurchaseControlsPage({
                 </div>
                 <div className="purchase-heading-actions">
                   <span className={`badge ${selectedTemplate.assigned_roles.length ? "badge-ok" : "badge-neutral"}`}>
-                    {selectedTemplate.assigned_roles.length ? "Assigned" : "Unassigned"}
+                    {selectedTemplate.assigned_roles.length ? "Role assigned" : "No role assignment"}
                   </span>
                   <PurchaseTemplateEditModal
                     key={selectedTemplate.template_id}
@@ -427,8 +427,8 @@ export default async function PurchaseControlsPage({
                       <tr>
                         <th>Product</th>
                         <th>SKU</th>
-                        <th>Limit</th>
-                        <th>Window</th>
+                        <th>Main allowance</th>
+                        <th>Short-term cap</th>
                         <th>Starts</th>
                       </tr>
                     </thead>
@@ -437,8 +437,12 @@ export default async function PurchaseControlsPage({
                         <tr key={rule.rule_id}>
                           <td><strong>{rule.product_name}</strong></td>
                           <td><code>{rule.sku}</code></td>
-                          <td>{rule.quantity_limit}</td>
-                          <td>{rule.duration_days} days</td>
+                          <td>{rule.quantity_limit} / {rule.duration_days} days</td>
+                          <td>
+                            {rule.short_term_quantity_limit != null && rule.short_term_duration_days != null
+                              ? `${rule.short_term_quantity_limit} / rolling ${rule.short_term_duration_days} days`
+                              : "—"}
+                          </td>
                           <td>{rule.start_date}</td>
                         </tr>
                       )) : (
@@ -503,7 +507,7 @@ export default async function PurchaseControlsPage({
                   <summary>
                     <span>
                       <strong>Delete template</strong>
-                      <small>Only unassigned templates can be deleted.</small>
+                      <small>Templates assigned to a role or Employee cannot be deleted.</small>
                     </span>
                   </summary>
                   <form className="purchase-operation-body" action={deletePurchaseControlTemplateAction}>
@@ -532,7 +536,9 @@ export default async function PurchaseControlsPage({
                     </div>
                     {selectedTemplate.assigned_roles.length ? (
                       <p className="muted small-text">Unassign this template from every role first.</p>
-                    ) : null}
+                    ) : (
+                      <p className="muted small-text">Fluid will also reject deletion if this template is assigned to an Employee.</p>
+                    )}
                   </form>
                 </details>
               </div>
@@ -736,10 +742,10 @@ export default async function PurchaseControlsPage({
                   <tr>
                     <th>User</th>
                     <th>Product</th>
-                    <th>Limit</th>
-                    <th>Used</th>
-                    <th>Remaining</th>
-                    <th>Window</th>
+                    <th>Main allowance</th>
+                    <th>Rolling cap</th>
+                    <th>Effective remaining</th>
+                    <th>Main period</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -756,8 +762,23 @@ export default async function PurchaseControlsPage({
                           <strong>{item.product_name}</strong><br />
                           <code>{item.sku}</code>
                         </td>
-                        <td>{item.quantity_limit}</td>
-                        <td>{item.purchases_so_far}</td>
+                        <td>
+                          <strong>{item.purchases_so_far} / {item.quantity_limit}</strong><br />
+                          <span className="muted small-text">{Math.max(0, item.quantity_limit - item.purchases_so_far)} main-period remaining</span>
+                        </td>
+                        <td>
+                          {item.short_term_quantity_limit != null
+                            && item.short_term_duration_days != null
+                            && item.short_term_purchases_so_far != null
+                            && item.short_term_remaining_quantity != null ? (
+                              <>
+                                <strong>{item.short_term_purchases_so_far} / {item.short_term_quantity_limit}</strong><br />
+                                <span className="muted small-text">
+                                  {item.short_term_remaining_quantity} remaining · rolling {item.short_term_duration_days} days
+                                </span>
+                              </>
+                            ) : "—"}
+                        </td>
                         <td>
                           <span className="purchase-allowance-remaining" data-level={remainingLevel}>
                             {item.remaining_quantity}

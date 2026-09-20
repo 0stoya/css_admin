@@ -428,7 +428,7 @@
 }
 
 .purchase-rule-grid {
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid var(--css-border);
   border-radius: 10px;
   background: #fff;
@@ -437,8 +437,16 @@
 .purchase-rule-head,
 .purchase-rule-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1.5fr) minmax(110px, 0.65fr) minmax(110px, 0.65fr) minmax(150px, 0.85fr) 48px;
-  gap: 0.7rem;
+  grid-template-columns:
+    minmax(160px, 1.35fr)
+    minmax(100px, 0.7fr)
+    minmax(105px, 0.72fr)
+    minmax(115px, 0.78fr)
+    minmax(105px, 0.72fr)
+    minmax(140px, 0.9fr)
+    48px;
+  min-width: 920px;
+  gap: 0.65rem;
   align-items: end;
   padding: 0.72rem 0.8rem;
 }
@@ -536,7 +544,8 @@
 @media (max-width: 1000px) {
   .purchase-rule-head,
   .purchase-rule-row {
-    grid-template-columns: minmax(150px, 1.3fr) 100px 100px minmax(135px, 0.8fr) 44px;
+    grid-template-columns: minmax(145px, 1.25fr) 92px 96px 105px 96px minmax(132px, 0.82fr) 44px;
+    min-width: 840px;
     gap: 0.5rem;
   }
 }
@@ -586,6 +595,7 @@
 
   .purchase-rule-row {
     grid-template-columns: 1fr 1fr;
+    min-width: 0;
     align-items: end;
     padding: 0.9rem;
   }
@@ -595,7 +605,7 @@
   }
 
   .purchase-rule-field:first-child,
-  .purchase-rule-field:nth-child(4) {
+  .purchase-rule-field:nth-child(6) {
     grid-column: 1 / -1;
   }
 
@@ -639,7 +649,7 @@
 
   .purchase-rule-field,
   .purchase-rule-field:first-child,
-  .purchase-rule-field:nth-child(4),
+  .purchase-rule-field:nth-child(6),
   .purchase-rule-remove {
     grid-column: 1;
   }

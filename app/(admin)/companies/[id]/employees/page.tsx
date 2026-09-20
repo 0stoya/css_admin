@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { History, UserMinus } from "lucide-react";
+import { History, ShieldCheck, UserMinus } from "lucide-react";
 import { AdminActionModal, AdminFormFooter } from "@/components/admin-action-modal";
+import { EmployeePurchaseControlModal } from "@/components/employee-purchase-control-modal";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { EMPLOYEE_IMPORT_TEMPLATE } from "@/lib/company-employees-csv";
@@ -10,16 +11,22 @@ import {
   getCompanyEmployee,
   getCompanyEmployeeConfiguration,
   getCompanyEmployeeOrders,
+  getCompanyEmployeePurchaseControl,
   getCompanyEmployees,
   getCompanyEmployeeSpend,
   type CompanyEmployee,
   type CompanyEmployeeOrderSearchResult,
+  type CompanyEmployeePurchaseControl,
   type CompanyEmployeeSpendResult,
 } from "@/lib/graphql/company-employees";
+import { getPurchaseControls, type PurchaseControlTemplate } from "@/lib/graphql/purchase-controls";
 import {
+  applyEmployeePurchaseControlAction,
+  assignEmployeePurchaseControlAction,
   createEmployeeAction,
   deactivateEmployeeAction,
   importEmployeesCsvAction,
+  resetEmployeePurchaseControlAction,
   saveEmployeeConfigurationAction,
   updateEmployeeAction,
 } from "./actions";
@@ -277,6 +284,8 @@ export default async function CompanyEmployeesPage({
   const from = firstParam(paramsValue.from)?.trim() ?? "";
   const to = firstParam(paramsValue.to)?.trim() ?? "";
   const modal = firstParam(paramsValue.modal)?.trim() ?? "";
+  const purchaseControlMatch = modal.match(/^purchase-control-(\d+)$/);
+  const purchaseControlEmployeeId = purchaseControlMatch ? Number(purchaseControlMatch[1]) : 0;
   const notice = firstParam(paramsValue.notice);
   const mutationError = firstParam(paramsValue.error);
   const modalStateKey = [modal, q, status, from, to, String(page), notice ?? "", mutationError ?? ""].join("|");
@@ -335,6 +344,24 @@ export default async function CompanyEmployeesPage({
     orders = ordersResult.status === "fulfilled" ? ordersResult.value : null;
     if (employeeResult.status === "rejected") orderError = graphQLErrorMessage(employeeResult.reason);
     else if (ordersResult.status === "rejected") orderError = graphQLErrorMessage(ordersResult.reason);
+  }
+
+  let employeePurchaseControl: CompanyEmployeePurchaseControl | null = null;
+  let purchaseTemplates: PurchaseControlTemplate[] = [];
+  let purchaseControlError: string | null = null;
+
+  if (Number.isInteger(purchaseControlEmployeeId) && purchaseControlEmployeeId > 0) {
+    const [purchaseControlResult, templatesResult] = await Promise.allSettled([
+      getCompanyEmployeePurchaseControl(companyId, purchaseControlEmployeeId),
+      getPurchaseControls(companyId),
+    ]);
+    employeePurchaseControl = purchaseControlResult.status === "fulfilled" ? purchaseControlResult.value : null;
+    purchaseTemplates = templatesResult.status === "fulfilled" ? templatesResult.value.templates : [];
+    if (purchaseControlResult.status === "rejected") {
+      purchaseControlError = graphQLErrorMessage(purchaseControlResult.reason);
+    } else if (templatesResult.status === "rejected") {
+      purchaseControlError = graphQLErrorMessage(templatesResult.reason);
+    }
   }
 
   const exportHref = `/api/companies/${companyId}/employees/export${status === "all" ? "" : `?active=${status === "active" ? "1" : "0"}`}`;
@@ -470,6 +497,10 @@ export default async function CompanyEmployeesPage({
             const manager = managers.find((user) => user.user_id === employee.manager_company_user_id);
             const employeeSpend = spendByEmployee.get(employee.employee_id);
             const modalKey = `edit-employee-${employee.employee_id}`;
+            const purchaseModalKey = `purchase-control-${employee.employee_id}`;
+            const purchaseControlHref = withQuery(companyId, {
+              q, status, from, to, page, modal: purchaseModalKey,
+            });
             const historyHref = `${withQuery(companyId, {
               q, status, from, to, page,
               employee: employee.employee_id,
@@ -514,6 +545,10 @@ export default async function CompanyEmployeesPage({
                         </details>
                       ) : null}
                     </AdminActionModal>
+                    <Link className="admin-employee-history-link" href={purchaseControlHref}>
+                      <ShieldCheck size={16} aria-hidden="true" />
+                      <span>Purchase controls</span>
+                    </Link>
                     <Link className="admin-employee-history-link" href={historyHref}>
                       <History size={16} aria-hidden="true" />
                       <span>History</span>
@@ -534,6 +569,227 @@ export default async function CompanyEmployeesPage({
           </div>
         ) : null}
       </section>
+
+      {purchaseControlEmployeeId > 0 ? (
+        <EmployeePurchaseControlModal
+          title={`Purchase controls · ${employeePurchaseControl?.employee_name ?? `Employee #${purchaseControlEmployeeId}`}`}
+          description="Assign a reusable template and review the Employee's currently applied main and rolling allowances."
+          returnHref={withQuery(companyId, { q, status, from, to, page })}
+        >
+          <div className="stack">
+            {mutationError && modal === `purchase-control-${purchaseControlEmployeeId}`
+              ? <div className="error" role="alert">{mutationError}</div>
+              : null}
+            {purchaseControlError ? <div className="error" role="alert">{purchaseControlError}</div> : null}
+
+            {employeePurchaseControl ? (
+              <>
+                <div className="purchase-summary-strip">
+                  <div className="purchase-summary-item">
+                    <span>Assignment</span>
+                    <strong>{employeePurchaseControl.assigned ? employeePurchaseControl.template_name : "None"}</strong>
+                  </div>
+                  <div className="purchase-summary-item">
+                    <span>Applied products</span>
+                    <strong>{employeePurchaseControl.allowances.length}</strong>
+                  </div>
+                  <div className="purchase-summary-item">
+                    <span>Rolling caps</span>
+                    <strong>
+                      {employeePurchaseControl.allowances.filter((item) => item.short_term_quantity_limit != null).length}
+                    </strong>
+                  </div>
+                </div>
+
+                <form className="stack" action={assignEmployeePurchaseControlAction}>
+                  <input type="hidden" name="companyId" value={companyId} />
+                  <input type="hidden" name="employeeId" value={purchaseControlEmployeeId} />
+                  <EmployeeReturnState
+                    modal={`purchase-control-${purchaseControlEmployeeId}`}
+                    q={q}
+                    status={status}
+                    from={from}
+                    to={to}
+                    page={page}
+                  />
+                  <div className="field">
+                    <label htmlFor={`employee-purchase-template-${purchaseControlEmployeeId}`}>Assigned template</label>
+                    <select
+                      id={`employee-purchase-template-${purchaseControlEmployeeId}`}
+                      name="templateId"
+                      defaultValue={employeePurchaseControl.template_id ?? ""}
+                      disabled={Boolean(purchaseControlError)}
+                    >
+                      <option value="">No template (unassign)</option>
+                      {purchaseTemplates.map((template) => (
+                        <option value={template.template_id} key={template.template_id}>
+                          {template.name} · {template.rules.length} rule{template.rules.length === 1 ? "" : "s"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <label className="purchase-check-field">
+                    <input type="checkbox" name="applyNow" />
+                    <span>
+                      <strong>Apply immediately after assigning</strong>
+                      <span className="muted small-text">
+                        Restarts this Employee&apos;s main allowance periods. Rolling usage remains based on purchase history.
+                      </span>
+                    </span>
+                  </label>
+                  <div>
+                    <button className="button" type="submit" disabled={Boolean(purchaseControlError)}>
+                      Save assignment
+                    </button>
+                  </div>
+                  <p className="muted small-text">
+                    Assignment alone does not change current applied allowances. Unassigning does not remove allowances already applied.
+                  </p>
+                </form>
+
+                <div>
+                  <p className="eyebrow">Current applied allowances</p>
+                  {employeePurchaseControl.allowances.length ? (
+                    <div className="table-wrap purchase-rule-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Product</th>
+                            <th>Main allowance</th>
+                            <th>Rolling cap</th>
+                            <th>Effective remaining</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {employeePurchaseControl.allowances.map((item) => (
+                            <tr key={item.applied_id}>
+                              <td>
+                                <strong>{item.product_name}</strong><br />
+                                <code>{item.sku}</code>
+                              </td>
+                              <td>
+                                <strong>{item.purchases_so_far} / {item.quantity_limit}</strong><br />
+                                <span className="muted small-text">
+                                  {item.duration_days} days from {item.start_date}
+                                </span>
+                              </td>
+                              <td>
+                                {item.short_term_quantity_limit != null
+                                  && item.short_term_duration_days != null
+                                  && item.short_term_purchases_so_far != null
+                                  && item.short_term_remaining_quantity != null ? (
+                                    <>
+                                      <strong>{item.short_term_purchases_so_far} / {item.short_term_quantity_limit}</strong><br />
+                                      <span className="muted small-text">
+                                        {item.short_term_remaining_quantity} remaining · rolling {item.short_term_duration_days} days
+                                      </span>
+                                    </>
+                                  ) : "—"}
+                              </td>
+                              <td>
+                                <span
+                                  className="purchase-allowance-remaining"
+                                  data-level={item.remaining_quantity <= 0 ? "none" : item.remaining_quantity <= 1 ? "low" : "ok"}
+                                >
+                                  {item.remaining_quantity}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={item.active ? "badge badge-ok" : "badge badge-neutral"}>
+                                  {item.active ? "Active" : "Inactive"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="purchase-empty-inline">
+                      <strong>No applied Employee allowances</strong>
+                      <span className="muted small-text">
+                        Assigning a template does not enforce it until Apply is used.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="eyebrow">Operations</p>
+                  <div className="purchase-operation-grid">
+                    <form className="purchase-operation-card" action={applyEmployeePurchaseControlAction}>
+                      <input type="hidden" name="companyId" value={companyId} />
+                      <input type="hidden" name="employeeId" value={purchaseControlEmployeeId} />
+                      <EmployeeReturnState
+                        modal={`purchase-control-${purchaseControlEmployeeId}`}
+                        q={q}
+                        status={status}
+                        from={from}
+                        to={to}
+                        page={page}
+                      />
+                      <div>
+                        <strong>Apply assigned template</strong>
+                        <p className="muted small-text">
+                          Replace this Employee&apos;s applied product allowances and restart the main periods.
+                        </p>
+                      </div>
+                      <label className="purchase-check-field">
+                        <input type="checkbox" name="confirmApply" value="yes" required />
+                        <span>
+                          <strong>Confirm replacement</strong>
+                          <span className="muted small-text">Purchase history and rolling usage are retained.</span>
+                        </span>
+                      </label>
+                      <div>
+                        <button className="button" type="submit" disabled={!employeePurchaseControl.assigned}>
+                          Apply
+                        </button>
+                      </div>
+                    </form>
+
+                    <form className="purchase-operation-card" action={resetEmployeePurchaseControlAction}>
+                      <input type="hidden" name="companyId" value={companyId} />
+                      <input type="hidden" name="employeeId" value={purchaseControlEmployeeId} />
+                      <EmployeeReturnState
+                        modal={`purchase-control-${purchaseControlEmployeeId}`}
+                        q={q}
+                        status={status}
+                        from={from}
+                        to={to}
+                        page={page}
+                      />
+                      <div>
+                        <strong>Reset main counters</strong>
+                        <p className="muted small-text">
+                          Clear main-period consumption. Rolling-window usage is not reset.
+                        </p>
+                      </div>
+                      <label className="purchase-check-field">
+                        <input type="checkbox" name="confirmReset" value="yes" required />
+                        <span>
+                          <strong>Confirm reset</strong>
+                          <span className="muted small-text">Rolling usage ages out naturally or changes through returns/cancellations.</span>
+                        </span>
+                      </label>
+                      <div>
+                        <button
+                          className="button button-secondary"
+                          type="submit"
+                          disabled={!employeePurchaseControl.allowances.length}
+                        >
+                          Reset main counters
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </EmployeePurchaseControlModal>
+      ) : null}
 
       {selectedEmployee ? (
         <OrderHistory
