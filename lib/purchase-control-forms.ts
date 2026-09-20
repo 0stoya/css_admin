@@ -144,6 +144,6 @@ export function assignmentNotice(
   employeeCount = 0,
 ): string {
   if (templateId === null) return "Template unassigned from the role. Existing applied allowances were not removed.";
-  if (!applyToUsers) return "Template assigned to the role. Existing applied allowances were not changed; use Apply when ready.";
+  if (!applyToUsers) return "Template assigned to the role. Missing products are added automatically for Employees using this Purchase Role. Existing buyer allowances and existing Employee SKU limits are not changed; use Apply when you want those existing limits refreshed.";
   return `Template assigned. ${affectedUsersNotice("applied", buyerCount, employeeCount)} Application covers eligible buyers and inheriting Employees across all roles assigned to this template.`;
 }
