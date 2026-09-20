@@ -57,7 +57,7 @@ export async function savePurchaseControlTemplateAction(formData: FormData) {
     state.templateId = optionalId(formData, "templateId");
     state.createOnError = state.templateId === null;
     await savePurchaseControlTemplate(companyId, templateInput(formData));
-    return "Template saved. Existing applied allowances and counters were not changed; assign and apply separately when ready.";
+    return "Template saved. New products are added automatically to Employees inheriting this template through Purchase Role. Existing SKU limits and counters are unchanged; use Apply when you want existing limits refreshed.";
   }, state);
 }
 

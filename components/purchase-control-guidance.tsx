@@ -13,9 +13,9 @@ export function PurchaseControlGuidance({ iconOnly = false }: { iconOnly?: boole
       <section className={styles.guideSection}>
         <h3><ClipboardList size={19} aria-hidden="true" /> From template to allowance</h3>
         <div className={styles.steps}>
-          <article><span className={styles.stepNumber}>1</span><div><h4>Save the rules</h4><p>Changes the template definition only. Existing applied buyer or Employee allowances are unchanged.</p></div></article>
-          <article><span className={styles.stepNumber}>2</span><div><h4>Assign the template</h4><p>Roles govern eligible buyers and can also act as an Employee <strong>Purchase Role</strong>. Purchase Role is policy inheritance only: it does not create a login or grant role permissions. Assignment changes do not clear applied allowances.</p></div></article>
-          <article><span className={styles.stepNumber}>3</span><div><h4>Apply when ready</h4><p>Materialises the current template. Role Apply covers eligible buyers plus Employees inheriting that Purchase Role. A direct Employee override takes precedence and is left alone by role Apply.</p></div></article>
+          <article><span className={styles.stepNumber}>1</span><div><h4>Save the rules</h4><p>New products are added automatically to Employees inheriting the template through Purchase Role. Existing SKU limits, counters and periods are left unchanged until Apply is used.</p></div></article>
+          <article><span className={styles.stepNumber}>2</span><div><h4>Assign the template</h4><p>Roles govern eligible buyers and can also act as an Employee <strong>Purchase Role</strong>. Assigning that role to an Employee automatically adds the template&apos;s missing products without resetting existing Employee allowances.</p></div></article>
+          <article><span className={styles.stepNumber}>3</span><div><h4>Apply existing changes when ready</h4><p>Use Apply when an existing SKU&apos;s quantity, period, start date or rolling cap changes. Apply refreshes eligible buyer and inherited Employee snapshots and restarts their main allowance periods.</p></div></article>
         </div>
       </section>
       <div className={styles.guideGrid}>

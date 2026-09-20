@@ -110,7 +110,7 @@ for (const portal of [false, true]) {
   test(`${prefix}: save does not apply or reset`, async () => {
     const h = harness(portal);
     const url = await redirectFrom(() => h.exports[names.save](form({ companyId: 3, name: "PPE", rules: "PPE | 4 | 30 | 2026-09-12" })));
-    assert.match(url.searchParams.get("notice"), /not changed/);
+    assert.match(url.searchParams.get("notice"), /New products are added automatically/);
     assert.equal(h.calls.length, 1);
     assert.match(h.calls[0].name, /^save/);
   });
@@ -143,7 +143,7 @@ for (const portal of [false, true]) {
     const h = harness(portal, { [field]: { applied_users: 0 } });
     const url = await redirectFrom(() => h.exports[names.assign](form({ companyId: 3, roleId: 9, templateId: 7, applyToUsers: "false" })));
     assert.equal(h.calls[0].args.at(-1), false);
-    assert.match(url.searchParams.get("notice"), /not changed/);
+    assert.match(url.searchParams.get("notice"), /Missing products are added automatically/);
     if (portal) assert.equal(url.searchParams.get("section"), "assignments");
   });
   test(`${prefix}: cannot apply while unassigning`, async () => {

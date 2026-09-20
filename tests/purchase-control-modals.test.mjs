@@ -180,6 +180,8 @@ test("editor keeps a controlled name and retained rule editor on error", () => {
   assert.match(text, /errorRef.current\?\.focus\(\)/);
   assert.match(text, /fieldset[^>]+disabled=\{pending\}/);
   assert.match(text, /initialRules=\{template.rules\}/);
+  assert.match(text, /New products sync automatically/);
+  assert.match(text, /existing SKU limits\/counters stay unchanged until Apply/);
   assert.doesNotMatch(text, /window\.location|form\.reset\(/);
 });
 test("staff heading contains the info trigger and the old editor accordion is removed", () => {
@@ -197,8 +199,8 @@ test("help explains main plus rolling limits and Employee controls without inven
   assert.match(text, /Rolling-cap usage therefore does <strong>not<\/strong> reset/);
   assert.match(text, /beneficiary hard constraints/);
   assert.match(text, /Purchase Role/);
-  assert.match(text, /policy inheritance only/);
-  assert.match(text, /direct Employee override takes precedence/);
+  assert.match(text, /New products are added automatically/);
+  assert.match(text, /existing SKU/);
   assert.match(text, /same product rule/);
   assert.match(text, /PurchaseControlHelp iconOnly=\{iconOnly\}/);
 });
