@@ -17,7 +17,7 @@ const PURCHASE_CONTROLS_QUERY = /* GraphQL */ `
         rules {
           rule_id product_id sku product_name quantity_limit duration_days start_date
         }
-        assigned_roles { role_id role_name }
+        assigned_roles { role_id role_name employee_count }
       }
     }
   }
@@ -96,7 +96,7 @@ const ASSIGN_TEMPLATE_MUTATION = /* GraphQL */ `
       template_id: $templateId
       apply_to_users: $applyToUsers
     ) {
-      company_id role_id role_name template_id template_name applied_users
+      company_id role_id role_name template_id template_name applied_users applied_employees
     }
   }
 `;
@@ -104,7 +104,7 @@ const ASSIGN_TEMPLATE_MUTATION = /* GraphQL */ `
 const APPLY_TEMPLATE_MUTATION = /* GraphQL */ `
   mutation CompanyPortalApplyPurchaseControlTemplate($templateId: Int!) {
     cssApplyCompanyPurchaseControlTemplate(template_id: $templateId) {
-      company_id template_id affected_users
+      company_id template_id affected_users affected_employees affected_employees
     }
   }
 `;
@@ -182,21 +182,21 @@ export async function assignCompanyPortalPurchaseControlTemplate(
   applyToUsers: boolean,
 ) {
   return customerGraphqlRequest<
-    { cssAssignCompanyPurchaseControlTemplate: { applied_users: number } },
+    { cssAssignCompanyPurchaseControlTemplate: { applied_users: number; applied_employees: number } },
     { roleId: number; templateId: number | null; applyToUsers: boolean }
   >(ASSIGN_TEMPLATE_MUTATION, { roleId, templateId, applyToUsers });
 }
 
 export async function applyCompanyPortalPurchaseControlTemplate(templateId: number) {
   return customerGraphqlRequest<
-    { cssApplyCompanyPurchaseControlTemplate: { affected_users: number } },
+    { cssApplyCompanyPurchaseControlTemplate: { affected_users: number; affected_employees: number } },
     { templateId: number }
   >(APPLY_TEMPLATE_MUTATION, { templateId });
 }
 
 export async function resetCompanyPortalPurchaseControlCounters(templateId: number) {
   return customerGraphqlRequest<
-    { cssResetCompanyPurchaseControlCounters: { affected_users: number } },
+    { cssResetCompanyPurchaseControlCounters: { affected_users: number; affected_employees: number } },
     { templateId: number }
   >(RESET_COUNTERS_MUTATION, { templateId });
 }
