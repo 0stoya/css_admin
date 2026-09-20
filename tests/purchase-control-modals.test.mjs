@@ -50,6 +50,22 @@ test("edit saves only a template definition and revalidates the selected company
   assert.deepEqual(h.calls, [[12, { template_id: 6, name: "PPE", rules: [{ sku: "A1117H", quantity_limit: 10, duration_days: 365, start_date: "2026-09-01" }] }]]);
   assert.deepEqual(h.invalidations, ["/companies/12/purchase-controls"]);
 });
+test("edit action forwards the optional rolling tier without applying the template", async () => {
+  const h = actionHarness();
+  const result = await h.action({ status: "idle" }, form({
+    rules: "DUST | 200 | 365 | 2026-09-01 | 5 | 7",
+  }));
+  assert.deepEqual(result, { status: "saved", templateId: 6 });
+  assert.deepEqual(h.calls[0][1].rules, [{
+    sku: "DUST",
+    quantity_limit: 200,
+    duration_days: 365,
+    start_date: "2026-09-01",
+    short_term_quantity_limit: 5,
+    short_term_duration_days: 7,
+  }]);
+});
+
 for (const [label, values] of [
   ["missing company", { companyId: "" }],
   ["invalid company", { companyId: "../1" }],
@@ -174,11 +190,12 @@ test("staff heading contains the info trigger and the old editor accordion is re
   assert.doesNotMatch(page, /<details className="purchase-editor-panel"/);
   assert.doesNotMatch(source("app/(admin)/companies/[id]/purchase-controls/layout.tsx"), /PurchaseControlGuidance/);
 });
-test("help keeps history/reset cautions and explicitly says stacked limits are unsupported", () => {
+test("help explains main plus rolling limits and Employee controls without inventing local policy", () => {
   const text = source("components/purchase-control-guidance.tsx");
-  assert.match(text, /not supported yet/); assert.match(text, /every role assigned/);
-  assert.match(text, /without changing their start dates|without changing start dates/);
-  assert.match(text, /legacy purchases do not automatically replenish/);
+  assert.match(text, /beneficiary <strong>Employee<\/strong>/);
+  assert.match(text, /trailing 7 days/);
+  assert.match(text, /Rolling-cap usage therefore does <strong>not<\/strong> reset/);
+  assert.match(text, /same product rule/);
   assert.match(text, /PurchaseControlHelp iconOnly=\{iconOnly\}/);
 });
 test("new edit action has no apply/reset mutation or template-creation fallback", () => {
