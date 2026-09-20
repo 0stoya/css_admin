@@ -427,8 +427,8 @@ export default async function PurchaseControlsPage({
                       <tr>
                         <th>Product</th>
                         <th>SKU</th>
-                        <th>Limit</th>
-                        <th>Window</th>
+                        <th>Main allowance</th>
+                        <th>Short-term cap</th>
                         <th>Starts</th>
                       </tr>
                     </thead>
@@ -437,8 +437,12 @@ export default async function PurchaseControlsPage({
                         <tr key={rule.rule_id}>
                           <td><strong>{rule.product_name}</strong></td>
                           <td><code>{rule.sku}</code></td>
-                          <td>{rule.quantity_limit}</td>
-                          <td>{rule.duration_days} days</td>
+                          <td>{rule.quantity_limit} / {rule.duration_days} days</td>
+                          <td>
+                            {rule.short_term_quantity_limit != null && rule.short_term_duration_days != null
+                              ? `${rule.short_term_quantity_limit} / rolling ${rule.short_term_duration_days} days`
+                              : "—"}
+                          </td>
                           <td>{rule.start_date}</td>
                         </tr>
                       )) : (
@@ -736,10 +740,10 @@ export default async function PurchaseControlsPage({
                   <tr>
                     <th>User</th>
                     <th>Product</th>
-                    <th>Limit</th>
-                    <th>Used</th>
-                    <th>Remaining</th>
-                    <th>Window</th>
+                    <th>Main allowance</th>
+                    <th>Rolling cap</th>
+                    <th>Effective remaining</th>
+                    <th>Main period</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -756,8 +760,23 @@ export default async function PurchaseControlsPage({
                           <strong>{item.product_name}</strong><br />
                           <code>{item.sku}</code>
                         </td>
-                        <td>{item.quantity_limit}</td>
-                        <td>{item.purchases_so_far}</td>
+                        <td>
+                          <strong>{item.purchases_so_far} / {item.quantity_limit}</strong><br />
+                          <span className="muted small-text">{Math.max(0, item.quantity_limit - item.purchases_so_far)} main-period remaining</span>
+                        </td>
+                        <td>
+                          {item.short_term_quantity_limit != null
+                            && item.short_term_duration_days != null
+                            && item.short_term_purchases_so_far != null
+                            && item.short_term_remaining_quantity != null ? (
+                              <>
+                                <strong>{item.short_term_purchases_so_far} / {item.short_term_quantity_limit}</strong><br />
+                                <span className="muted small-text">
+                                  {item.short_term_remaining_quantity} remaining · rolling {item.short_term_duration_days} days
+                                </span>
+                              </>
+                            ) : "—"}
+                        </td>
                         <td>
                           <span className="purchase-allowance-remaining" data-level={remainingLevel}>
                             {item.remaining_quantity}
