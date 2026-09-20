@@ -99,7 +99,15 @@ function ManagerSelect({ users, employee }: { users: CompanyPortalUser[]; employ
   );
 }
 
-function EmployeeFields({ users, employee }: { users: CompanyPortalUser[]; employee?: CompanyEmployee }) {
+function EmployeeFields({
+  users,
+  roles,
+  employee,
+}: {
+  users: CompanyPortalUser[];
+  roles: CompanyPortalAdministration["roles"];
+  employee?: CompanyEmployee;
+}) {
   return (
     <div className={styles.formGrid}>
       <div className="field"><label>First name</label><input name="firstName" defaultValue={employee?.first_name ?? ""} required /></div>
@@ -108,6 +116,18 @@ function EmployeeFields({ users, employee }: { users: CompanyPortalUser[]; emplo
       <div className="field"><label>Department</label><input name="department" defaultValue={employee?.department ?? ""} /></div>
       <div className="field"><label>Cost centre</label><input name="costCentre" defaultValue={employee?.cost_centre ?? ""} /></div>
       <div className="field"><label>Manager</label><ManagerSelect users={users} employee={employee} /></div>
+      <div className="field">
+        <label>Purchase role</label>
+        <select name="purchaseControlRoleId" defaultValue={employee?.purchase_control_role_id ?? ""}>
+          <option value="">No Purchase Role</option>
+          {roles.filter((role) => role.role_id > 0 && role.manageable).map((role) => (
+            <option key={role.role_id} value={role.role_id}>{role.name}</option>
+          ))}
+        </select>
+        <span className="muted small-text">
+          Controls purchase-policy inheritance only. It does not create a login or grant role permissions.
+        </span>
+      </div>
       <label className={styles.checkboxField}>
         <input name="active" type="checkbox" defaultChecked={employee?.active ?? true} />
         <span><strong>Active</strong><small>May be assigned to new orders.</small></span>
@@ -119,11 +139,13 @@ function EmployeeFields({ users, employee }: { users: CompanyPortalUser[]; emplo
 function EmployeeManagementModal({
   employee,
   users,
+  roles,
   canManage,
   historyHref,
 }: {
   employee: CompanyEmployee;
   users: CompanyPortalUser[];
+  roles: CompanyPortalAdministration["roles"];
   canManage: boolean;
   historyHref: string;
 }) {
@@ -144,7 +166,7 @@ function EmployeeManagementModal({
           <>
             <form action={updatePortalEmployeeAction} className="stack">
               <input type="hidden" name="employeeId" value={employee.employee_id} />
-              <EmployeeFields users={users} employee={employee} />
+              <EmployeeFields users={users} roles={roles} employee={employee} />
               <div><button className="button" type="submit">Save employee</button></div>
             </form>
             {employee.active ? (
@@ -306,7 +328,7 @@ export default async function PortalEmployeesPage({ searchParams }: { searchPara
               triggerHint="Create an ordering beneficiary"
             >
               <form action={createPortalEmployeeAction} className="stack">
-                <EmployeeFields users={managers} />
+                <EmployeeFields users={managers} roles={administration?.roles ?? []} />
                 <div><button className="button" type="submit">Create employee</button></div>
               </form>
             </PortalModal>
@@ -337,6 +359,7 @@ export default async function PortalEmployeesPage({ searchParams }: { searchPara
                   <EmployeeManagementModal
                     employee={employee}
                     users={managers}
+                    roles={administration?.roles ?? []}
                     canManage={permissions.canManage}
                     historyHref={withQuery({ q, status, from, to, page, employee: employee.employee_id })}
                   />
