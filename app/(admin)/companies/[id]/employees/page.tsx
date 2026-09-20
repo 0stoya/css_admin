@@ -6,7 +6,11 @@ import { EmployeePurchaseControlModal } from "@/components/employee-purchase-con
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { EMPLOYEE_IMPORT_TEMPLATE } from "@/lib/company-employees-csv";
-import { getCompanyManagement, type CompanyAdminUser } from "@/lib/graphql/company-management";
+import {
+  getCompanyManagement,
+  type CompanyAdminRole,
+  type CompanyAdminUser,
+} from "@/lib/graphql/company-management";
 import {
   getCompanyEmployee,
   getCompanyEmployeeConfiguration,
@@ -109,7 +113,15 @@ function ManagerSelect({
   );
 }
 
-function EmployeeFields({ employee, managers }: { employee?: CompanyEmployee; managers: CompanyAdminUser[] }) {
+function EmployeeFields({
+  employee,
+  managers,
+  purchaseRoles,
+}: {
+  employee?: CompanyEmployee;
+  managers: CompanyAdminUser[];
+  purchaseRoles: CompanyAdminRole[];
+}) {
   const prefix = employee ? `employee-${employee.employee_id}` : "new-employee";
   return (
     <div className={styles.formGrid}>
@@ -136,6 +148,22 @@ function EmployeeFields({ employee, managers }: { employee?: CompanyEmployee; ma
       <div className="field">
         <label htmlFor={`${prefix}-manager`}>Manager</label>
         <ManagerSelect id={`${prefix}-manager`} users={managers} defaultValue={employee?.manager_company_user_id} />
+      </div>
+      <div className="field">
+        <label htmlFor={`${prefix}-purchase-role`}>Purchase role</label>
+        <select
+          id={`${prefix}-purchase-role`}
+          name="purchaseControlRoleId"
+          defaultValue={employee?.purchase_control_role_id ?? ""}
+        >
+          <option value="">No Purchase Role</option>
+          {purchaseRoles.map((role) => (
+            <option value={role.role_id} key={role.role_id}>{role.name}</option>
+          ))}
+        </select>
+        <span className="muted small-text">
+          Controls purchase-policy inheritance only. It does not create a login or grant role permissions.
+        </span>
       </div>
       <label className={styles.checkboxField} htmlFor={`${prefix}-active`}>
         <input id={`${prefix}-active`} name="active" type="checkbox" defaultChecked={employee?.active ?? true} />
@@ -322,6 +350,9 @@ export default async function CompanyEmployeesPage({
   }
 
   const managers = management?.users ?? [];
+  const purchaseRoles = (management?.roles ?? []).filter(
+    (role) => role.role_id > 0 && role.manageable,
+  );
   const spendByEmployee = new Map(spend?.items.map((item) => [item.employee_id, item]) ?? []);
   let selectedEmployee: CompanyEmployee | null = null;
   let orders: CompanyEmployeeOrderSearchResult | null = null;
@@ -464,7 +495,7 @@ export default async function CompanyEmployeesPage({
             <form action={createEmployeeAction} className="admin-employee-modal-form">
               <input type="hidden" name="companyId" value={companyId} />
               <EmployeeReturnState modal="add-employee" q={q} status={status} from={from} to={to} page={page} />
-              <EmployeeFields managers={managers} />
+              <EmployeeFields managers={managers} purchaseRoles={purchaseRoles} />
               <AdminFormFooter submitLabel="Create employee" pendingLabel="Creating employee…" />
             </form>
           </AdminActionModal>
@@ -529,7 +560,11 @@ export default async function CompanyEmployeesPage({
                         <input type="hidden" name="companyId" value={companyId} />
                         <input type="hidden" name="employeeId" value={employee.employee_id} />
                         <EmployeeReturnState modal={modalKey} q={q} status={status} from={from} to={to} page={page} />
-                        <EmployeeFields employee={employee} managers={managers} />
+                        <EmployeeFields
+                          employee={employee}
+                          managers={managers}
+                          purchaseRoles={purchaseRoles}
+                        />
                         <AdminFormFooter submitLabel="Save employee" pendingLabel="Saving employee…" />
                       </form>
                       {employee.active ? (
