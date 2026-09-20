@@ -99,8 +99,8 @@ test("employee source keeps history separate while create/edit move to modals", 
 test("shared admin modal resets from server state and keeps native dialog semantics", () => {
   const modal = source("components/admin-action-modal.tsx");
   assert.doesNotMatch(modal, /useSearchParams/);
-  assert.match(modal, /setOpen\(defaultOpen\)/);
-  assert.match(modal, /\[defaultOpen, stateKey\]/);
+  assert.match(modal, /const resetKey =/);
+  assert.match(modal, /modalState\.resetKey === resetKey \? modalState\.open : defaultOpen/);
   assert.match(modal, /closeOnBackdrop=\{false\}/);
   assert.match(modal, /useFormStatus/);
   assert.match(modal, /PurchaseControlDialog/);
