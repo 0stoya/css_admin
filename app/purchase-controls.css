@@ -594,22 +594,22 @@
   font-size: 1rem;
 }
 
-.employee-purchase-override-form {
-  display: grid;
-  gap: 0.85rem;
-  min-width: 0;
-}
-
-.employee-purchase-form-actions {
+.employee-purchase-policy-note {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--css-border);
+  background: #fbfdfe;
 }
 
-.employee-purchase-form-actions p {
-  flex: 1 1 360px;
-  min-width: 220px;
+.employee-purchase-policy-note p {
+  flex: 1 1 auto;
+}
+
+.employee-purchase-policy-note .button {
+  flex: 0 0 auto;
 }
 
 .employee-purchase-operations .purchase-operation-card {
@@ -682,12 +682,12 @@
     display: grid;
   }
 
-  .employee-purchase-form-actions {
+  .employee-purchase-policy-note {
     display: grid;
-    align-items: stretch;
+    padding: 0.85rem 1rem;
   }
 
-  .employee-purchase-form-actions .button {
+  .employee-purchase-policy-note .button {
     width: 100%;
   }
 
