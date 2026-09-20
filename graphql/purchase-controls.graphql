@@ -18,6 +18,7 @@ query AdminPurchaseControls($companyId: Int!) {
       assigned_roles {
         role_id
         role_name
+        employee_count
       }
     }
   }
