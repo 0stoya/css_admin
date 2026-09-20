@@ -23,7 +23,9 @@ for (const raw of [
 }
 test("parse rolling cap on the same SKU rule", () => {
   const [rule] = forms.parsePurchaseRules("DUST | 200 | 365 | 2026-09-12 | 5 | 7");
-  assert.deepEqual(rule, {
+  // load-typescript.mjs evaluates the helper in a separate VM realm. Spread
+  // the returned value into this realm before a strict structural comparison.
+  assert.deepEqual({ ...rule }, {
     sku: "DUST",
     quantity_limit: 200,
     duration_days: 365,
