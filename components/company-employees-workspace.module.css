@@ -319,7 +319,7 @@
 
 .employeeRow {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.5fr) minmax(9rem, 1fr) minmax(9rem, 1fr) 5rem 8rem 6rem 6rem;
+  grid-template-columns: minmax(12rem, 1.5fr) minmax(9rem, 1fr) minmax(9rem, 1fr) 5rem 8rem 6rem minmax(9rem, auto);
   gap: 0.8rem;
   align-items: center;
   padding: 0.85rem 1rem;
