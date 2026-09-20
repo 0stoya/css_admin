@@ -12,6 +12,7 @@ import {
 } from "@/app/(admin)/bulk-import/actions";
 import type { FlatCompanyImportState, ImportRowStatus } from "@/lib/import-export-types";
 import styles from "@/components/company-import-export-workspace.module.css";
+import { RolePermissionsCsvHelp } from "@/components/role-permissions-csv-help";
 
 const initialState: FlatCompanyImportState = {
   phase: "idle",
@@ -35,6 +36,7 @@ type PanelProps = {
   exampleHref: string;
   help: string;
   showCreateMissingRoles?: boolean;
+  showRolePermissionsGuide?: boolean;
   showPurchaseControlOptions?: boolean;
   groupResultsByCompany?: boolean;
   applyConfirmation?: string;
@@ -164,6 +166,7 @@ function BulkImportPanel({
   exampleHref,
   help,
   showCreateMissingRoles = false,
+  showRolePermissionsGuide = false,
   showPurchaseControlOptions = false,
   groupResultsByCompany = true,
   applyConfirmation,
@@ -194,6 +197,7 @@ function BulkImportPanel({
       <div className={styles.downloads}>
         <a className="button button-secondary button-link" href={exportHref}>Download current CSV</a>
         <a className="button button-secondary button-link" href={exampleHref}>Download example CSV</a>
+        {showRolePermissionsGuide ? <RolePermissionsCsvHelp /> : null}
       </div>
 
       <ImportSteps state={state} />
@@ -410,6 +414,7 @@ export function BulkImportWorkspace() {
           exportHref={`${base}/exports/roles`}
           exampleHref={`${base}/examples/roles`}
           showCreateMissingRoles
+          showRolePermissionsGuide
           help="All referenced companies must expose the same Fluid permission tree. Each company is dry-run and applied independently; a backend failure for one company does not rewrite another company's transaction."
         />
       </div>
