@@ -735,7 +735,7 @@ export default async function CompanyEmployeesPage({
                     <div className="purchase-empty-inline">
                       <strong>No applied Employee allowances</strong>
                       <span className="muted small-text">
-                        Assigning a template does not enforce it until Apply is used.
+                        Purchase Role products sync automatically. Existing SKU limit changes still require Apply.
                       </span>
                     </div>
                   )}
