@@ -114,20 +114,36 @@ export function requireAcknowledgement(formData: FormData, key: "confirmApply" |
 }
 
 /** Counts come from the mutation result, never from a locally inferred user list. */
-export function affectedUsersNotice(action: "applied" | "reset", count: number): string {
-  if (!Number.isInteger(count) || count < 0) {
-    return "The request completed, but Magento did not return a usable affected-user count. Review allowances before retrying.";
+export function affectedUsersNotice(
+  action: "applied" | "reset",
+  buyerCount: number,
+  employeeCount = 0,
+): string {
+  if (
+    !Number.isInteger(buyerCount) || buyerCount < 0
+    || !Number.isInteger(employeeCount) || employeeCount < 0
+  ) {
+    return "The request completed, but Magento did not return usable affected-subject counts. Review allowances before retrying.";
   }
-  if (count === 0) {
-    return "No eligible buyers were changed. Check the template's role assignments and users' template approval setting.";
+  if (buyerCount === 0 && employeeCount === 0) {
+    return "No eligible buyers or Employees were changed. Check the template's role assignments and applied policy.";
   }
+
+  const buyers = `${buyerCount} eligible buyer${buyerCount === 1 ? "" : "s"}`;
+  const employees = `${employeeCount} Employee${employeeCount === 1 ? "" : "s"}`;
+
   return action === "applied"
-    ? `Template applied to ${count} eligible buyer${count === 1 ? "" : "s"}. Their allowance counters restarted; purchase history was retained.`
-    : `Usage counters reset for ${count} eligible buyer${count === 1 ? "" : "s"}. Allowance dates were not changed; purchase history was retained.`;
+    ? `Template applied to ${buyers} and ${employees}. Main allowance periods restarted; purchase history was retained.`
+    : `Usage counters reset for ${buyers} and ${employees}. Purchase history was retained; rolling usage is still history-based.`;
 }
 
-export function assignmentNotice(templateId: number | null, applyToUsers: boolean, count: number): string {
+export function assignmentNotice(
+  templateId: number | null,
+  applyToUsers: boolean,
+  buyerCount: number,
+  employeeCount = 0,
+): string {
   if (templateId === null) return "Template unassigned from the role. Existing applied allowances were not removed.";
   if (!applyToUsers) return "Template assigned to the role. Existing applied allowances were not changed; use Apply when ready.";
-  return `Template assigned. ${affectedUsersNotice("applied", count)} Application covers eligible buyers across all roles assigned to this template.`;
+  return `Template assigned. ${affectedUsersNotice("applied", buyerCount, employeeCount)} Application covers eligible buyers and inheriting Employees across all roles assigned to this template.`;
 }
