@@ -83,6 +83,13 @@ test("management source uses modal create/edit interactions instead of expandabl
   assert.doesNotMatch(page, /management-create-panel management-create-inline/);
 });
 
+test("role management protects roles referenced by Employee Purchase Role", () => {
+  const page = source("app/(admin)/companies/[id]/management/page.tsx");
+  assert.match(page, /role\.purchase_employee_count/);
+  assert.match(page, /no Employees using the role as their Purchase Role/);
+  assert.match(page, /role\.user_count > 0 \|\| role\.purchase_employee_count > 0/);
+});
+
 test("employee source keeps history separate while create/edit move to modals", () => {
   const page = source("app/(admin)/companies/[id]/employees/page.tsx");
   assert.match(page, /title="Add employee"/);
