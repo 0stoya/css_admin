@@ -608,7 +608,7 @@ export default async function CompanyEmployeesPage({
       {purchaseControlEmployeeId > 0 ? (
         <EmployeePurchaseControlModal
           title={`Purchase controls · ${employeePurchaseControl?.employee_name ?? `Employee #${purchaseControlEmployeeId}`}`}
-          description="Assign a reusable template and review the Employee's currently applied main and rolling allowances."
+          description="Review the Employee's inherited purchase policy, optional direct override, and currently applied allowances."
           returnHref={withQuery(companyId, { q, status, from, to, page })}
         >
           <div className="stack">
@@ -621,18 +621,26 @@ export default async function CompanyEmployeesPage({
               <>
                 <div className="purchase-summary-strip">
                   <div className="purchase-summary-item">
-                    <span>Assignment</span>
-                    <strong>{employeePurchaseControl.assigned ? employeePurchaseControl.template_name : "None"}</strong>
+                    <span>Purchase role</span>
+                    <strong>{employeePurchaseControl.purchase_control_role_name ?? "None"}</strong>
+                  </div>
+                  <div className="purchase-summary-item">
+                    <span>Effective template</span>
+                    <strong>{employeePurchaseControl.template_name ?? "None"}</strong>
+                  </div>
+                  <div className="purchase-summary-item">
+                    <span>Source</span>
+                    <strong>
+                      {employeePurchaseControl.assignment_source === "DIRECT"
+                        ? "Direct override"
+                        : employeePurchaseControl.assignment_source === "ROLE"
+                          ? "Inherited from role"
+                          : "None"}
+                    </strong>
                   </div>
                   <div className="purchase-summary-item">
                     <span>Applied products</span>
                     <strong>{employeePurchaseControl.allowances.length}</strong>
-                  </div>
-                  <div className="purchase-summary-item">
-                    <span>Rolling caps</span>
-                    <strong>
-                      {employeePurchaseControl.allowances.filter((item) => item.short_term_quantity_limit != null).length}
-                    </strong>
                   </div>
                 </div>
 
@@ -648,14 +656,18 @@ export default async function CompanyEmployeesPage({
                     page={page}
                   />
                   <div className="field">
-                    <label htmlFor={`employee-purchase-template-${purchaseControlEmployeeId}`}>Assigned template</label>
+                    <label htmlFor={`employee-purchase-template-${purchaseControlEmployeeId}`}>Override template</label>
                     <select
                       id={`employee-purchase-template-${purchaseControlEmployeeId}`}
                       name="templateId"
-                      defaultValue={employeePurchaseControl.template_id ?? ""}
+                      defaultValue={employeePurchaseControl.direct_template_id ?? ""}
                       disabled={Boolean(purchaseControlError)}
                     >
-                      <option value="">No template (unassign)</option>
+                      <option value="">
+                        {employeePurchaseControl.purchase_control_role_id
+                          ? "No override (inherit Purchase Role)"
+                          : "No direct override"}
+                      </option>
                       {purchaseTemplates.map((template) => (
                         <option value={template.template_id} key={template.template_id}>
                           {template.name} · {template.rules.length} rule{template.rules.length === 1 ? "" : "s"}
@@ -666,7 +678,7 @@ export default async function CompanyEmployeesPage({
                   <label className="purchase-check-field">
                     <input type="checkbox" name="applyNow" />
                     <span>
-                      <strong>Apply immediately after assigning</strong>
+                      <strong>Apply override immediately</strong>
                       <span className="muted small-text">
                         Restarts this Employee&apos;s main allowance periods. Rolling usage remains based on purchase history.
                       </span>
@@ -674,11 +686,11 @@ export default async function CompanyEmployeesPage({
                   </label>
                   <div>
                     <button className="button" type="submit" disabled={Boolean(purchaseControlError)}>
-                      Save assignment
+                      Save override
                     </button>
                   </div>
                   <p className="muted small-text">
-                    Assignment alone does not change current applied allowances. Unassigning does not remove allowances already applied.
+                    Saving or removing an override does not change current applied allowances. Removing it falls back to the Purchase Role template when one is configured; use Apply when ready.
                   </p>
                 </form>
 
@@ -765,9 +777,9 @@ export default async function CompanyEmployeesPage({
                         page={page}
                       />
                       <div>
-                        <strong>Apply assigned template</strong>
+                        <strong>Apply effective template</strong>
                         <p className="muted small-text">
-                          Replace this Employee&apos;s applied product allowances and restart the main periods.
+                          Materialise the current effective template (override first, otherwise Purchase Role) and restart the main periods.
                         </p>
                       </div>
                       <label className="purchase-check-field">
