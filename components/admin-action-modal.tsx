@@ -2,11 +2,11 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { Eye, Pencil, Plus, ShieldCheck } from "lucide-react";
+import { Contactless, Eye, Pencil, Plus, ShieldCheck } from "lucide-react";
 import { PurchaseControlDialog } from "./purchase-control-dialog";
 import styles from "./admin-action-modal.module.css";
 
-type TriggerIcon = "plus" | "edit" | "view" | "permissions";
+type TriggerIcon = "plus" | "edit" | "view" | "permissions" | "rfid";
 type TriggerVariant = "primary" | "secondary" | "row";
 
 type AdminActionModalProps = {
@@ -28,6 +28,7 @@ function TriggerGlyph({ icon }: { icon: TriggerIcon }) {
   if (icon === "plus") return <Plus {...props} />;
   if (icon === "view") return <Eye {...props} />;
   if (icon === "permissions") return <ShieldCheck {...props} />;
+  if (icon === "rfid") return <Contactless {...props} />;
   return <Pencil {...props} />;
 }
 

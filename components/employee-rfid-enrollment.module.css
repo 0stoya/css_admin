@@ -1,0 +1,58 @@
+.content {
+  display: grid;
+  gap: 1rem;
+}
+
+.instructions {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 0.75rem;
+  background: #f7fafc;
+}
+
+.instructions span,
+.securityNote,
+.codeCard small {
+  color: var(--css-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.codeCard {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 1.15rem;
+  border: 1px solid #bad9f4;
+  border-radius: 0.85rem;
+  background: #eef7ff;
+  text-align: center;
+}
+
+.codeCard > span {
+  color: var(--css-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.codeCard > strong {
+  color: var(--css-text);
+  font-family: var(--font-secondary);
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  letter-spacing: 0.14em;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.securityNote {
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--css-secondary);
+  background: #fffdf0;
+}
