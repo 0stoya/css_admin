@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { History, ShieldCheck, UserMinus } from "lucide-react";
 import { AdminActionModal, AdminFormFooter } from "@/components/admin-action-modal";
 import { EmployeePurchaseControlModal } from "@/components/employee-purchase-control-modal";
+import { EmployeeRfidEnrollment } from "@/components/employee-rfid-enrollment";
 import { getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { EMPLOYEE_IMPORT_TEMPLATE } from "@/lib/company-employees-csv";
@@ -574,6 +575,13 @@ export default async function CompanyEmployeesPage({
                         </details>
                       ) : null}
                     </AdminActionModal>
+                    <EmployeeRfidEnrollment
+                      companyId={companyId}
+                      employeeId={employee.employee_id}
+                      employeeName={employeeName(employee)}
+                      employeeCode={employee.employee_code}
+                      active={employee.active}
+                    />
                     <Link
                       className="admin-employee-icon-link"
                       href={purchaseControlHref}
