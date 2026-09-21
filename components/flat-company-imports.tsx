@@ -16,6 +16,7 @@ import {
 } from "@/app/(admin)/bulk-import/actions";
 import type { FlatCompanyImportState, ImportRowStatus } from "@/lib/import-export-types";
 import styles from "@/components/company-import-export-workspace.module.css";
+import { RolePermissionsCsvHelp } from "@/components/role-permissions-csv-help";
 
 const initialState: FlatCompanyImportState = {
   phase: "idle",
@@ -37,6 +38,7 @@ type PanelProps = {
   exampleHref: string;
   companyId?: number;
   showCreateMissingRoles?: boolean;
+  showRolePermissionsGuide?: boolean;
   groupResultsByCompany?: boolean;
   applyConfirmation?: string;
   help: string;
@@ -169,6 +171,7 @@ function FlatImportPanel({
   exampleHref,
   companyId,
   showCreateMissingRoles = false,
+  showRolePermissionsGuide = false,
   groupResultsByCompany = true,
   applyConfirmation,
   help,
@@ -199,6 +202,7 @@ function FlatImportPanel({
       <div className={downloadClass}>
         <a className="button button-secondary button-link" href={exportHref}>Download current CSV</a>
         <a className="button button-secondary button-link" href={exampleHref}>Download example CSV</a>
+        {showRolePermissionsGuide ? <RolePermissionsCsvHelp /> : null}
       </div>
 
       {workspace ? <ImportSteps state={state} /> : null}
@@ -334,6 +338,7 @@ export function CompanyFlatImportPanels({ companyId, companyRef }: { companyId: 
           exportHref={`${base}/exports/roles`}
           exampleHref={`${base}/examples/roles`}
           showCreateMissingRoles
+          showRolePermissionsGuide
           help="Columns start user_role, company_ref, sort_order. Permission columns use full tree paths. Protected/non-assignable resources such as All are not writable and are preserved."
           workspace
         />
@@ -405,6 +410,7 @@ export function BulkFlatImportPanels() {
         exportHref={`${base}/exports/roles`}
         exampleHref={`${base}/examples/roles`}
         showCreateMissingRoles
+        showRolePermissionsGuide
         help="All companies referenced by one roles CSV must expose the same Fluid permission tree. Each company is dry-run and applied independently; one company failure does not block another company’s backend transaction."
       />
       <FlatImportPanel
