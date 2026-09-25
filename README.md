@@ -36,6 +36,7 @@ Roadmaps and acceptance references:
 - [`docs/PORTAL_UI_ROADMAP.md`](docs/PORTAL_UI_ROADMAP.md) — customer-facing UI refinement and remaining Portal-wide acceptance gate;
 - [`docs/PORTAL_REGRESSION_CHECKLIST.md`](docs/PORTAL_REGRESSION_CHECKLIST.md) — live Company Portal acceptance checklist;
 - [`docs/AUTH_UI_BOUNDARIES.md`](docs/AUTH_UI_BOUNDARIES.md) — authentication and ownership contract.
+- [`docs/COMPANY_FINANCE_LOCAL_SNAPSHOTS.md`](docs/COMPANY_FINANCE_LOCAL_SNAPSHOTS.md) — local Postgres finance snapshots, visibility controls and group-head finance rollout.
 
 The next agreed functional candidate is stacked purchase allowances for the same logical product (for example, **10 within 365 days and 2 within 30 days**, both enforced simultaneously). That is a backend capability first under `Css/Commerce/**`, not a browser-side rule.
 

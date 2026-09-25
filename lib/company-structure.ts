@@ -114,3 +114,7 @@ export function findCompanyStructureContext(
 
   return null;
 }
+
+export function flattenCompanyStructure(node: CompanyStructureNode): CompanyStructureNode[] {
+  return [node, ...node.children.flatMap((child) => flattenCompanyStructure(child))];
+}

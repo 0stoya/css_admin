@@ -2,13 +2,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
+  defaultCompanyFinanceVisibility,
+  getCompanyFinanceVisibility,
+  isCompanyFinanceStoreConfigured,
+} from "@/lib/company-finance-local";
+import {
   getCompanySettings,
   getCompanySettingsOptions,
   type CompanySettings,
   type CompanySettingsOptions,
 } from "@/lib/graphql/company-settings";
 import styles from "@/components/company-settings-workspace.module.css";
-import { deleteCompanyAction, updateCompanySettingsAction } from "./actions";
+import {
+  deleteCompanyAction,
+  updateCompanyFinanceVisibilityAction,
+  updateCompanySettingsAction,
+} from "./actions";
 
 type SettingsView = "overview" | "local" | "danger";
 
@@ -31,6 +40,33 @@ async function loadOptions() {
     return { options: await getCompanySettingsOptions(), error: null };
   } catch (error) {
     return { options: null, error: graphQLErrorMessage(error) };
+  }
+}
+
+async function loadFinanceVisibility(companyId: number) {
+  const configured = isCompanyFinanceStoreConfigured();
+  if (!configured) {
+    return {
+      financeVisibility: defaultCompanyFinanceVisibility(companyId),
+      financeVisibilityError: null,
+      financeVisibilityConfigured: false,
+    };
+  }
+
+  try {
+    return {
+      financeVisibility: await getCompanyFinanceVisibility(companyId),
+      financeVisibilityError: null,
+      financeVisibilityConfigured: true,
+    };
+  } catch (error) {
+    return {
+      financeVisibility: defaultCompanyFinanceVisibility(companyId),
+      financeVisibilityError: error instanceof Error
+        ? error.message
+        : "Local finance settings are unavailable.",
+      financeVisibilityConfigured: true,
+    };
   }
 }
 
@@ -69,9 +105,15 @@ export default async function CompanySettingsPage({
     notFound();
   }
 
-  const [{ company, error: companyError }, { options, error: optionsError }, query] = await Promise.all([
+  const [
+    { company, error: companyError },
+    { options, error: optionsError },
+    { financeVisibility, financeVisibilityError, financeVisibilityConfigured },
+    query,
+  ] = await Promise.all([
     loadCompany(companyId),
     loadOptions(),
+    loadFinanceVisibility(companyId),
     searchParams,
   ]);
 
@@ -323,6 +365,119 @@ export default async function CompanySettingsPage({
               </p>
             </div>
           )}
+        </section>
+      ) : null}
+
+      {activeView === "local" ? (
+        <section className={`card ${styles.sectionCard}`}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <p className="eyebrow">Finance presentation</p>
+              <h2>Finance visibility</h2>
+              <p className="muted">
+                Choose which spend periods appear in this company&apos;s Finance workspace. Group heads use the same switches for the columns in their group snapshot table.
+              </p>
+            </div>
+            <span className={`badge ${financeVisibilityConfigured ? "badge-ok" : "badge-neutral"}`}>
+              {financeVisibilityConfigured ? "Local Postgres" : "Not configured"}
+            </span>
+          </div>
+
+          {financeVisibilityError ? <div className="error">{financeVisibilityError}</div> : null}
+
+          <form action={updateCompanyFinanceVisibilityAction} className={styles.localForm}>
+            <input type="hidden" name="companyId" value={company.company_id} />
+            <div className={styles.localGrid}>
+              <label className="check-field">
+                <input
+                  name="showYearToDate"
+                  type="checkbox"
+                  defaultChecked={financeVisibility.show_year_to_date}
+                  disabled={!financeVisibilityConfigured}
+                />
+                <span>
+                  <strong>Show spend to date</strong>
+                  <small className="muted">Current calendar-year OGL order value.</small>
+                </span>
+              </label>
+
+              <label className="check-field">
+                <input
+                  name="showLast7Days"
+                  type="checkbox"
+                  defaultChecked={financeVisibility.show_last_7_days}
+                  disabled={!financeVisibilityConfigured}
+                />
+                <span>
+                  <strong>Show last 7 days</strong>
+                  <small className="muted">Rolling 7-day order value and count.</small>
+                </span>
+              </label>
+
+              <label className="check-field">
+                <input
+                  name="showLast30Days"
+                  type="checkbox"
+                  defaultChecked={financeVisibility.show_last_30_days}
+                  disabled={!financeVisibilityConfigured}
+                />
+                <span>
+                  <strong>Show last 30 days</strong>
+                  <small className="muted">Rolling 30-day order value and count.</small>
+                </span>
+              </label>
+
+              <label className="check-field">
+                <input
+                  name="showLast3Months"
+                  type="checkbox"
+                  defaultChecked={financeVisibility.show_last_3_months}
+                  disabled={!financeVisibilityConfigured}
+                />
+                <span>
+                  <strong>Show last 3 months</strong>
+                  <small className="muted">Existing Fluid 3-month finance period.</small>
+                </span>
+              </label>
+
+              <label className="check-field">
+                <input
+                  name="showLast6Months"
+                  type="checkbox"
+                  defaultChecked={financeVisibility.show_last_6_months}
+                  disabled={!financeVisibilityConfigured}
+                />
+                <span>
+                  <strong>Show last 6 months</strong>
+                  <small className="muted">Existing Fluid 6-month finance period.</small>
+                </span>
+              </label>
+
+              <label className="check-field">
+                <input
+                  name="showLast365Days"
+                  type="checkbox"
+                  defaultChecked={financeVisibility.show_last_365_days}
+                  disabled={!financeVisibilityConfigured}
+                />
+                <span>
+                  <strong>Show last 365 days</strong>
+                  <small className="muted">
+                    Ready now; it shows — until Fluid supplies the exact rolling 365-day field.
+                  </small>
+                </span>
+              </label>
+            </div>
+
+            <div className="button-row">
+              <button className="button" type="submit" disabled={!financeVisibilityConfigured}>
+                Save finance visibility
+              </button>
+              <span className="muted small-text">
+                Hiding a period changes presentation only. Stored snapshots remain available for group totals and reporting.
+              </span>
+            </div>
+          </form>
         </section>
       ) : null}
 
