@@ -46,11 +46,17 @@ export async function oglRequest(
   });
 
   const text = await response.text();
-  let body;
-  try {
-    body = text ? JSON.parse(text) : {};
-  } catch {
-    throw new Error(`OGL returned invalid JSON for ${path} (HTTP ${response.status}).`);
+  let body = null;
+  let parseError = null;
+
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch (error) {
+      parseError = error;
+    }
+  } else {
+    body = {};
   }
 
   if (response.status === 404 && notFoundAsEmpty) {
@@ -58,10 +64,22 @@ export async function oglRequest(
   }
 
   if (!response.ok) {
-    const detail = Array.isArray(body?.errors) && body.errors.length
+    const jsonDetail = Array.isArray(body?.errors) && body.errors.length
       ? JSON.stringify(body.errors[0])
-      : response.statusText || "request failed";
+      : typeof body?.message === "string"
+        ? body.message
+        : null;
+    const rawDetail = text
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\\s+/g, " ")
+      .trim()
+      .slice(0, 500);
+    const detail = jsonDetail || rawDetail || response.statusText || "request failed";
     throw new Error(`OGL ${path} returned HTTP ${response.status}: ${detail}`);
+  }
+
+  if (parseError) {
+    throw new Error(`OGL returned invalid JSON for ${path} (HTTP ${response.status}).`);
   }
 
   if (Array.isArray(body?.errors) && body.errors.length && !Array.isArray(body?.data)) {

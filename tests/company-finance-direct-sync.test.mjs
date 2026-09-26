@@ -80,6 +80,25 @@ test("missing OGL order history is treated as an empty finance period", async ()
   assert.deepEqual(rows, []);
 });
 
+test("non-JSON OGL HTTP errors expose the gateway response detail", async () => {
+  const config = {
+    apiUrl: "https://ogl.example.test",
+    apiKey: "secret",
+    timeoutMs: 5_000,
+  };
+  const fetchImpl = async () => ({
+    ok: false,
+    status: 403,
+    statusText: "Forbidden",
+    text: async () => "<html><body>Source IP is not allowed</body></html>",
+  });
+
+  await assert.rejects(
+    () => oglRequest("customer/BIO007/orders/365", config, fetchImpl),
+    /HTTP 403: Source IP is not allowed/,
+  );
+});
+
 test("direct OGL sync always requests enough history for YTD and 365 days", () => {
   assert.equal(financeHistoryDays(new Date("2026-09-26T12:00:00Z")), 365);
   assert.equal(financeHistoryDays(new Date("2028-12-31T12:00:00Z")), 366);
