@@ -195,32 +195,51 @@ export default async function PortalEmployeesPage({ searchParams }: { searchPara
   const notice = firstParam(query.notice);
   const mutationError = firstParam(query.error);
 
-  const [contextResult, administrationResult, configResult, employeesResult, spendResult] = await Promise.allSettled([
+  const [contextResult, administrationResult, configResult] = await Promise.allSettled([
     getCompanyPortalContext(),
     getCompanyPortalAdministration(),
     getPortalEmployeeConfiguration(),
-    getPortalEmployees({ currentPage: page, pageSize: PAGE_SIZE, search: q, active: activeFilter(status) }),
-    getPortalEmployeeSpend({ from, to }),
   ]);
 
-  if (contextResult.status === "rejected" || employeesResult.status === "rejected") {
+  if (contextResult.status === "rejected" || configResult.status === "rejected") {
     const reason = contextResult.status === "rejected"
       ? contextResult.reason
-      : employeesResult.status === "rejected"
-        ? employeesResult.reason
+      : configResult.status === "rejected"
+        ? configResult.reason
         : new Error("Employee workspace unavailable.");
     return <section className="card stack"><div><p className="eyebrow">Company portal</p><h1>Employees unavailable</h1></div><div className="error">{graphQLErrorMessage(reason)}</div></section>;
   }
 
   const context = contextResult.value;
   const administration = administrationResult.status === "fulfilled" ? administrationResult.value : null;
-  const employees = employeesResult.value;
+  const configuration = configResult.value;
   const permissions = employeePermissions(administration);
+
+  if (!configuration.uses_employee) {
+    return (
+      <section className="card stack">
+        <div><p className="eyebrow">Company portal</p><h1>Employees not enabled</h1></div>
+        <p className="muted">
+          Employee ordering has not been enabled for this company by Chelmsford Safety Supplies.
+        </p>
+      </section>
+    );
+  }
+
   if (!permissions.canView) {
     return <section className="card stack"><div><p className="eyebrow">Company portal</p><h1>Employees unavailable</h1></div><div className="error">Your company role does not allow employee viewing.</div></section>;
   }
 
-  const configuration = configResult.status === "fulfilled" ? configResult.value : null;
+  const [employeesResult, spendResult] = await Promise.allSettled([
+    getPortalEmployees({ currentPage: page, pageSize: PAGE_SIZE, search: q, active: activeFilter(status) }),
+    getPortalEmployeeSpend({ from, to }),
+  ]);
+
+  if (employeesResult.status === "rejected") {
+    return <section className="card stack"><div><p className="eyebrow">Company portal</p><h1>Employees unavailable</h1></div><div className="error">{graphQLErrorMessage(employeesResult.reason)}</div></section>;
+  }
+
+  const employees = employeesResult.value;
   const spend = spendResult.status === "fulfilled" ? spendResult.value : null;
   const spendError = spendResult.status === "rejected" ? graphQLErrorMessage(spendResult.reason) : null;
   const selectedMembership = context.companies.find((membership) => membership.selected);
@@ -268,18 +287,20 @@ export default async function PortalEmployeesPage({ searchParams }: { searchPara
       <section className={styles.topGrid} aria-label="Employee settings and data tools">
         <article className={`card ${styles.configurationCard}`}>
           <div><p className="eyebrow">Ordering setup</p><h2>Employee ordering</h2><p className="muted">Choose how employee beneficiaries are used when your company places orders.</p></div>
-          {configuration ? permissions.canManage ? (
+          <div className="notice">
+            Employee ordering is enabled for this company by Chelmsford Safety Supplies.
+          </div>
+          {permissions.canManage ? (
             <form action={savePortalEmployeeConfigurationAction} className="stack">
-              <label className={styles.switchRow}><input name="usesEmployee" type="checkbox" defaultChecked={configuration.uses_employee} /><span><strong>Use employees</strong><small>Enable employee-aware ordering for this company.</small></span></label>
               <label className={styles.switchRow}><input name="multiEmployeeBasket" type="checkbox" defaultChecked={configuration.multi_employee_basket} /><span><strong>Multi-employee basket</strong><small>Allow one basket to contain items for more than one employee.</small></span></label>
-              <div><button className="button" type="submit">Save ordering settings</button></div>
+              <div><button className="button" type="submit">Save basket setting</button></div>
             </form>
           ) : (
             <dl>
-              <div><dt>Employee ordering</dt><dd>{configuration.uses_employee ? "Enabled" : "Disabled"}</dd></div>
+              <div><dt>Employee ordering</dt><dd>Enabled by Chelmsford Safety Supplies</dd></div>
               <div><dt>Multi-employee basket</dt><dd>{configuration.multi_employee_basket ? "Enabled" : "Disabled"}</dd></div>
             </dl>
-          ) : <div className="error">Employee configuration is unavailable.</div>}
+          )}
         </article>
 
         <article className={`card ${styles.importCard}`}>

@@ -8,6 +8,7 @@ import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
 import {
   createPortalEmployee,
   deactivatePortalEmployee,
+  getPortalEmployeeConfiguration,
   importPortalEmployees,
   savePortalEmployeeConfiguration,
   updatePortalEmployee,
@@ -52,6 +53,14 @@ function employeeInput(formData: FormData): CompanyEmployeeInput {
   };
 }
 
+async function requireEmployeeFeatureEnabled() {
+  const current = await getPortalEmployeeConfiguration();
+  if (!current.uses_employee) {
+    throw new Error("Employee ordering has been disabled for this company by Chelmsford Safety Supplies.");
+  }
+  return current;
+}
+
 async function runMutation(notice: string, work: () => Promise<unknown>) {
   let errorMessage: string | null = null;
   try {
@@ -67,35 +76,45 @@ async function runMutation(notice: string, work: () => Promise<unknown>) {
 }
 
 export async function savePortalEmployeeConfigurationAction(formData: FormData) {
-  const usesEmployee = formData.get("usesEmployee") === "on";
   const multiEmployeeBasket = formData.get("multiEmployeeBasket") === "on";
-  if (multiEmployeeBasket && !usesEmployee) {
-    return runMutation("", async () => {
-      throw new Error("Multi-employee baskets require Uses employees to be enabled.");
+
+  return runMutation("Employee basket setting updated.", async () => {
+    await requireEmployeeFeatureEnabled();
+
+    await savePortalEmployeeConfiguration({
+      uses_employee: true,
+      multi_employee_basket: multiEmployeeBasket,
     });
-  }
-  return runMutation("Employee ordering settings updated.", () =>
-    savePortalEmployeeConfiguration({ uses_employee: usesEmployee, multi_employee_basket: multiEmployeeBasket }),
-  );
+  });
 }
 
 export async function createPortalEmployeeAction(formData: FormData) {
-  return runMutation("Employee created.", () => createPortalEmployee(employeeInput(formData)));
+  return runMutation("Employee created.", async () => {
+    await requireEmployeeFeatureEnabled();
+    await createPortalEmployee(employeeInput(formData));
+  });
 }
 
 export async function updatePortalEmployeeAction(formData: FormData) {
   const employeeId = positiveInt(formData, "employeeId");
-  return runMutation("Employee updated.", () => updatePortalEmployee(employeeId, employeeInput(formData)));
+  return runMutation("Employee updated.", async () => {
+    await requireEmployeeFeatureEnabled();
+    await updatePortalEmployee(employeeId, employeeInput(formData));
+  });
 }
 
 export async function deactivatePortalEmployeeAction(formData: FormData) {
   const employeeId = positiveInt(formData, "employeeId");
-  return runMutation("Employee deactivated. Historical attribution remains available.", () => deactivatePortalEmployee(employeeId));
+  return runMutation("Employee deactivated. Historical attribution remains available.", async () => {
+    await requireEmployeeFeatureEnabled();
+    await deactivatePortalEmployee(employeeId);
+  });
 }
 
 export async function importPortalEmployeesCsvAction(formData: FormData) {
   const upload = formData.get("employeeCsv");
   return runMutation("Employee CSV imported.", async () => {
+    await requireEmployeeFeatureEnabled();
     if (!(upload instanceof File) || upload.size === 0) throw new Error("Choose a non-empty employee CSV file.");
     if (upload.size > 2_000_000) throw new Error("Employee CSV must be 2 MB or smaller.");
 

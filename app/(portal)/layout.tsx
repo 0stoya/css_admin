@@ -31,13 +31,20 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   }
 
   const capabilities = administrationResult.status === "fulfilled" ? administrationResult.value : null;
-  // Employee ACL is independent of Users/Roles administration ACL, so probe the
-  // employee read contract directly rather than hiding the route when css_company_admin is unavailable.
-  const canViewEmployees = employeeResult.status === "fulfilled";
+  // Employee ACL is independent of Users/Roles administration ACL, so the
+  // configuration query remains the capability probe. The feature must also be
+  // enabled for the selected company before Portal exposes Employees.
+  const canViewEmployees = employeeResult.status === "fulfilled"
+    && employeeResult.value.uses_employee;
 
   const navigation: PortalNavigationItem[] = [
-    { href: "/portal", label: "Company", exact: true },
     { href: "/portal/company-profile", label: "Company profile" },
+    ...(capabilities?.can_view_users
+      ? [{ href: "/portal?view=users#portal-users", label: "Users" }]
+      : []),
+    ...(capabilities?.can_view_roles
+      ? [{ href: "/portal?view=roles#portal-roles", label: "Roles" }]
+      : []),
     ...(canViewEmployees ? [{ href: "/portal/employees", label: "Employees" }] : []),
     ...(capabilities?.can_manage_catalog_visibility ? [{ href: "/portal/catalog", label: "Catalogue" }] : []),
     ...(capabilities?.can_view_purchase_controls ? [{ href: "/portal/purchase-controls", label: "Purchase controls" }] : []),
