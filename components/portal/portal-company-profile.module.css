@@ -121,6 +121,91 @@
   font-size: 0.78rem;
 }
 
+.monthlySection {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid #e4ebf0;
+}
+
+.monthlyHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.monthlyHeader h3 {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-secondary);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.monthlyCurrency {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  background: #edf3f7;
+  color: #42627b;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.monthlyChart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.45rem;
+  min-height: 190px;
+  align-items: end;
+}
+
+.monthColumn {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 130px auto;
+  gap: 0.35rem;
+  align-items: end;
+  text-align: center;
+}
+
+.monthValue {
+  overflow: hidden;
+  color: #536b80;
+  font-size: 0.67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthTrack {
+  position: relative;
+  width: 100%;
+  height: 130px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eaf2f8;
+}
+
+.monthFill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: 3px;
+  border-top: 2px solid var(--css-secondary);
+  border-radius: 7px 7px 0 0;
+  background: var(--css-primary);
+}
+
+.monthLabel {
+  color: var(--css-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .financeFooter {
   display: flex;
   flex-wrap: wrap;
@@ -369,10 +454,11 @@
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; }
   .sideColumn { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monthlyChart { overflow-x: auto; grid-template-columns: repeat(12, minmax(58px, 1fr)); padding-bottom: 0.25rem; }
 }
 
 @media (max-width: 680px) {
-  .header, .financeHeader { align-items: flex-start; flex-direction: column; }
+  .header, .financeHeader, .monthlyHeader { align-items: flex-start; flex-direction: column; }
   .financeUpdated { min-width: 0; text-align: left; }
   .banner { min-height: 180px; padding: 1rem; }
   .logoWrap { width: 86px; height: 86px; }

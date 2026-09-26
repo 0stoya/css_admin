@@ -33,6 +33,32 @@ function formatAmount(value: number, currency: string) {
   }
 }
 
+function formatCompactAmount(value: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  } catch {
+    return formatAmount(value, currency);
+  }
+}
+
+function monthLabel(month: number) {
+  return new Intl.DateTimeFormat("en-GB", { month: "short" })
+    .format(new Date(2000, month - 1, 1));
+}
+
+function normaliseMonths(finance: StoredCompanyFinancialSummary) {
+  const byMonth = new Map(finance.monthly.map((month) => [month.month, month]));
+  return Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    return byMonth.get(month) ?? { month, order_count: 0, value: 0 };
+  });
+}
+
 function formatDate(value: string | null) {
   if (!value) return "No orders returned";
   const date = new Date(value);
@@ -148,6 +174,8 @@ export default async function PortalCompanyProfilePage() {
     ? { backgroundImage: `linear-gradient(rgb(0 35 72 / 18%), rgb(0 35 72 / 18%)), url("${presentation.banner_url}")` }
     : undefined;
   const periods = finance && visibility ? financePeriods(finance, visibility) : [];
+  const monthly = finance ? normaliseMonths(finance) : [];
+  const maxMonthValue = Math.max(1, ...monthly.map((month) => month.value));
 
   return (
     <div className={styles.profile}>
@@ -163,59 +191,6 @@ export default async function PortalCompanyProfilePage() {
 
       {!presentation.enabled ? (
         <div className={styles.notice}>Your personalised company page is not enabled yet. Your core company details are still available below.</div>
-      ) : null}
-
-      {canViewFinance ? (
-        <section className={styles.financeSection} aria-labelledby="company-finance-heading">
-          <div className={styles.financeHeader}>
-            <div>
-              <span className="eyebrow">Financial overview</span>
-              <h2 id="company-finance-heading">Order activity</h2>
-              <p>Read-only OGL order value for your company. These figures are not the accounting ledger balance.</p>
-            </div>
-            {finance ? (
-              <div className={styles.financeUpdated}>
-                <span>Updated</span>
-                <strong>{formatTimestamp(finance.refreshed_at)}</strong>
-              </div>
-            ) : null}
-          </div>
-
-          {financeError ? <div className="error">{financeError}</div> : null}
-
-          {finance ? (
-            <>
-              {periods.length ? (
-                <div className={styles.financeGrid}>
-                  {periods.map((item) => (
-                    <article className={styles.financeCard} key={item.key}>
-                      <span className={styles.financeLabel}>{item.label}</span>
-                      <strong className={styles.financeValue}>
-                        {item.period ? formatAmount(item.period.value, finance.currency) : "—"}
-                      </strong>
-                      <span className={styles.financeMeta}>
-                        {item.period
-                          ? `${item.period.order_count} order${item.period.order_count === 1 ? "" : "s"}`
-                          : "Awaiting source support"}
-                      </span>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className={styles.financeEmpty}>Financial summary periods are currently hidden by your company settings.</div>
-              )}
-
-              <div className={styles.financeFooter}>
-                <span>Last order <strong>{formatDate(finance.last_order_date)}</strong></span>
-                <span>Currency <strong>{finance.currency}</strong></span>
-              </div>
-            </>
-          ) : !financeError ? (
-            <div className={styles.financeEmpty}>
-              No local financial snapshot is available yet. Your company profile remains available normally.
-            </div>
-          ) : null}
-        </section>
       ) : null}
 
       <div className={styles.layout}>
@@ -291,6 +266,98 @@ export default async function PortalCompanyProfilePage() {
           </section>
         </aside>
       </div>
+
+      {canViewFinance ? (
+        <section className={styles.financeSection} aria-labelledby="company-finance-heading">
+          <div className={styles.financeHeader}>
+            <div>
+              <span className="eyebrow">Financial overview</span>
+              <h2 id="company-finance-heading">Order activity</h2>
+              <p>Read-only OGL order value for your company. These figures are not the accounting ledger balance.</p>
+            </div>
+            {finance ? (
+              <div className={styles.financeUpdated}>
+                <span>Updated</span>
+                <strong>{formatTimestamp(finance.refreshed_at)}</strong>
+              </div>
+            ) : null}
+          </div>
+
+          {financeError ? <div className="error">{financeError}</div> : null}
+
+          {finance ? (
+            <>
+              {periods.length ? (
+                <div className={styles.financeGrid}>
+                  {periods.map((item) => (
+                    <article className={styles.financeCard} key={item.key}>
+                      <span className={styles.financeLabel}>{item.label}</span>
+                      <strong className={styles.financeValue}>
+                        {item.period ? formatAmount(item.period.value, finance.currency) : "—"}
+                      </strong>
+                      <span className={styles.financeMeta}>
+                        {item.period
+                          ? `${item.period.order_count} order${item.period.order_count === 1 ? "" : "s"}`
+                          : "Awaiting source support"}
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.financeEmpty}>Financial summary periods are currently hidden by your company settings.</div>
+              )}
+
+              <section className={styles.monthlySection} aria-labelledby="portal-monthly-spend-heading">
+                <div className={styles.monthlyHeader}>
+                  <div>
+                    <span className="eyebrow">January–December</span>
+                    <h3 id="portal-monthly-spend-heading">{finance.year} spend per month</h3>
+                  </div>
+                  <span className={styles.monthlyCurrency}>{finance.currency}</span>
+                </div>
+
+                <div
+                  className={styles.monthlyChart}
+                  role="img"
+                  aria-label={`${finance.year} monthly OGL order value`}
+                >
+                  {monthly.map((month) => {
+                    const height = month.value > 0
+                      ? Math.max(3, (month.value / maxMonthValue) * 100)
+                      : 0;
+                    return (
+                      <div
+                        className={styles.monthColumn}
+                        key={month.month}
+                        title={`${monthLabel(month.month)}: ${formatAmount(month.value, finance.currency)} · ${month.order_count} orders`}
+                      >
+                        <span className={styles.monthValue}>
+                          {month.value > 0 ? formatCompactAmount(month.value, finance.currency) : "—"}
+                        </span>
+                        <div className={styles.monthTrack} aria-hidden="true">
+                          {month.value > 0 ? (
+                            <div className={styles.monthFill} style={{ height: `${height}%` }} />
+                          ) : null}
+                        </div>
+                        <span className={styles.monthLabel}>{monthLabel(month.month)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <div className={styles.financeFooter}>
+                <span>Last order <strong>{formatDate(finance.last_order_date)}</strong></span>
+                <span>Currency <strong>{finance.currency}</strong></span>
+              </div>
+            </>
+          ) : !financeError ? (
+            <div className={styles.financeEmpty}>
+              No local financial snapshot is available yet. Your company profile remains available normally.
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 }
