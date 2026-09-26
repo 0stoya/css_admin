@@ -2,7 +2,6 @@ import postgres from "postgres";
 
 declare global {
   // Reuse one small pool across Next.js server reloads/process lifetime.
-  // eslint-disable-next-line no-var
   var __cssAdminPostgres: ReturnType<typeof postgres> | undefined;
 }
 

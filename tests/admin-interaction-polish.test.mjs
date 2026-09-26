@@ -107,14 +107,14 @@ test("employee source keeps history separate while create/edit move to modals", 
 
 test("Employee secondary row actions stay icon-only and accessible", () => {
   const page = source("app/(admin)/companies/[id]/employees/page.tsx");
-  assert.match(page, />Actions<\\/span>/);
+  assert.match(page, />Actions<\/span>/);
   assert.match(page, /className="admin-employee-icon-link"/);
-  assert.match(page, /aria-label=\\{`Purchase controls for/);
-  assert.match(page, /aria-label=\\{`Order history for/);
+  assert.match(page, /aria-label=\{`Purchase controls for/);
+  assert.match(page, /aria-label=\{`Order history for/);
   assert.match(page, /title="Purchase controls"/);
   assert.match(page, /title="History"/);
-  assert.doesNotMatch(page, /<span>Purchase controls<\\/span>/);
-  assert.doesNotMatch(page, /<span>History<\\/span>/);
+  assert.doesNotMatch(page, /<span>Purchase controls<\/span>/);
+  assert.doesNotMatch(page, /<span>History<\/span>/);
 });
 test("portal Employee forms expose Purchase Role as policy-only metadata", () => {
   const page = source("app/(portal)/portal/employees/page.tsx");
