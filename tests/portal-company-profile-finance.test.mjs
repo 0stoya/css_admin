@@ -55,3 +55,26 @@ test("portal finance respects Admin visibility settings and remains read-only", 
   assert.match(profile, /Awaiting source support/);
   assert.match(profile, /No local financial snapshot is available yet/);
 });
+
+test("company profile content leads and finance follows underneath", () => {
+  const profile = source("app/(portal)/portal/company-profile/page.tsx");
+
+  const companyLayout = profile.indexOf("className={styles.layout}");
+  const financeSection = profile.indexOf("className={styles.financeSection}");
+
+  assert.ok(companyLayout >= 0);
+  assert.ok(financeSection > companyLayout);
+});
+
+test("portal financial overview includes monthly spend from the local snapshot", () => {
+  const profile = source("app/(portal)/portal/company-profile/page.tsx");
+  const css = source("components/portal/portal-company-profile.module.css");
+
+  assert.match(profile, /normaliseMonths\(finance\)/);
+  assert.match(profile, /spend per month/);
+  assert.match(profile, /monthly OGL order value/);
+  assert.match(profile, /monthly\.map/);
+  assert.match(profile, /formatCompactAmount/);
+  assert.match(css, /\.monthlyChart/);
+  assert.match(css, /\.monthFill/);
+});
