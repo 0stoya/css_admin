@@ -72,6 +72,12 @@ function errorText(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function financeSyncSource(env = process.env) {
+  return env.CSS_ADMIN_FINANCE_SYNC_SOURCE?.trim().toLowerCase() === "ogl"
+    ? "ogl"
+    : "fluid";
+}
+
 async function discoverCustomers(config, options) {
   if (options.cref) {
     return [{ cref: options.cref, name: null, stopped: false }];
@@ -84,6 +90,17 @@ async function discoverCustomers(config, options) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const source = financeSyncSource();
+
+  if (source !== "ogl") {
+    console.log(JSON.stringify({
+      status: "DISABLED",
+      source,
+      message: "Direct OGL finance sync is disabled. Admin continues to use Fluid/local snapshots.",
+    }, null, 2));
+    return;
+  }
+
   const config = getDirectOglFinanceConfig();
   const customers = await discoverCustomers(config, options);
 

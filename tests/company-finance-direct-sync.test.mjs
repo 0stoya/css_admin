@@ -125,6 +125,28 @@ test("finance sync runner keeps its node shebang as the first line", () => {
   assert.ok(runner.startsWith("#!/usr/bin/env node\n"));
 });
 
+test("direct OGL automatic sync is opt-in and defaults to Fluid", () => {
+  const runner = source("scripts/finance-sync.mjs");
+  const env = source(".env.example");
+
+  assert.match(runner, /CSS_ADMIN_FINANCE_SYNC_SOURCE/);
+  assert.match(runner, /\? "ogl"\s*:\s*"fluid"/);
+  assert.match(runner, /status: "DISABLED"/);
+  assert.match(runner, /Direct OGL finance sync is disabled/);
+  assert.match(env, /CSS_ADMIN_FINANCE_SYNC_SOURCE=fluid/);
+});
+
+test("Finance reads exclude direct OGL snapshots while Fluid is selected", () => {
+  const localStore = source("lib/company-finance-local.ts");
+  const roadmap = source("ROADMAP.md");
+
+  assert.match(localStore, /companyFinanceSyncSource/);
+  assert.match(localStore, /source_kind <> 'OGL_DIRECT'/);
+  assert.match(localStore, /directOglEnabled/);
+  assert.match(roadmap, /Planned finance source hardening — Fluid bridge first/);
+  assert.match(roadmap, /Direct OGL snapshot\/schema support exists but is \*\*disabled by default\*\*/);
+});
+
 test("CREF snapshots and systemd timer are part of the deployment contract", () => {
   const migration = source("deploy/postgres/002_direct_ogl_finance_sync.sql");
   const service = source("deploy/systemd/css-admin-finance-sync.service");
