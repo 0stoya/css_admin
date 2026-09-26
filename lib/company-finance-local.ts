@@ -157,6 +157,16 @@ export function isCompanyFinanceStoreConfigured() {
   return hasLocalPostgres();
 }
 
+export function companyFinanceSyncSource() {
+  return process.env.CSS_ADMIN_FINANCE_SYNC_SOURCE?.trim().toLowerCase() === "ogl"
+    ? "ogl"
+    : "fluid";
+}
+
+export function isDirectOglFinanceSyncEnabled() {
+  return companyFinanceSyncSource() === "ogl";
+}
+
 export async function saveCompanyFinanceSnapshot(summary: CompanyFinancialSummary) {
   const sql = getLocalPostgres();
   await sql`
@@ -236,6 +246,7 @@ export async function getLatestCompanyFinanceSnapshot(
 
   const sql = getLocalPostgres();
   const normalisedCref = cref?.trim() || null;
+  const directOglEnabled = isDirectOglFinanceSyncEnabled();
   const rows = normalisedCref
     ? await sql`
         SELECT
@@ -261,8 +272,11 @@ export async function getLatestCompanyFinanceSnapshot(
           captured_at,
           source_kind
         FROM css_admin.company_order_finance_snapshot
-        WHERE company_id = ${companyId}
-           OR UPPER(cref) = UPPER(${normalisedCref})
+        WHERE (
+          company_id = ${companyId}
+          OR UPPER(cref) = UPPER(${normalisedCref})
+        )
+          AND (${directOglEnabled} OR source_kind <> 'OGL_DIRECT')
         ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
         LIMIT 1
       `
@@ -291,6 +305,7 @@ export async function getLatestCompanyFinanceSnapshot(
           source_kind
         FROM css_admin.company_order_finance_snapshot
         WHERE company_id = ${companyId}
+          AND (${directOglEnabled} OR source_kind <> 'OGL_DIRECT')
         ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
         LIMIT 1
       `;
@@ -303,6 +318,7 @@ export async function getLatestCompanyFinanceSnapshots(companyIds: number[]) {
   if (!hasLocalPostgres() || companyIds.length === 0) return result;
 
   const sql = getLocalPostgres();
+  const directOglEnabled = isDirectOglFinanceSyncEnabled();
   const rows = await sql`
     SELECT DISTINCT ON (company_id)
       company_id,
@@ -328,6 +344,7 @@ export async function getLatestCompanyFinanceSnapshots(companyIds: number[]) {
       source_kind
     FROM css_admin.company_order_finance_snapshot
     WHERE company_id IN ${sql(companyIds)}
+      AND (${directOglEnabled} OR source_kind <> 'OGL_DIRECT')
     ORDER BY company_id, source_refreshed_at DESC, captured_at DESC
   `;
 
@@ -351,6 +368,7 @@ export async function getLatestCompanyFinanceSnapshotsForCompanies(
     .filter((value): value is string => Boolean(value));
 
   const sql = getLocalPostgres();
+  const directOglEnabled = isDirectOglFinanceSyncEnabled();
   const rows = refs.length
     ? await sql`
         SELECT
@@ -376,8 +394,11 @@ export async function getLatestCompanyFinanceSnapshotsForCompanies(
           captured_at,
           source_kind
         FROM css_admin.company_order_finance_snapshot
-        WHERE company_id IN ${sql(ids)}
-           OR UPPER(cref) IN ${sql(refs)}
+        WHERE (
+          company_id IN ${sql(ids)}
+          OR UPPER(cref) IN ${sql(refs)}
+        )
+          AND (${directOglEnabled} OR source_kind <> 'OGL_DIRECT')
         ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
       `
     : await sql`
@@ -405,6 +426,7 @@ export async function getLatestCompanyFinanceSnapshotsForCompanies(
           source_kind
         FROM css_admin.company_order_finance_snapshot
         WHERE company_id IN ${sql(ids)}
+          AND (${directOglEnabled} OR source_kind <> 'OGL_DIRECT')
         ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
       `;
 

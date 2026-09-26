@@ -1,6 +1,6 @@
 # CSS Admin roadmap
 
-Last updated: 2026-09-06
+Last updated: 2026-09-26
 
 ## Goal
 
@@ -176,6 +176,32 @@ Accepted patterns now include:
 - [x] UI changes preserve backend-authoritative Fluid ACL and validation behavior.
 
 Presentation can still receive small follow-up polish, but there is no remaining major Admin workspace redesign blocking production serving.
+
+## Planned finance source hardening — Fluid bridge first
+
+The local Postgres finance read model is accepted and remains available to Admin regardless of which upstream source is active.
+
+Current production policy:
+
+- [x] Finance pages use local Postgres snapshots first and fall back to the existing authenticated Fluid GraphQL financial summary.
+- [x] Direct OGL snapshot/schema support exists but is **disabled by default** behind `CSS_ADMIN_FINANCE_SYNC_SOURCE=fluid`.
+- [x] The direct OGL runner exits cleanly without calling Web Connector unless the source is explicitly set to `ogl`.
+- [ ] Keep the production automatic direct-OGL timer disabled while the new server is blocked by the OGL Web Connector source/network boundary.
+
+Next Fluid / `Css/Commerce` slice:
+
+- [ ] Extend `CssAdminCompanyFinancialSummary` with an exact `last_365_days` period.
+- [ ] Update `AdminCompanyFinancialSummary` to request enough OGL history for both calendar YTD and a true rolling 365 days, while preserving the existing 7/30/3m/6m semantics.
+- [ ] Add/extend Fluid unit and API-functional coverage for the 365-day finance contract.
+- [ ] Design an efficient authenticated Admin finance-refresh/bulk-read contract so css_admin can refresh many companies without browser-session coupling or one GraphQL round-trip per company.
+- [ ] Build and validate the Fluid change in `0stoya/Fluid`; deployment to live Magento remains an external release dependency.
+- [ ] After the Fluid release is live, add a global Admin finance-source control with explicit choices such as **Fluid (default)** and **Direct OGL**.
+- [ ] Store the selected source locally in css_admin/Postgres so switching source does not require an application rebuild.
+- [ ] Enable automatic all-company refresh through the deployed Fluid bridge first.
+- [ ] Retain the direct OGL implementation as the later low-latency source once Web Connector access for the Admin server is approved.
+- [ ] Before enabling either automatic source globally, compare a representative company set against the existing Finance workspace totals, including zero-order companies and the rolling 365-day value.
+
+The source switch must be reversible. Changing source must not delete existing snapshots or company visibility preferences.
 
 ## Remaining regression/hardening checks
 

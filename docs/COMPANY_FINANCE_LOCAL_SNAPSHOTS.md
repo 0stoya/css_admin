@@ -66,12 +66,31 @@ Migration 002:
 - adds a CREF/latest index and CREF/source uniqueness;
 - adds `css_admin.company_finance_sync_run` for operational run history.
 
-## Environment
+## Environment and source switch
 
-For local/manual testing, these values may live in the ignored `.env.local` file. The sync runner automatically loads `.env.local` when present.
+The finance source selector defaults to Fluid when it is missing or invalid:
+
+```env
+CSS_ADMIN_FINANCE_SYNC_SOURCE=fluid
+```
+
+With `fluid` selected:
+
+- Finance pages ignore `OGL_DIRECT` snapshots and continue using the existing local Fluid snapshots / authenticated Fluid fallback.
+- `yarn finance:sync` exits successfully with `status: "DISABLED"` and does not call OGL.
+- An installed systemd timer is therefore harmless, although production should leave the direct-OGL timer disabled until Web Connector access is approved.
+
+Direct OGL is opt-in only:
+
+```env
+CSS_ADMIN_FINANCE_SYNC_SOURCE=ogl
+```
+
+For local/manual direct-OGL testing, these values may live in the ignored `.env.local` file. The sync runner automatically loads `.env.local` when present.
 
 ```env
 CSS_ADMIN_DATABASE_URL=postgresql://css_admin:REPLACE_ME@127.0.0.1:5432/css_admin
+CSS_ADMIN_FINANCE_SYNC_SOURCE=ogl
 CSS_ADMIN_OGL_API_URL=https://ogl-api.example.com
 CSS_ADMIN_OGL_API_KEY=REPLACE_WITH_OGL_API_KEY
 CSS_ADMIN_FINANCE_CURRENCY=GBP
@@ -88,18 +107,18 @@ sudo install -m 600 -o root -g root /dev/null /etc/css-admin-finance-sync.env
 sudoedit /etc/css-admin-finance-sync.env
 ```
 
-Example content:
+Example content while direct OGL remains disabled:
 
 ```env
 CSS_ADMIN_DATABASE_URL=postgresql://css_admin:REPLACE_ME@127.0.0.1:5432/css_admin
-CSS_ADMIN_OGL_API_URL=https://ogl-api.example.com
-CSS_ADMIN_OGL_API_KEY=REPLACE_WITH_OGL_API_KEY
-CSS_ADMIN_FINANCE_CURRENCY=GBP
-CSS_ADMIN_FINANCE_SYNC_CONCURRENCY=5
-CSS_ADMIN_FINANCE_SYNC_TIMEOUT_MS=25000
+CSS_ADMIN_FINANCE_SYNC_SOURCE=fluid
 ```
 
+When direct Web Connector access is eventually approved, switch the source to `ogl` and add the OGL URL/key plus the optional tuning values.
+
 ## Manual acceptance
+
+Direct OGL acceptance is only applicable when `CSS_ADMIN_FINANCE_SYNC_SOURCE=ogl`.
 
 Before enabling the timer, test one CREF:
 
@@ -162,7 +181,9 @@ ORDER BY cref, source_refreshed_at DESC;
 
 ## Automatic systemd sync
 
-Install the units shipped in this repository:
+Do not enable the direct-OGL timer in production while `CSS_ADMIN_FINANCE_SYNC_SOURCE=fluid`. The runner itself is fail-safe and exits as disabled without making an OGL request, but leaving the timer off makes the operational intent explicit.
+
+When direct OGL is intentionally enabled, install the units shipped in this repository:
 
 ```bash
 sudo cp deploy/systemd/css-admin-finance-sync.service /etc/systemd/system/
@@ -203,7 +224,8 @@ The existing Fluid GraphQL finance path remains deliberately available:
 - manual **Refresh finance** and **Refresh group finance** still use the authenticated Fluid path in this slice;
 - those rows are marked `FLUID_GRAPHQL`;
 - direct automatic rows are marked `OGL_DIRECT`;
-- a direct snapshot newer than 12 hours is preferred over the Fluid fallback;
-- if direct sync has been stale for more than 12 hours, a newer Fluid snapshot may take over until the timer recovers.
+- while `CSS_ADMIN_FINANCE_SYNC_SOURCE=fluid`, `OGL_DIRECT` rows are ignored completely;
+- when `CSS_ADMIN_FINANCE_SYNC_SOURCE=ogl`, a direct snapshot newer than 12 hours is preferred;
+- if direct sync is enabled but stale for more than 12 hours, a newer Fluid snapshot may take over until the timer recovers.
 
 Direct OGL snapshots provide the true rolling 365-day value. The legacy Fluid fallback may leave 365 days blank until its GraphQL contract adds that exact period.
