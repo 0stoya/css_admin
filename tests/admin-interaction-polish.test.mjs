@@ -94,7 +94,7 @@ test("employee source keeps history separate while create/edit move to modals", 
   const page = source("app/(admin)/companies/[id]/employees/page.tsx");
   assert.match(page, /title="Add employee"/);
   assert.match(page, /triggerLabel="Edit"/);
-  assert.match(page, /admin-employee-history-link/);
+  assert.match(page, /href=\{historyHref\}/);
   assert.match(page, /id="employee-history"/);
   assert.match(page, /Deactivate employee/);
   assert.match(page, /Purchase controls/);
