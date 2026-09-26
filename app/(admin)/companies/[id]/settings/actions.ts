@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { saveCompanyFinanceVisibility } from "@/lib/company-finance-local";
 import {
   deleteCompany,
   getCompanySettings,
@@ -47,6 +48,7 @@ async function redirectMutationResult(
     await work();
     revalidatePath(settingsPath(companyId));
     revalidatePath(`/companies/${companyId}`);
+    revalidatePath(`/companies/${companyId}/finance`);
   } catch (error) {
     errorMessage = graphQLErrorMessage(error);
   }
@@ -74,6 +76,22 @@ export async function updateCompanySettingsAction(formData: FormData) {
       homepage_content: stringValue(formData, "homepageContent"),
       show_company_landing_page: formData.get("showCompanyLandingPage") === "on",
       locker_collection_enabled: formData.get("lockerCollectionEnabled") === "on",
+    });
+  });
+}
+
+export async function updateCompanyFinanceVisibilityAction(formData: FormData) {
+  const companyId = requiredPositiveInt(formData, "companyId");
+
+  return redirectMutationResult(companyId, "local", "Finance visibility updated.", async () => {
+    await saveCompanyFinanceVisibility({
+      company_id: companyId,
+      show_year_to_date: formData.get("showYearToDate") === "on",
+      show_last_7_days: formData.get("showLast7Days") === "on",
+      show_last_30_days: formData.get("showLast30Days") === "on",
+      show_last_3_months: formData.get("showLast3Months") === "on",
+      show_last_6_months: formData.get("showLast6Months") === "on",
+      show_last_365_days: formData.get("showLast365Days") === "on",
     });
   });
 }
