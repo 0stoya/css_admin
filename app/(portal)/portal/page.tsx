@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CompanyPermissionPicker } from "@/components/company-permission-picker";
 import styles from "@/components/portal/portal-dashboard.module.css";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
@@ -77,7 +78,7 @@ function resourcePathMap(administration: CompanyPortalAdministration) {
 export default async function CompanyPortalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>;
+  searchParams: Promise<{ error?: string; success?: string; landing?: string }>;
 }) {
   const params = await searchParams;
   const { context, administration, canViewEmployees, error } = await loadPortal();
@@ -93,6 +94,11 @@ export default async function CompanyPortalPage({
   }
 
   const selected = context.companies.find((company) => company.selected) ?? null;
+
+  if (params.landing === "1" && selected && administration?.is_company_admin) {
+    redirect("/portal/company-profile");
+  }
+
   const usersById = new Map(administration?.users.map((user) => [user.user_id, user]) ?? []);
   const resourcePaths = administration ? resourcePathMap(administration) : new Map<string, string>();
 
@@ -108,6 +114,7 @@ export default async function CompanyPortalPage({
           <div className={styles.heroContext}>
             {context.companies.length ? (
               <form className={styles.switcher} action={selectPortalCompanyAction}>
+                {params.landing === "1" ? <input type="hidden" name="landing" value="1" /> : null}
                 <select name="companyId" aria-label="Company">
                   {context.companies.map((company) => (
                     <option key={company.company_id} value={company.company_id}>

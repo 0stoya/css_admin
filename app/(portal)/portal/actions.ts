@@ -60,11 +60,23 @@ async function runPortalMutation(success: string, mutation: () => Promise<unknow
 
 export async function selectPortalCompanyAction(formData: FormData) {
   let errorMessage: string | null = null;
+  let openProfile = false;
+  const landing = String(formData.get("landing") ?? "") === "1";
 
   try {
     const companyId = positiveInt(formData.get("companyId"), "Company");
     await selectCompanyPortalCompany(companyId);
+
+    if (landing) {
+      try {
+        openProfile = (await getCompanyPortalAdministration()).is_company_admin;
+      } catch {
+        openProfile = false;
+      }
+    }
+
     revalidatePath("/portal");
+    revalidatePath("/portal/company-profile");
   } catch (error) {
     errorMessage = graphQLErrorMessage(error);
   }
@@ -72,7 +84,7 @@ export async function selectPortalCompanyAction(formData: FormData) {
   if (errorMessage) {
     redirect(`/portal?error=${encodeURIComponent(errorMessage)}`);
   }
-  redirect("/portal");
+  redirect(openProfile ? "/portal/company-profile" : "/portal");
 }
 
 export async function savePortalRoleAction(formData: FormData) {
