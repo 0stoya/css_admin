@@ -357,7 +357,7 @@ export default async function CompanyFinancePage({
         </section>
       ) : (
         <div className="notice">
-          All Finance period cards are hidden by this company's Finance visibility settings.
+          All Finance period cards are hidden by this company&apos;s Finance visibility settings.
         </div>
       )}
 
@@ -464,7 +464,7 @@ export default async function CompanyFinancePage({
           </div>
 
           <p className="muted small-text">
-            Period columns follow the group head's Finance visibility settings. The All row includes the head plus children that currently have a stored snapshot.
+            Period columns follow the group head&apos;s Finance visibility settings. The All row includes the head plus children that currently have a stored snapshot.
           </p>
         </section>
       ) : null}
