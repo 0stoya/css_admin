@@ -18,7 +18,7 @@ test("finance migration keeps snapshots and presentation settings local", () => 
 
 test("local finance store is resilient and snapshot-first", () => {
   const store = source("lib/company-finance-local.ts");
-  assert.match(store, /getLatestCompanyFinanceSnapshot\(companyId\)/);
+  assert.match(store, /getLatestCompanyFinanceSnapshot\(/);
   assert.match(store, /saveCompanyFinanceSnapshot\(live\)/);
   assert.match(store, /source: "local"/);
   assert.match(store, /source: "live"/);

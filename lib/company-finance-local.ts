@@ -8,6 +8,7 @@ import { getLocalPostgres, hasLocalPostgres } from "@/lib/local-postgres";
 
 export type StoredCompanyFinancialSummary = CompanyFinancialSummary & {
   captured_at: string | null;
+  source_kind: string;
 };
 
 export type CompanyFinanceVisibility = {
@@ -22,7 +23,7 @@ export type CompanyFinanceVisibility = {
 };
 
 type FinanceSnapshotRow = {
-  company_id: number;
+  company_id: number | null;
   cref: string | null;
   currency: string;
   financial_year: number;
@@ -42,6 +43,7 @@ type FinanceSnapshotRow = {
   last_order_date: Date | string | null;
   source_refreshed_at: Date | string;
   captured_at: Date | string;
+  source_kind: string;
 };
 
 type FinanceVisibilityRow = {
@@ -100,10 +102,13 @@ function monthlyRows(value: unknown): CompanyFinanceMonth[] {
     .filter((item): item is CompanyFinanceMonth => item !== null);
 }
 
-function snapshotFromRow(row: FinanceSnapshotRow): StoredCompanyFinancialSummary {
+function snapshotFromRow(
+  row: FinanceSnapshotRow,
+  companyId = Number(row.company_id ?? 0),
+): StoredCompanyFinancialSummary {
   const last365Value = amount(row.last_365_days_value);
   return {
-    company_id: Number(row.company_id),
+    company_id: companyId,
     cref: row.cref,
     currency: row.currency,
     year: Number(row.financial_year),
@@ -123,6 +128,7 @@ function snapshotFromRow(row: FinanceSnapshotRow): StoredCompanyFinancialSummary
     last_order_date: iso(row.last_order_date),
     refreshed_at: iso(row.source_refreshed_at) ?? "",
     captured_at: iso(row.captured_at),
+    source_kind: row.source_kind || "FLUID_GRAPHQL",
   };
 }
 
@@ -130,6 +136,7 @@ function liveSnapshot(summary: CompanyFinancialSummary): StoredCompanyFinancialS
   return {
     ...summary,
     captured_at: new Date().toISOString(),
+    source_kind: "FLUID_GRAPHQL",
   };
 }
 
@@ -173,7 +180,8 @@ export async function saveCompanyFinanceSnapshot(summary: CompanyFinancialSummar
       monthly,
       last_order_date,
       source_refreshed_at,
-      captured_at
+      captured_at,
+      source_kind
     ) VALUES (
       ${summary.company_id},
       ${summary.cref},
@@ -194,7 +202,8 @@ export async function saveCompanyFinanceSnapshot(summary: CompanyFinancialSummar
       ${sql.json(summary.monthly)},
       ${summary.last_order_date},
       ${summary.refreshed_at},
-      now()
+      now(),
+      'FLUID_GRAPHQL'
     )
     ON CONFLICT (company_id, source_refreshed_at) DO UPDATE SET
       cref = EXCLUDED.cref,
@@ -214,43 +223,79 @@ export async function saveCompanyFinanceSnapshot(summary: CompanyFinancialSummar
       last_365_days_value = EXCLUDED.last_365_days_value,
       monthly = EXCLUDED.monthly,
       last_order_date = EXCLUDED.last_order_date,
-      captured_at = now()
+      captured_at = now(),
+      source_kind = 'FLUID_GRAPHQL'
   `;
 }
 
-export async function getLatestCompanyFinanceSnapshot(companyId: number) {
+export async function getLatestCompanyFinanceSnapshot(
+  companyId: number,
+  cref?: string | null,
+) {
   if (!hasLocalPostgres()) return null;
 
   const sql = getLocalPostgres();
-  const rows = await sql`
-    SELECT
-      company_id,
-      cref,
-      currency,
-      financial_year,
-      year_to_date_order_count,
-      year_to_date_value,
-      last_7_days_order_count,
-      last_7_days_value,
-      last_30_days_order_count,
-      last_30_days_value,
-      last_3_months_order_count,
-      last_3_months_value,
-      last_6_months_order_count,
-      last_6_months_value,
-      last_365_days_order_count,
-      last_365_days_value,
-      monthly,
-      last_order_date,
-      source_refreshed_at,
-      captured_at
-    FROM css_admin.company_order_finance_snapshot
-    WHERE company_id = ${companyId}
-    ORDER BY source_refreshed_at DESC, captured_at DESC
-    LIMIT 1
-  `;
+  const normalisedCref = cref?.trim() || null;
+  const rows = normalisedCref
+    ? await sql`
+        SELECT
+          company_id,
+          cref,
+          currency,
+          financial_year,
+          year_to_date_order_count,
+          year_to_date_value,
+          last_7_days_order_count,
+          last_7_days_value,
+          last_30_days_order_count,
+          last_30_days_value,
+          last_3_months_order_count,
+          last_3_months_value,
+          last_6_months_order_count,
+          last_6_months_value,
+          last_365_days_order_count,
+          last_365_days_value,
+          monthly,
+          last_order_date,
+          source_refreshed_at,
+          captured_at,
+          source_kind
+        FROM css_admin.company_order_finance_snapshot
+        WHERE company_id = ${companyId}
+           OR UPPER(cref) = UPPER(${normalisedCref})
+        ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
+        LIMIT 1
+      `
+    : await sql`
+        SELECT
+          company_id,
+          cref,
+          currency,
+          financial_year,
+          year_to_date_order_count,
+          year_to_date_value,
+          last_7_days_order_count,
+          last_7_days_value,
+          last_30_days_order_count,
+          last_30_days_value,
+          last_3_months_order_count,
+          last_3_months_value,
+          last_6_months_order_count,
+          last_6_months_value,
+          last_365_days_order_count,
+          last_365_days_value,
+          monthly,
+          last_order_date,
+          source_refreshed_at,
+          captured_at,
+          source_kind
+        FROM css_admin.company_order_finance_snapshot
+        WHERE company_id = ${companyId}
+        ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
+        LIMIT 1
+      `;
 
-  return rows[0] ? snapshotFromRow(rows[0] as FinanceSnapshotRow) : null;
+  return rows[0] ? snapshotFromRow(rows[0] as FinanceSnapshotRow, companyId) : null;
 }
 
 export async function getLatestCompanyFinanceSnapshots(companyIds: number[]) {
@@ -279,7 +324,8 @@ export async function getLatestCompanyFinanceSnapshots(companyIds: number[]) {
       monthly,
       last_order_date,
       source_refreshed_at,
-      captured_at
+      captured_at,
+      source_kind
     FROM css_admin.company_order_finance_snapshot
     WHERE company_id IN ${sql(companyIds)}
     ORDER BY company_id, source_refreshed_at DESC, captured_at DESC
@@ -288,6 +334,101 @@ export async function getLatestCompanyFinanceSnapshots(companyIds: number[]) {
   for (const row of rows) {
     const snapshot = snapshotFromRow(row as FinanceSnapshotRow);
     result.set(snapshot.company_id, snapshot);
+  }
+
+  return result;
+}
+
+export async function getLatestCompanyFinanceSnapshotsForCompanies(
+  companies: Array<{ company_id: number; reference: string | null }>,
+) {
+  const result = new Map<number, StoredCompanyFinancialSummary>();
+  if (!hasLocalPostgres() || companies.length === 0) return result;
+
+  const ids = companies.map((company) => company.company_id);
+  const refs = companies
+    .map((company) => company.reference?.trim().toUpperCase() || null)
+    .filter((value): value is string => Boolean(value));
+
+  const sql = getLocalPostgres();
+  const rows = refs.length
+    ? await sql`
+        SELECT
+          company_id,
+          cref,
+          currency,
+          financial_year,
+          year_to_date_order_count,
+          year_to_date_value,
+          last_7_days_order_count,
+          last_7_days_value,
+          last_30_days_order_count,
+          last_30_days_value,
+          last_3_months_order_count,
+          last_3_months_value,
+          last_6_months_order_count,
+          last_6_months_value,
+          last_365_days_order_count,
+          last_365_days_value,
+          monthly,
+          last_order_date,
+          source_refreshed_at,
+          captured_at,
+          source_kind
+        FROM css_admin.company_order_finance_snapshot
+        WHERE company_id IN ${sql(ids)}
+           OR UPPER(cref) IN ${sql(refs)}
+        ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
+      `
+    : await sql`
+        SELECT
+          company_id,
+          cref,
+          currency,
+          financial_year,
+          year_to_date_order_count,
+          year_to_date_value,
+          last_7_days_order_count,
+          last_7_days_value,
+          last_30_days_order_count,
+          last_30_days_value,
+          last_3_months_order_count,
+          last_3_months_value,
+          last_6_months_order_count,
+          last_6_months_value,
+          last_365_days_order_count,
+          last_365_days_value,
+          monthly,
+          last_order_date,
+          source_refreshed_at,
+          captured_at,
+          source_kind
+        FROM css_admin.company_order_finance_snapshot
+        WHERE company_id IN ${sql(ids)}
+        ORDER BY (source_kind = 'OGL_DIRECT' AND source_refreshed_at >= now() - interval '12 hours') DESC, source_refreshed_at DESC, captured_at DESC
+      `;
+
+  const companyIdSet = new Set(ids);
+  const companyIdByRef = new Map(
+    companies
+      .filter((company) => company.reference?.trim())
+      .map((company) => [
+        company.reference!.trim().toUpperCase(),
+        company.company_id,
+      ] as const),
+  );
+
+  for (const rawRow of rows) {
+    const row = rawRow as FinanceSnapshotRow;
+    const rowCompanyId = row.company_id === null ? null : Number(row.company_id);
+    const mappedCompanyId = rowCompanyId !== null && companyIdSet.has(rowCompanyId)
+      ? rowCompanyId
+      : row.cref
+        ? companyIdByRef.get(row.cref.trim().toUpperCase()) ?? null
+        : null;
+
+    if (mappedCompanyId === null || result.has(mappedCompanyId)) continue;
+    result.set(mappedCompanyId, snapshotFromRow(row, mappedCompanyId));
   }
 
   return result;
@@ -365,12 +506,13 @@ export async function saveCompanyFinanceVisibility(
 
 export async function getCompanyFinanceForDisplay(
   companyId: number,
+  cref?: string | null,
 ): Promise<CompanyFinanceDisplayResult> {
   let persistenceError: string | null = null;
 
   if (hasLocalPostgres()) {
     try {
-      const local = await getLatestCompanyFinanceSnapshot(companyId);
+      const local = await getLatestCompanyFinanceSnapshot(companyId, cref);
       if (local) {
         return {
           finance: local,
@@ -388,7 +530,7 @@ export async function getCompanyFinanceForDisplay(
   if (hasLocalPostgres()) {
     try {
       await saveCompanyFinanceSnapshot(live);
-      const stored = await getLatestCompanyFinanceSnapshot(companyId);
+      const stored = await getLatestCompanyFinanceSnapshot(companyId, live.cref);
       if (stored) {
         return {
           finance: stored,
@@ -413,5 +555,5 @@ export async function refreshCompanyFinance(companyId: number) {
   if (!hasLocalPostgres()) return liveSnapshot(live);
 
   await saveCompanyFinanceSnapshot(live);
-  return (await getLatestCompanyFinanceSnapshot(companyId)) ?? liveSnapshot(live);
+  return (await getLatestCompanyFinanceSnapshot(companyId, live.cref)) ?? liveSnapshot(live);
 }

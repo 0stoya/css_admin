@@ -1,0 +1,20 @@
+[Unit]
+Description=CSS Admin direct OGL finance snapshot sync
+Wants=network-online.target
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/css/css_admin
+EnvironmentFile=/etc/css-admin-finance-sync.env
+ExecStart=/usr/bin/node /srv/css/css_admin/scripts/finance-sync.mjs
+TimeoutStartSec=3h
+SuccessExitStatus=2
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

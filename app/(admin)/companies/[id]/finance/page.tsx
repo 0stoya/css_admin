@@ -10,7 +10,7 @@ import {
   defaultCompanyFinanceVisibility,
   getCompanyFinanceForDisplay,
   getCompanyFinanceVisibility,
-  getLatestCompanyFinanceSnapshots,
+  getLatestCompanyFinanceSnapshotsForCompanies,
   type CompanyFinanceVisibility,
   type StoredCompanyFinancialSummary,
 } from "@/lib/company-finance-local";
@@ -166,18 +166,31 @@ function groupPeriodCell(
 }
 
 async function loadFinance(companyId: number) {
-  const [companyResult, financeResult, structureResult, visibilityResult] = await Promise.allSettled([
+  const [companyResult, structureResult, visibilityResult] = await Promise.allSettled([
     getCompany(companyId),
-    getCompanyFinanceForDisplay(companyId),
     getAllCompanies(),
     getCompanyFinanceVisibility(companyId),
   ]);
 
+  let finance = null;
+  let financeError: string | null = null;
+
+  if (companyResult.status === "fulfilled") {
+    try {
+      finance = await getCompanyFinanceForDisplay(
+        companyId,
+        companyResult.value.reference,
+      );
+    } catch (error) {
+      financeError = graphQLErrorMessage(error);
+    }
+  }
+
   return {
     company: companyResult.status === "fulfilled" ? companyResult.value : null,
     companyError: companyResult.status === "rejected" ? graphQLErrorMessage(companyResult.reason) : null,
-    finance: financeResult.status === "fulfilled" ? financeResult.value : null,
-    financeError: financeResult.status === "rejected" ? graphQLErrorMessage(financeResult.reason) : null,
+    finance,
+    financeError,
     companies: structureResult.status === "fulfilled" ? structureResult.value : null,
     structureError: structureResult.status === "rejected" ? graphQLErrorMessage(structureResult.reason) : null,
     visibility:
@@ -282,8 +295,8 @@ export default async function CompanyFinancePage({
   let groupSnapshotError: string | null = null;
   if (groupNodes.length) {
     try {
-      groupSnapshots = await getLatestCompanyFinanceSnapshots(
-        groupNodes.map((node) => node.company.company_id),
+      groupSnapshots = await getLatestCompanyFinanceSnapshotsForCompanies(
+        groupNodes.map((node) => node.company),
       );
     } catch (error) {
       groupSnapshotError = error instanceof Error ? error.message : "Local group snapshots are unavailable.";
@@ -312,7 +325,11 @@ export default async function CompanyFinancePage({
         </div>
         <div className="button-row">
           <span className="badge badge-neutral">
-            {finance.source === "local" ? "Local snapshot · OGL" : "Live · OGL"}
+            {finance.source === "local"
+              ? summary.source_kind === "OGL_DIRECT"
+                ? "Local snapshot · Direct OGL"
+                : "Local snapshot · Fluid/OGL"
+              : "Live · Fluid/OGL"}
           </span>
           <form action={refreshCompanyFinanceAction}>
             <input type="hidden" name="companyId" value={company.company_id} />
@@ -474,7 +491,7 @@ export default async function CompanyFinancePage({
           <div>
             <p className="eyebrow">January–December</p>
             <h2>{summary.year} monthly order value</h2>
-            <p className="muted">Order value and order count from the OGL order history returned through Fluid.</p>
+            <p className="muted">Order value and order count from OGL order history.</p>
           </div>
           <span className="badge badge-neutral">{summary.currency}</span>
         </div>
@@ -521,13 +538,19 @@ export default async function CompanyFinancePage({
           </div>
           <div className={styles.detailItem}>
             <dt>Served from</dt>
-            <dd>{finance.source === "local" ? "Local Postgres snapshot" : "Live Fluid GraphQL"}</dd>
+            <dd>
+              {finance.source === "local"
+                ? summary.source_kind === "OGL_DIRECT"
+                  ? "Local Postgres · Direct OGL"
+                  : "Local Postgres · Fluid GraphQL"
+                : "Live Fluid GraphQL"}
+            </dd>
           </div>
         </dl>
       </section>
 
       <p className={styles.readOnlyNote}>
-        “Spend” in this workspace means OGL order value. It is not the accounting ledger balance and does not apply credits or other financial transactions unless Fluid explicitly adds those to the contract. Rolling 365-day data remains blank until the source contract provides that exact period.
+        “Spend” in this workspace means OGL order value. It is not the accounting ledger balance and does not apply credits or other financial transactions. Direct OGL snapshots calculate a true rolling 365-day period; the Fluid GraphQL fallback may leave that period blank until its contract exposes the same field.
       </p>
     </div>
   );

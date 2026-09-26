@@ -1,0 +1,11 @@
+[Unit]
+Description=Run CSS Admin finance sync every four hours
+
+[Timer]
+OnCalendar=*-*-* 00,04,08,12,16,20:00:00
+RandomizedDelaySec=5min
+Persistent=true
+Unit=css-admin-finance-sync.service
+
+[Install]
+WantedBy=timers.target
