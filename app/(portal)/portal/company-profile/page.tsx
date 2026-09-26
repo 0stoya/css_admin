@@ -1,5 +1,16 @@
 import Link from "next/link";
+import {
+  defaultCompanyFinanceVisibility,
+  getCompanyFinanceVisibility,
+  getLatestCompanyFinanceSnapshot,
+  type CompanyFinanceVisibility,
+  type StoredCompanyFinancialSummary,
+} from "@/lib/company-finance-local";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import {
+  getCompanyPortalAdministration,
+  getCompanyPortalContext,
+} from "@/lib/graphql/company-portal";
 import { getPortalCompanyPresentation } from "@/lib/graphql/company-presentation";
 import styles from "@/components/portal/portal-company-profile.module.css";
 
@@ -9,6 +20,78 @@ function initials(name: string) {
 
 function address(parts: Array<string | null>) {
   return parts.filter(Boolean).join(", ") || "—";
+}
+
+function formatAmount(value: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency,
+    }).format(value);
+  } catch {
+    return `${value.toFixed(2)} ${currency}`;
+  }
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "No orders returned";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(date);
+}
+
+function formatTimestamp(value: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function financePeriods(
+  finance: StoredCompanyFinancialSummary,
+  visibility: CompanyFinanceVisibility,
+) {
+  return [
+    {
+      key: "year-to-date",
+      label: `${finance.year} spend to date`,
+      enabled: visibility.show_year_to_date,
+      period: finance.year_to_date,
+    },
+    {
+      key: "last-7-days",
+      label: "Last 7 days",
+      enabled: visibility.show_last_7_days,
+      period: finance.last_7_days,
+    },
+    {
+      key: "last-30-days",
+      label: "Last 30 days",
+      enabled: visibility.show_last_30_days,
+      period: finance.last_30_days,
+    },
+    {
+      key: "last-3-months",
+      label: "Last 3 months",
+      enabled: visibility.show_last_3_months,
+      period: finance.last_3_months,
+    },
+    {
+      key: "last-6-months",
+      label: "Last 6 months",
+      enabled: visibility.show_last_6_months,
+      period: finance.last_6_months,
+    },
+    {
+      key: "last-365-days",
+      label: "Last 365 days",
+      enabled: visibility.show_last_365_days,
+      period: finance.last_365_days,
+    },
+  ].filter((item) => item.enabled);
 }
 
 export default async function PortalCompanyProfilePage() {
@@ -24,10 +107,47 @@ export default async function PortalCompanyProfilePage() {
     );
   }
 
+  const [contextResult, administrationResult] = await Promise.allSettled([
+    getCompanyPortalContext(),
+    getCompanyPortalAdministration(),
+  ]);
+  const context = contextResult.status === "fulfilled" ? contextResult.value : null;
+  const administration = administrationResult.status === "fulfilled" ? administrationResult.value : null;
+  const selected = context?.companies.find((company) => company.selected) ?? null;
+  const canViewFinance = Boolean(
+    selected
+    && administration?.is_company_admin
+    && administration.company_id === selected.company_id,
+  );
+
+  let finance: StoredCompanyFinancialSummary | null = null;
+  let visibility: CompanyFinanceVisibility | null = null;
+  let financeError: string | null = null;
+
+  if (canViewFinance && selected) {
+    const [financeResult, visibilityResult] = await Promise.allSettled([
+      getLatestCompanyFinanceSnapshot(selected.company_id, selected.reference),
+      getCompanyFinanceVisibility(selected.company_id),
+    ]);
+
+    if (financeResult.status === "fulfilled") {
+      finance = financeResult.value;
+    } else {
+      financeError = financeResult.reason instanceof Error
+        ? financeResult.reason.message
+        : "Company finance snapshot is unavailable.";
+    }
+
+    visibility = visibilityResult.status === "fulfilled"
+      ? visibilityResult.value
+      : defaultCompanyFinanceVisibility(selected.company_id);
+  }
+
   const rep = presentation.can_view_rep_contacts ? presentation.rep_contacts[0] ?? null : null;
   const bannerStyle = presentation.banner_url
     ? { backgroundImage: `linear-gradient(rgb(0 35 72 / 18%), rgb(0 35 72 / 18%)), url("${presentation.banner_url}")` }
     : undefined;
+  const periods = finance && visibility ? financePeriods(finance, visibility) : [];
 
   return (
     <div className={styles.profile}>
@@ -37,12 +157,65 @@ export default async function PortalCompanyProfilePage() {
         <div>
           <span className={styles.reference}>{presentation.company_reference || "Company profile"}</span>
           <h1>{presentation.portal_title || presentation.company_name || "Your company"}</h1>
-          <p>Your company information and Chelmsford Safety Supplies account contact.</p>
+          <p>Your company information, recent order activity and Chelmsford Safety Supplies account contact.</p>
         </div>
       </header>
 
       {!presentation.enabled ? (
         <div className={styles.notice}>Your personalised company page is not enabled yet. Your core company details are still available below.</div>
+      ) : null}
+
+      {canViewFinance ? (
+        <section className={styles.financeSection} aria-labelledby="company-finance-heading">
+          <div className={styles.financeHeader}>
+            <div>
+              <span className="eyebrow">Financial overview</span>
+              <h2 id="company-finance-heading">Order activity</h2>
+              <p>Read-only OGL order value for your company. These figures are not the accounting ledger balance.</p>
+            </div>
+            {finance ? (
+              <div className={styles.financeUpdated}>
+                <span>Updated</span>
+                <strong>{formatTimestamp(finance.refreshed_at)}</strong>
+              </div>
+            ) : null}
+          </div>
+
+          {financeError ? <div className="error">{financeError}</div> : null}
+
+          {finance ? (
+            <>
+              {periods.length ? (
+                <div className={styles.financeGrid}>
+                  {periods.map((item) => (
+                    <article className={styles.financeCard} key={item.key}>
+                      <span className={styles.financeLabel}>{item.label}</span>
+                      <strong className={styles.financeValue}>
+                        {item.period ? formatAmount(item.period.value, finance.currency) : "—"}
+                      </strong>
+                      <span className={styles.financeMeta}>
+                        {item.period
+                          ? `${item.period.order_count} order${item.period.order_count === 1 ? "" : "s"}`
+                          : "Awaiting source support"}
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.financeEmpty}>Financial summary periods are currently hidden by your company settings.</div>
+              )}
+
+              <div className={styles.financeFooter}>
+                <span>Last order <strong>{formatDate(finance.last_order_date)}</strong></span>
+                <span>Currency <strong>{finance.currency}</strong></span>
+              </div>
+            </>
+          ) : !financeError ? (
+            <div className={styles.financeEmpty}>
+              No local financial snapshot is available yet. Your company profile remains available normally.
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       <div className={styles.layout}>

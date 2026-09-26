@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     if (mode === "company") {
       const token = await requestMagentoCustomerToken(login, password);
       await setCompanyToken(token);
-      return NextResponse.json({ ok: true, destination: "/portal" });
+      return NextResponse.json({ ok: true, destination: "/portal?landing=1" });
     }
 
     const token = await requestMagentoAdminToken(login, password);
