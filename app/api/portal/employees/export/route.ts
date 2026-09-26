@@ -1,6 +1,6 @@
 import { employeeExportCsv } from "@/lib/company-employees-csv";
 import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
-import { getPortalEmployeeExport } from "@/lib/graphql/company-portal-employees";
+import { getPortalEmployeeConfiguration, getPortalEmployeeExport } from "@/lib/graphql/company-portal-employees";
 import { getCompanyToken } from "@/lib/session";
 
 export async function GET(request: Request) {
@@ -11,6 +11,11 @@ export async function GET(request: Request) {
   const active = activeParam === "1" ? true : activeParam === "0" ? false : undefined;
 
   try {
+    const configuration = await getPortalEmployeeConfiguration();
+    if (!configuration.uses_employee) {
+      return new Response("Employee ordering is not enabled for this company.", { status: 404 });
+    }
+
     const [rows, administration] = await Promise.all([
       getPortalEmployeeExport(active),
       getCompanyPortalAdministration().catch(() => null),

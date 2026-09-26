@@ -43,7 +43,7 @@ async function loadPortal() {
       error = graphQLErrorMessage(administrationResult.reason);
     }
 
-    canViewEmployees = employeeResult.status === "fulfilled";
+    canViewEmployees = employeeResult.status === "fulfilled" && employeeResult.value.uses_employee;
   }
 
   return { context, administration, canViewEmployees, error };
