@@ -3,6 +3,7 @@
 import { useActionState, useId, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  bulkCompanyDescriptionsImportAction,
   bulkCompanyProductsImportAction,
   bulkCompanyStructureImportAction,
   bulkPurchaseControlsImportAction,
@@ -24,7 +25,7 @@ const initialState: FlatCompanyImportState = {
 };
 
 type ImportAction = (state: FlatCompanyImportState, formData: FormData) => Promise<FlatCompanyImportState>;
-type BulkImportView = "structure" | "users" | "roles" | "role-products" | "company-products" | "purchase-controls";
+type BulkImportView = "structure" | "users" | "roles" | "role-products" | "company-products" | "purchase-controls" | "company-descriptions";
 
 type PanelProps = {
   title: string;
@@ -326,6 +327,7 @@ const tabs: Array<{ id: BulkImportView; label: string }> = [
   { id: "role-products", label: "Role products" },
   { id: "company-products", label: "Company products" },
   { id: "purchase-controls", label: "Purchase controls" },
+  { id: "company-descriptions", label: "Company descriptions" },
 ];
 
 function isBulkImportView(value: string | null): value is BulkImportView {
@@ -435,6 +437,19 @@ export function BulkImportWorkspace() {
           exportHref={`${base}/exports/company-products`}
           exampleHref={`${base}/examples/company-products`}
           help="Rows are grouped by company_ref. Category settings and unrelated company controls remain untouched."
+        />
+      </div>
+
+
+      <div hidden={view !== "company-descriptions"}>
+        <BulkImportPanel
+          eyebrow="Portal content"
+          title="Company descriptions"
+          description="Export, review and update the company description shown in Personalisation across multiple company references."
+          action={bulkCompanyDescriptionsImportAction}
+          exportHref={`${base}/exports/company-descriptions`}
+          exampleHref={`${base}/examples/company-descriptions`}
+          help="Columns: company_ref, company_name, company_description. company_ref is authoritative; company_name is informational. A blank company_description explicitly clears the existing description. No other Personalisation fields or media are changed."
         />
       </div>
 
