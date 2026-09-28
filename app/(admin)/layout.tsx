@@ -42,6 +42,7 @@ const sectionNavigation: SidebarSectionNavigation[] = [
       { href: "/bulk-import?view=roles", label: "Roles & permissions" },
       { href: "/bulk-import?view=role-products", label: "Role products" },
       { href: "/bulk-import?view=company-products", label: "Company products" },
+      { href: "/bulk-import?view=company-descriptions", label: "Company descriptions" },
     ],
   },
   {

@@ -23,6 +23,10 @@ import {
   previewCompanyStructureCsv,
 } from "@/lib/company-structure-import";
 import type { FlatCompanyImportState } from "@/lib/import-export-types";
+import {
+  applyCompanyDescriptionsCsv,
+  previewCompanyDescriptionsCsv,
+} from "@/lib/company-description-import";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
@@ -191,4 +195,11 @@ export async function bulkCompanyStructureImportAction(previous: FlatCompanyImpo
   return runBulkImport(previous, formData, (source, apply) => apply
     ? applyCompanyStructureCsv(source)
     : previewCompanyStructureCsv(source));
+}
+
+
+export async function bulkCompanyDescriptionsImportAction(previous: FlatCompanyImportState, formData: FormData) {
+  return runBulkImport(previous, formData, (source, apply) => apply
+    ? applyCompanyDescriptionsCsv(source)
+    : previewCompanyDescriptionsCsv(source));
 }
