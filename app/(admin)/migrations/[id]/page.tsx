@@ -4,6 +4,12 @@ import {
   updatePortalMigrationAction,
   updatePortalMigrationTaskAction,
 } from "@/app/(admin)/migrations/actions";
+import { graphQLErrorMessage } from "@/lib/graphql/client";
+import {
+  getActiveMagentoAdmins,
+  magentoAdminDisplayName,
+  type MagentoAdminUser,
+} from "@/lib/graphql/admin-users";
 import {
   getPortalMigration,
   isPortalMigrationStoreConfigured,
@@ -15,22 +21,83 @@ import {
 } from "@/lib/portal-migrations";
 import styles from "@/app/(admin)/migrations/migrations.module.css";
 
+const TASK_SECTIONS: Array<{ label: string; keys: string[] }> = [
+  {
+    label: "Setup",
+    keys: ["company_structure", "company_products"],
+  },
+  {
+    label: "People & access",
+    keys: ["roles_permissions", "company_users", "role_products"],
+  },
+  {
+    label: "Purchasing",
+    keys: ["purchase_controls"],
+  },
+  {
+    label: "Content & go-live",
+    keys: [
+      "company_descriptions",
+      "personalisation",
+      "import_preview",
+      "import_applied",
+      "internal_qa",
+      "customer_qa",
+      "go_live",
+    ],
+  },
+];
+
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function taskBadgeClass(task: PortalMigrationTask) {
-  if (task.status === "blocked") return "badge-restricted";
-  if (task.status === "complete") return "badge-ok";
-  return "badge-neutral";
+function adminOptionLabel(admin: MagentoAdminUser) {
+  const name = magentoAdminDisplayName(admin);
+  return admin.username && admin.username !== name
+    ? `${name} (@${admin.username})`
+    : name;
 }
 
-function taskCardClass(task: PortalMigrationTask) {
-  if (task.status === "blocked") return `${styles.taskCard} ${styles.taskBlocked}`;
-  if (task.status === "complete" || task.status === "not_applicable") {
-    return `${styles.taskCard} ${styles.taskDone}`;
+async function loadAdminOwners() {
+  try {
+    return { admins: await getActiveMagentoAdmins(), error: null };
+  } catch (error) {
+    return {
+      admins: [] as MagentoAdminUser[],
+      error: graphQLErrorMessage(error),
+    };
   }
-  return styles.taskCard;
+}
+
+function taskStatusClass(status: PortalMigrationTask["status"]) {
+  switch (status) {
+    case "complete":
+      return styles.statusComplete;
+    case "blocked":
+      return styles.statusBlocked;
+    case "in_progress":
+      return styles.statusInProgress;
+    case "not_applicable":
+      return styles.statusMuted;
+    default:
+      return styles.statusNeutral;
+  }
+}
+
+function taskDisclosureClass(task: PortalMigrationTask) {
+  if (task.status === "blocked") return `${styles.taskDisclosure} ${styles.taskBlocked}`;
+  if (task.status === "complete" || task.status === "not_applicable") {
+    return `${styles.taskDisclosure} ${styles.taskDone}`;
+  }
+  return styles.taskDisclosure;
+}
+
+function taskStatusSymbol(status: PortalMigrationTask["status"]) {
+  if (status === "complete") return "✓";
+  if (status === "blocked") return "!";
+  if (status === "not_applicable") return "–";
+  return "•";
 }
 
 function formatDateTime(value: string | null) {
@@ -43,6 +110,17 @@ function formatDateTime(value: string | null) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+  }).format(date);
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Not set";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.valueOf())) return value;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   }).format(date);
 }
 
@@ -86,10 +164,15 @@ export default async function PortalMigrationDetailPage({
 
   if (!migration) notFound();
 
+  const { admins, error: adminOwnersError } = await loadAdminOwners();
   const incomplete = migration.tasks.filter(
     (task) => task.status !== "complete" && task.status !== "not_applicable",
   );
+  const blockedTasks = migration.tasks.filter((task) => task.status === "blocked");
+  const attentionTasks = blockedTasks.length ? blockedTasks : incomplete.slice(0, 4);
+  const attentionTitle = blockedTasks.length ? "Blocked" : "Next up";
   const sequentialStages = PORTAL_MIGRATION_STAGES.filter((stage) => stage.value !== "paused");
+  const taskIndex = new Map(migration.tasks.map((task, index) => [task.task_key, index + 1]));
 
   return (
     <div className="stack section-gap">
@@ -115,12 +198,13 @@ export default async function PortalMigrationDetailPage({
 
       {notice ? <div className="notice">{notice}</div> : null}
       {actionError ? <div className="error">{actionError}</div> : null}
+      {adminOwnersError ? <div className="error">Magento Admin owners are unavailable: {adminOwnersError}</div> : null}
 
-      <section className="card stack">
-        <div className="section-heading">
+      <section className={`card ${styles.stagePanel}`}>
+        <div className={styles.stagePanelHeader}>
           <div>
-            <h2>Migration path</h2>
-            <p className="muted">Stage is a programme view; checklist progress below is the actual readiness signal.</p>
+            <p className="eyebrow">Migration path</p>
+            <strong>{portalMigrationStageLabel(migration.stage)}</strong>
           </div>
           {migration.stage === "paused" ? <span className="badge badge-restricted">Paused</span> : null}
         </div>
@@ -138,102 +222,187 @@ export default async function PortalMigrationDetailPage({
 
       <div className={styles.detailLayout}>
         <div className="stack">
-          <section className="card stack">
-            <div>
-              <p className="eyebrow">Programme control</p>
-              <h2>Migration details</h2>
+          <details className={`card ${styles.metadataDisclosure}`}>
+            <summary className={styles.metadataSummary}>
+              <div className={styles.metadataHeading}>
+                <p className="eyebrow">Programme control</p>
+                <h2>Migration details</h2>
+              </div>
+              <div className={styles.metadataSummaryGrid}>
+                <div>
+                  <span>Owner</span>
+                  <strong>{migration.owner_name || "Unassigned"}</strong>
+                </div>
+                <div>
+                  <span>Stage</span>
+                  <strong>{portalMigrationStageLabel(migration.stage)}</strong>
+                </div>
+                <div>
+                  <span>Target</span>
+                  <strong>{formatDate(migration.target_date)}</strong>
+                </div>
+              </div>
+              <span className={styles.editCue}>Edit details</span>
+            </summary>
+
+            <div className={styles.metadataEditor}>
+              <form action={updatePortalMigrationAction} className="stack">
+                <input name="migrationId" type="hidden" value={migration.id} />
+                <div className={styles.metadataGrid}>
+                  <div className="field">
+                    <label htmlFor="migration-owner">Owner</label>
+                    <select
+                      id="migration-owner"
+                      name="ownerAdminUserId"
+                      defaultValue={migration.owner_admin_user_id ? String(migration.owner_admin_user_id) : ""}
+                      disabled={Boolean(adminOwnersError)}
+                    >
+                      <option value="">Unassigned</option>
+                      {migration.owner_admin_user_id
+                        && !admins.some((admin) => admin.user_id === migration.owner_admin_user_id)
+                        ? <option value={migration.owner_admin_user_id}>{migration.owner_name ?? `Admin #${migration.owner_admin_user_id}`} (inactive/unavailable)</option>
+                        : null}
+                      {admins.map((admin) => (
+                        <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="migration-stage">Stage</label>
+                    <select id="migration-stage" name="stage" defaultValue={migration.stage}>
+                      {PORTAL_MIGRATION_STAGES.map((stage) => (
+                        <option value={stage.value} key={stage.value}>{stage.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="migration-target">Target go-live</label>
+                    <input id="migration-target" name="targetDate" type="date" defaultValue={migration.target_date ?? ""} />
+                  </div>
+                  <div className={`field ${styles.span4}`}>
+                    <label htmlFor="migration-notes">Notes</label>
+                    <textarea id="migration-notes" name="notes" rows={3} defaultValue={migration.notes ?? ""} placeholder="Scope, customer contacts, risks or migration notes." />
+                  </div>
+                </div>
+                <div className="button-row">
+                  <button className="button" type="submit" disabled={Boolean(adminOwnersError)}>Save migration details</button>
+                  <span className="muted small-text">Last updated {formatDateTime(migration.updated_at)}</span>
+                </div>
+              </form>
             </div>
-            <form action={updatePortalMigrationAction} className="stack">
-              <input name="migrationId" type="hidden" value={migration.id} />
-              <div className={styles.metadataGrid}>
-                <div className="field">
-                  <label htmlFor="migration-owner">Owner</label>
-                  <input id="migration-owner" name="ownerName" type="text" defaultValue={migration.owner_name ?? ""} placeholder="Unassigned" />
-                </div>
-                <div className="field">
-                  <label htmlFor="migration-stage">Stage</label>
-                  <select id="migration-stage" name="stage" defaultValue={migration.stage}>
-                    {PORTAL_MIGRATION_STAGES.map((stage) => (
-                      <option value={stage.value} key={stage.value}>{stage.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label htmlFor="migration-target">Target go-live</label>
-                  <input id="migration-target" name="targetDate" type="date" defaultValue={migration.target_date ?? ""} />
-                </div>
-                <div className={`field ${styles.span4}`}>
-                  <label htmlFor="migration-notes">Notes</label>
-                  <textarea id="migration-notes" name="notes" rows={3} defaultValue={migration.notes ?? ""} placeholder="Scope, customer contacts, risks or migration notes." />
-                </div>
-              </div>
-              <div className="button-row">
-                <button className="button" type="submit">Save migration details</button>
-                <span className="muted small-text">Last updated {formatDateTime(migration.updated_at)}</span>
-              </div>
-            </form>
-          </section>
+          </details>
 
           <section className="stack">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">Working checklist</p>
                 <h2>Portal readiness</h2>
-                <p className="muted">Use Not applicable for a genuine non-requirement; it counts as resolved without pretending work happened.</p>
+                <p className="muted">Open a step only when you need to update it.</p>
               </div>
               <span className={`badge ${migration.blocked_count ? "badge-restricted" : migration.ready ? "badge-ok" : "badge-neutral"}`}>
                 {migration.blocked_count ? `${migration.blocked_count} blocked` : migration.ready ? "Ready" : `${incomplete.length} remaining`}
               </span>
             </div>
 
-            <div className={styles.taskList}>
-              {migration.tasks.map((task, index) => {
-                const statusId = `task-${task.task_key}-status`;
-                const ownerId = `task-${task.task_key}-owner`;
-                const noteId = `task-${task.task_key}-note`;
+            <div className={styles.taskSections}>
+              {TASK_SECTIONS.map((section) => {
+                const sectionTasks = migration.tasks.filter((task) => section.keys.includes(task.task_key));
+                if (!sectionTasks.length) return null;
+
                 return (
-                  <article className={taskCardClass(task)} key={task.task_key}>
-                    <div className={styles.taskHeader}>
-                      <div className={styles.taskTitle}>
-                        <p className="eyebrow">Step {index + 1}</p>
-                        <h3>{task.label}</h3>
-                        <p>{task.description}</p>
-                      </div>
-                      <span className={`badge ${taskBadgeClass(task)}`}>{portalMigrationTaskStatusLabel(task.status)}</span>
+                  <section className={styles.taskSection} key={section.label}>
+                    <div className={styles.taskSectionHeading}>
+                      <span>{section.label}</span>
                     </div>
 
-                    {task.tool_href ? (
-                      <Link className={styles.taskTool} href={task.tool_href}>
-                        Open the relevant Admin tool →
-                      </Link>
-                    ) : null}
+                    <div className={styles.compactTaskList}>
+                      {sectionTasks.map((task) => {
+                        const statusId = `task-${task.task_key}-status`;
+                        const ownerId = `task-${task.task_key}-owner`;
+                        const noteId = `task-${task.task_key}-note`;
+                        const effectiveOwner = task.owner_name ?? migration.owner_name ?? "Unassigned";
+                        const stepNumber = taskIndex.get(task.task_key) ?? 0;
 
-                    <form action={updatePortalMigrationTaskAction} className={styles.taskForm}>
-                      <input name="migrationId" type="hidden" value={migration.id} />
-                      <input name="taskKey" type="hidden" value={task.task_key} />
+                        return (
+                          <details className={taskDisclosureClass(task)} key={task.task_key}>
+                            <summary className={styles.taskSummary}>
+                              <span className={`${styles.taskStateIcon} ${taskStatusClass(task.status)}`} aria-hidden="true">
+                                {taskStatusSymbol(task.status)}
+                              </span>
 
-                      <div className="field">
-                        <label htmlFor={statusId}>Status</label>
-                        <select id={statusId} name="status" defaultValue={task.status}>
-                          {PORTAL_MIGRATION_TASK_STATUSES.map((status) => (
-                            <option value={status.value} key={status.value}>{status.label}</option>
-                          ))}
-                        </select>
-                      </div>
+                              <div className={styles.taskSummaryMain}>
+                                <span className={styles.taskStep}>Step {stepNumber}</span>
+                                <strong>{task.label}</strong>
+                                {task.note ? <span className={styles.taskSummaryNote}>{task.note}</span> : null}
+                              </div>
 
-                      <div className="field">
-                        <label htmlFor={ownerId}>Owner</label>
-                        <input id={ownerId} name="ownerName" type="text" defaultValue={task.owner_name ?? ""} placeholder={migration.owner_name ?? "Unassigned"} />
-                      </div>
+                              <div className={styles.taskSummaryOwner}>
+                                <span>Owner</span>
+                                <strong>{effectiveOwner}</strong>
+                              </div>
 
-                      <div className="field">
-                        <label htmlFor={noteId}>Note / blocker</label>
-                        <input id={noteId} name="note" type="text" defaultValue={task.note ?? ""} placeholder="What changed, or what is blocking this step?" />
-                      </div>
+                              <span className={`${styles.statusPill} ${taskStatusClass(task.status)}`}>
+                                {portalMigrationTaskStatusLabel(task.status)}
+                              </span>
 
-                      <button className="button button-compact" type="submit">Save</button>
-                    </form>
-                  </article>
+                              <span className={styles.taskChevron} aria-hidden="true">›</span>
+                            </summary>
+
+                            <div className={styles.taskEditor}>
+                              <div className={styles.taskEditorIntro}>
+                                <p>{task.description}</p>
+                                {task.tool_href ? (
+                                  <Link className="button button-secondary button-link button-compact" href={task.tool_href}>
+                                    Open Admin tool
+                                  </Link>
+                                ) : null}
+                              </div>
+
+                              <form action={updatePortalMigrationTaskAction} className={styles.taskForm}>
+                                <input name="migrationId" type="hidden" value={migration.id} />
+                                <input name="taskKey" type="hidden" value={task.task_key} />
+
+                                <div className="field">
+                                  <label htmlFor={statusId}>Status</label>
+                                  <select id={statusId} name="status" defaultValue={task.status}>
+                                    {PORTAL_MIGRATION_TASK_STATUSES.map((status) => (
+                                      <option value={status.value} key={status.value}>{status.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div className="field">
+                                  <label htmlFor={ownerId}>Owner</label>
+                                  <select
+                                    id={ownerId}
+                                    name="ownerAdminUserId"
+                                    defaultValue={task.owner_admin_user_id ? String(task.owner_admin_user_id) : ""}
+                                    disabled={Boolean(adminOwnersError)}
+                                  >
+                                    <option value="">Inherit: {migration.owner_name ?? "Unassigned"}</option>
+                                    {task.owner_admin_user_id
+                                      && !admins.some((admin) => admin.user_id === task.owner_admin_user_id)
+                                      ? <option value={task.owner_admin_user_id}>{task.owner_name ?? `Admin #${task.owner_admin_user_id}`} (inactive/unavailable)</option>
+                                      : null}
+                                    {admins.map((admin) => (
+                                      <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div className="field">
+                                  <label htmlFor={noteId}>Note / blocker</label>
+                                  <input id={noteId} name="note" type="text" defaultValue={task.note ?? ""} placeholder="Add a short note or blocker" />
+                                </div>
+
+                                <button className="button button-compact" type="submit" disabled={Boolean(adminOwnersError)}>Save changes</button>
+                              </form>
+                            </div>
+                          </details>
+                        );
+                      })}
+                    </div>
+                  </section>
                 );
               })}
             </div>
@@ -257,19 +426,22 @@ export default async function PortalMigrationDetailPage({
                 style={{ width: `${migration.progress_percent}%` }}
               />
             </div>
-            <p className="muted">
-              {migration.done_count} of {migration.task_count} steps resolved.
-              {migration.blocked_count ? ` ${migration.blocked_count} currently blocked.` : ""}
-            </p>
-            {incomplete.length ? (
-              <ul className={styles.readinessList}>
-                {incomplete.slice(0, 6).map((task) => (
-                  <li key={task.task_key}>{task.label} — {portalMigrationTaskStatusLabel(task.status)}</li>
-                ))}
-                {incomplete.length > 6 ? <li>+ {incomplete.length - 6} more</li> : null}
-              </ul>
+            <p className="muted">{migration.done_count} of {migration.task_count} steps resolved.</p>
+
+            {attentionTasks.length ? (
+              <div className={styles.attentionList}>
+                <strong>{attentionTitle}</strong>
+                <ul>
+                  {attentionTasks.map((task) => (
+                    <li key={task.task_key}>
+                      <span>{task.label}</span>
+                      <small>{portalMigrationTaskStatusLabel(task.status)}</small>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : (
-              <div className="notice">All checklist items are resolved. The migration can be moved through the final stage/go-live decision.</div>
+              <div className="notice">All checklist items are resolved.</div>
             )}
           </section>
 

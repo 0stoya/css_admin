@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  getActiveMagentoAdmins,
+  magentoAdminDisplayName,
+} from "@/lib/graphql/admin-users";
+import {
   createPortalMigration,
   updatePortalMigration,
   updatePortalMigrationTask,
@@ -22,10 +26,38 @@ function requiredMigrationId(formData: FormData) {
   return migrationId;
 }
 
+function optionalAdminUserId(formData: FormData, key: string) {
+  const raw = value(formData, key);
+  if (!raw) return null;
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("Owner must be a valid Magento administrator.");
+  }
+  return id;
+}
+
 async function requireAdminSession() {
   if (!(await getAdminToken())) {
     redirect("/login");
   }
+}
+
+async function resolveOwner(formData: FormData) {
+  const ownerAdminUserId = optionalAdminUserId(formData, "ownerAdminUserId");
+  if (ownerAdminUserId === null) {
+    return { ownerAdminUserId: null, ownerName: null };
+  }
+
+  const admins = await getActiveMagentoAdmins();
+  const owner = admins.find((admin) => admin.user_id === ownerAdminUserId) ?? null;
+  if (!owner) {
+    throw new Error("The selected migration owner is no longer an active Magento administrator.");
+  }
+
+  return {
+    ownerAdminUserId,
+    ownerName: magentoAdminDisplayName(owner),
+  };
 }
 
 function messageFor(error: unknown) {
@@ -36,8 +68,11 @@ function messageFor(error: unknown) {
   ) {
     return "A migration already exists for that root company reference.";
   }
-  if (message.includes("does not exist") && message.includes("portal_migration")) {
-    return "Portal migration storage is not initialized on this server yet.";
+  if (
+    message.includes("does not exist")
+    && (message.includes("portal_migration") || message.includes("owner_admin_user_id"))
+  ) {
+    return "Portal migration storage needs the latest database migration before this action can run.";
   }
   return message;
 }
@@ -57,10 +92,11 @@ export async function createPortalMigrationAction(formData: FormData) {
   let error: string | null = null;
 
   try {
+    const owner = await resolveOwner(formData);
     migrationId = await createPortalMigration({
       name: value(formData, "name"),
       rootCompanyRef: value(formData, "rootCompanyRef"),
-      ownerName: value(formData, "ownerName"),
+      ...owner,
       targetDate: value(formData, "targetDate"),
       notes: value(formData, "notes"),
     });
@@ -92,9 +128,10 @@ export async function updatePortalMigrationAction(formData: FormData) {
 
   let error: string | null = null;
   try {
+    const owner = await resolveOwner(formData);
     await updatePortalMigration({
       id: migrationId!,
-      ownerName: value(formData, "ownerName"),
+      ...owner,
       stage: value(formData, "stage"),
       targetDate: value(formData, "targetDate"),
       notes: value(formData, "notes"),
@@ -124,11 +161,12 @@ export async function updatePortalMigrationTaskAction(formData: FormData) {
 
   let error: string | null = null;
   try {
+    const owner = await resolveOwner(formData);
     await updatePortalMigrationTask({
       migrationId: migrationId!,
       taskKey: value(formData, "taskKey"),
       status: value(formData, "status"),
-      ownerName: value(formData, "ownerName"),
+      ...owner,
       note: value(formData, "note"),
     });
     revalidatePath("/migrations");
