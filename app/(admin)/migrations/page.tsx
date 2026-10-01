@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { createPortalMigrationAction } from "@/app/(admin)/migrations/actions";
+import { graphQLErrorMessage } from "@/lib/graphql/client";
+import {
+  getActiveMagentoAdmins,
+  magentoAdminDisplayName,
+  type MagentoAdminUser,
+} from "@/lib/graphql/admin-users";
 import {
   isPortalMigrationStage,
   isPortalMigrationStoreConfigured,
@@ -40,6 +46,24 @@ function stageBadgeClass(migration: PortalMigrationSummary) {
   return "badge-neutral";
 }
 
+function adminOptionLabel(admin: MagentoAdminUser) {
+  const name = magentoAdminDisplayName(admin);
+  return admin.username && admin.username !== name
+    ? `${name} (@${admin.username})`
+    : name;
+}
+
+async function loadAdminOwners() {
+  try {
+    return { admins: await getActiveMagentoAdmins(), error: null };
+  } catch (error) {
+    return {
+      admins: [] as MagentoAdminUser[],
+      error: graphQLErrorMessage(error),
+    };
+  }
+}
+
 function matchesSearch(migration: PortalMigrationSummary, query: string) {
   if (!query) return true;
   const haystack = [
@@ -60,6 +84,7 @@ export default async function PortalMigrationsPage({
   const search = first(query.q)?.trim() ?? "";
   const requestedStage = first(query.stage)?.trim() ?? "";
   const owner = first(query.owner)?.trim() ?? "";
+  const ownerAdminUserId = owner ? Number(owner) : null;
   const blockedOnly = first(query.blocked) === "1";
   const notice = first(query.notice);
   const errorFromAction = first(query.error);
@@ -107,11 +132,16 @@ export default async function PortalMigrationsPage({
     );
   }
 
+  const { admins, error: adminOwnersError } = await loadAdminOwners();
+
   const stageFilter = isPortalMigrationStage(requestedStage) ? requestedStage : "";
   const filtered = migrations.filter((migration) => (
     matchesSearch(migration, search)
     && (!stageFilter || migration.stage === stageFilter)
-    && (!owner || (migration.owner_name ?? "").toLowerCase().includes(owner.toLowerCase()))
+    && (
+      ownerAdminUserId === null
+      || (Number.isInteger(ownerAdminUserId) && migration.owner_admin_user_id === ownerAdminUserId)
+    )
     && (!blockedOnly || migration.blocked_count > 0)
   ));
 
@@ -136,6 +166,9 @@ export default async function PortalMigrationsPage({
 
       {notice ? <div className="notice">{notice}</div> : null}
       {errorFromAction ? <div className="error">{errorFromAction}</div> : null}
+      {adminOwnersError ? (
+        <div className="error">Magento Admin owners are unavailable: {adminOwnersError}</div>
+      ) : null}
 
       <section className={styles.summaryGrid} aria-label="Migration summary">
         <div className={styles.summaryCard}>
@@ -170,7 +203,12 @@ export default async function PortalMigrationsPage({
             </div>
             <div className="field">
               <label htmlFor="migration-owner">Owner</label>
-              <input id="migration-owner" name="ownerName" type="text" placeholder="Rabia" />
+              <select id="migration-owner" name="ownerAdminUserId" defaultValue="" disabled={Boolean(adminOwnersError)}>
+                <option value="">Unassigned</option>
+                {admins.map((admin) => (
+                  <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="migration-target">Target go-live</label>
@@ -209,7 +247,12 @@ export default async function PortalMigrationsPage({
           </div>
           <div className="field">
             <label htmlFor="migration-owner-filter">Owner</label>
-            <input id="migration-owner-filter" name="owner" type="text" defaultValue={owner} placeholder="Any owner" />
+            <select id="migration-owner-filter" name="owner" defaultValue={owner} disabled={Boolean(adminOwnersError)}>
+              <option value="">All owners</option>
+              {admins.map((admin) => (
+                <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+              ))}
+            </select>
           </div>
           <label className="check-field">
             <input name="blocked" type="checkbox" value="1" defaultChecked={blockedOnly} />
