@@ -94,7 +94,7 @@ test("migration pages expose queue, filters, checklist, blockers and activity", 
   assert.match(queue, /Create portal migration/);
 
   assert.match(detail, /Portal readiness/);
-  assert.match(detail, /Not applicable/);
+  assert.match(detail, /PORTAL_MIGRATION_TASK_STATUSES/);
   assert.match(detail, /Recent activity/);
   assert.match(detail, /Open Admin tool/);
   assert.match(detail, /updatePortalMigrationTaskAction/);
