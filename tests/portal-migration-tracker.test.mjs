@@ -105,16 +105,41 @@ test("migration pages expose queue, filters, checklist, blockers and activity", 
   assert.match(detail, /taskDisclosureClass/);
 });
 
-test("staff help replaces chat archaeology with searchable migration guidance", () => {
+test("staff help is request-only and uses generic public templates", () => {
   const page = source("app/(admin)/help/page.tsx");
+  const guide = source("lib/portal-creation-guide.ts");
   const library = source("lib/admin-help-library.ts");
   const contextual = source("lib/admin-context-help.ts");
 
-  assert.match(page, /Help & how-to/);
-  assert.match(page, /Search help/);
-  assert.match(library, /How do I migrate a portal\?/);
+  assert.match(page, /Portal creation — quick guide/);
+  assert.match(page, /No uploads required/);
+  assert.match(page, /Sales and Area Managers prepare the request only/);
+  assert.match(page, /More help \/ common questions/);
+
+  assert.match(guide, /Current company hierarchy/);
+  assert.match(guide, /Proposed SKU list/);
+  assert.match(guide, /Complete the company hierarchy template/);
+  assert.match(guide, /Tell us the roles and users/);
+  assert.match(guide, /Add restrictions only when needed/);
+  assert.match(guide, /Send the completed request to the migration team/);
+  assert.match(guide, /Sales \/ Area Managers do not upload CSV files/);
+  assert.doesNotMatch(guide, /\/bulk-import/);
+  assert.doesNotMatch(guide, /\/api\/bulk-import/);
+
+  for (const filename of [
+    "company-structure.csv",
+    "company-products.csv",
+    "company-roles.csv",
+    "company-users.csv",
+    "role-products.csv",
+    "purchase-controls.csv",
+    "company-descriptions.csv",
+  ]) {
+    assert.match(guide, new RegExp(`/portal-migration-samples/${filename.replace(".", "\\.")}`));
+    assert.ok(source(`public/portal-migration-samples/${filename}`).trim().length > 0);
+  }
+
   assert.match(library, /What is the difference between company products and role products\?/);
-  assert.match(library, /What do Purchase Controls actually restrict\?/);
   assert.match(contextual, /About Portal migrations/);
   assert.match(contextual, /Staff only/);
 });
