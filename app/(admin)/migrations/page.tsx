@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { createPortalMigrationAction } from "@/app/(admin)/migrations/actions";
+import { graphQLErrorMessage } from "@/lib/graphql/client";
+import {
+  getActiveMagentoAdmins,
+  getCurrentMagentoAdmin,
+  magentoAdminDisplayName,
+  type MagentoAdminUser,
+} from "@/lib/graphql/admin-users";
 import {
   isPortalMigrationStage,
   isPortalMigrationStoreConfigured,
@@ -40,6 +47,29 @@ function stageBadgeClass(migration: PortalMigrationSummary) {
   return "badge-neutral";
 }
 
+function adminOptionLabel(admin: MagentoAdminUser) {
+  const name = magentoAdminDisplayName(admin);
+  return admin.username && admin.username !== name
+    ? `${name} (@${admin.username})`
+    : name;
+}
+
+async function loadAdminPeople() {
+  try {
+    const [admins, currentAdmin] = await Promise.all([
+      getActiveMagentoAdmins(),
+      getCurrentMagentoAdmin(),
+    ]);
+    return { admins, currentAdmin, error: null };
+  } catch (error) {
+    return {
+      admins: [] as MagentoAdminUser[],
+      currentAdmin: null,
+      error: graphQLErrorMessage(error),
+    };
+  }
+}
+
 function matchesSearch(migration: PortalMigrationSummary, query: string) {
   if (!query) return true;
   const haystack = [
@@ -60,6 +90,7 @@ export default async function PortalMigrationsPage({
   const search = first(query.q)?.trim() ?? "";
   const requestedStage = first(query.stage)?.trim() ?? "";
   const owner = first(query.owner)?.trim() ?? "";
+  const ownerAdminUserId = owner ? Number(owner) : null;
   const blockedOnly = first(query.blocked) === "1";
   const notice = first(query.notice);
   const errorFromAction = first(query.error);
@@ -107,11 +138,19 @@ export default async function PortalMigrationsPage({
     );
   }
 
+  const { admins, currentAdmin, error: adminPeopleError } = await loadAdminPeople();
+  const defaultOwnerId = currentAdmin && admins.some((admin) => admin.user_id === currentAdmin.user_id)
+    ? String(currentAdmin.user_id)
+    : "";
+
   const stageFilter = isPortalMigrationStage(requestedStage) ? requestedStage : "";
   const filtered = migrations.filter((migration) => (
     matchesSearch(migration, search)
     && (!stageFilter || migration.stage === stageFilter)
-    && (!owner || (migration.owner_name ?? "").toLowerCase().includes(owner.toLowerCase()))
+    && (
+      ownerAdminUserId === null
+      || (Number.isInteger(ownerAdminUserId) && migration.owner_admin_user_id === ownerAdminUserId)
+    )
     && (!blockedOnly || migration.blocked_count > 0)
   ));
 
@@ -136,6 +175,11 @@ export default async function PortalMigrationsPage({
 
       {notice ? <div className="notice">{notice}</div> : null}
       {errorFromAction ? <div className="error">{errorFromAction}</div> : null}
+      {adminPeopleError ? (
+        <div className="error">
+          Magento Admin identities are unavailable: {adminPeopleError}
+        </div>
+      ) : null}
 
       <section className={styles.summaryGrid} aria-label="Migration summary">
         <div className={styles.summaryCard}>
@@ -170,7 +214,21 @@ export default async function PortalMigrationsPage({
             </div>
             <div className="field">
               <label htmlFor="migration-owner">Owner</label>
-              <input id="migration-owner" name="ownerName" type="text" placeholder="Rabia" />
+              <select id="migration-owner" name="ownerAdminUserId" defaultValue={defaultOwnerId}>
+                <option value="">Unassigned</option>
+                {admins.map((admin) => (
+                  <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="migration-creator">Creator</label>
+              <input
+                id="migration-creator"
+                value={currentAdmin ? adminOptionLabel(currentAdmin) : "Unavailable"}
+                readOnly
+                aria-readonly="true"
+              />
             </div>
             <div className="field">
               <label htmlFor="migration-target">Target go-live</label>
@@ -182,7 +240,7 @@ export default async function PortalMigrationsPage({
             </div>
           </div>
           <div className="button-row">
-            <button className="button" type="submit">Create migration</button>
+            <button className="button" type="submit" disabled={!currentAdmin}>Create migration</button>
             <span className="muted small-text">The standard portal checklist is created automatically.</span>
           </div>
         </form>
@@ -209,7 +267,12 @@ export default async function PortalMigrationsPage({
           </div>
           <div className="field">
             <label htmlFor="migration-owner-filter">Owner</label>
-            <input id="migration-owner-filter" name="owner" type="text" defaultValue={owner} placeholder="Any owner" />
+            <select id="migration-owner-filter" name="owner" defaultValue={owner}>
+              <option value="">All owners</option>
+              {admins.map((admin) => (
+                <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+              ))}
+            </select>
           </div>
           <label className="check-field">
             <input name="blocked" type="checkbox" value="1" defaultChecked={blockedOnly} />

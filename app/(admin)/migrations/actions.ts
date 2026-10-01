@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  getActiveMagentoAdmins,
+  getCurrentMagentoAdmin,
+  magentoAdminDisplayName,
+  type MagentoAdminUser,
+} from "@/lib/graphql/admin-users";
+import {
   createPortalMigration,
   updatePortalMigration,
   updatePortalMigrationTask,
@@ -22,10 +28,50 @@ function requiredMigrationId(formData: FormData) {
   return migrationId;
 }
 
+function optionalAdminUserId(formData: FormData, key: string) {
+  const raw = value(formData, key);
+  if (!raw) return null;
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("Owner must be a valid Magento administrator.");
+  }
+  return id;
+}
+
 async function requireAdminSession() {
   if (!(await getAdminToken())) {
     redirect("/login");
   }
+}
+
+function actorFields(admin: MagentoAdminUser) {
+  return {
+    actorAdminUserId: admin.user_id,
+    actorUsername: admin.username,
+    actorName: magentoAdminDisplayName(admin),
+  };
+}
+
+async function resolveOwnerAndActor(formData: FormData) {
+  const ownerAdminUserId = optionalAdminUserId(formData, "ownerAdminUserId");
+  const [admins, currentAdmin] = await Promise.all([
+    getActiveMagentoAdmins(),
+    getCurrentMagentoAdmin(),
+  ]);
+
+  const owner = ownerAdminUserId === null
+    ? null
+    : admins.find((admin) => admin.user_id === ownerAdminUserId) ?? null;
+
+  if (ownerAdminUserId !== null && !owner) {
+    throw new Error("The selected migration owner is no longer an active Magento administrator.");
+  }
+
+  return {
+    ownerAdminUserId,
+    ownerName: owner ? magentoAdminDisplayName(owner) : null,
+    currentAdmin,
+  };
 }
 
 function messageFor(error: unknown) {
@@ -36,8 +82,11 @@ function messageFor(error: unknown) {
   ) {
     return "A migration already exists for that root company reference.";
   }
-  if (message.includes("does not exist") && message.includes("portal_migration")) {
-    return "Portal migration storage is not initialized on this server yet.";
+  if (
+    message.includes("does not exist")
+    && (message.includes("portal_migration") || message.includes("owner_admin_user_id"))
+  ) {
+    return "Portal migration storage needs the latest database migration before this action can run.";
   }
   return message;
 }
@@ -57,12 +106,17 @@ export async function createPortalMigrationAction(formData: FormData) {
   let error: string | null = null;
 
   try {
+    const { ownerAdminUserId, ownerName, currentAdmin } = await resolveOwnerAndActor(formData);
     migrationId = await createPortalMigration({
       name: value(formData, "name"),
       rootCompanyRef: value(formData, "rootCompanyRef"),
-      ownerName: value(formData, "ownerName"),
+      ownerAdminUserId,
+      ownerName,
       targetDate: value(formData, "targetDate"),
       notes: value(formData, "notes"),
+      createdByAdminUserId: currentAdmin.user_id,
+      createdByUsername: currentAdmin.username,
+      createdByName: magentoAdminDisplayName(currentAdmin),
     });
     revalidatePath("/migrations");
   } catch (caught) {
@@ -92,12 +146,15 @@ export async function updatePortalMigrationAction(formData: FormData) {
 
   let error: string | null = null;
   try {
+    const { ownerAdminUserId, ownerName, currentAdmin } = await resolveOwnerAndActor(formData);
     await updatePortalMigration({
       id: migrationId!,
-      ownerName: value(formData, "ownerName"),
+      ownerAdminUserId,
+      ownerName,
       stage: value(formData, "stage"),
       targetDate: value(formData, "targetDate"),
       notes: value(formData, "notes"),
+      ...actorFields(currentAdmin),
     });
     revalidatePath("/migrations");
     revalidatePath(`/migrations/${migrationId!}`);
@@ -124,12 +181,15 @@ export async function updatePortalMigrationTaskAction(formData: FormData) {
 
   let error: string | null = null;
   try {
+    const { ownerAdminUserId, ownerName, currentAdmin } = await resolveOwnerAndActor(formData);
     await updatePortalMigrationTask({
       migrationId: migrationId!,
       taskKey: value(formData, "taskKey"),
       status: value(formData, "status"),
-      ownerName: value(formData, "ownerName"),
+      ownerAdminUserId,
+      ownerName,
       note: value(formData, "note"),
+      ...actorFields(currentAdmin),
     });
     revalidatePath("/migrations");
     revalidatePath(`/migrations/${migrationId!}`);
