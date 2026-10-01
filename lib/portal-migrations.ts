@@ -111,7 +111,11 @@ export type PortalMigrationSummary = {
   id: number;
   name: string;
   root_company_ref: string;
+  owner_admin_user_id: number | null;
   owner_name: string | null;
+  created_by_admin_user_id: number | null;
+  created_by_username: string | null;
+  created_by_name: string | null;
   stage: PortalMigrationStage;
   target_date: string | null;
   notes: string | null;
@@ -132,6 +136,7 @@ export type PortalMigrationTask = {
   tool_href: string | null;
   sort_order: number;
   status: PortalMigrationTaskStatus;
+  owner_admin_user_id: number | null;
   owner_name: string | null;
   note: string | null;
   completed_at: string | null;
@@ -143,6 +148,8 @@ export type PortalMigrationEvent = {
   migration_id: number;
   event_type: string;
   message: string;
+  actor_admin_user_id: number | null;
+  actor_username: string | null;
   actor_name: string | null;
   created_at: string;
 };
@@ -156,7 +163,11 @@ type MigrationRow = {
   id: number | string;
   name: string;
   root_company_ref: string;
+  owner_admin_user_id: number | string | null;
   owner_name: string | null;
+  created_by_admin_user_id: number | string | null;
+  created_by_username: string | null;
+  created_by_name: string | null;
   stage: string;
   target_date: Date | string | null;
   notes: string | null;
@@ -175,6 +186,7 @@ type TaskRow = {
   tool_href: string | null;
   sort_order: number | string;
   status: string;
+  owner_admin_user_id: number | string | null;
   owner_name: string | null;
   note: string | null;
   completed_at: Date | string | null;
@@ -186,6 +198,8 @@ type EventRow = {
   migration_id: number | string;
   event_type: string;
   message: string;
+  actor_admin_user_id: number | string | null;
+  actor_username: string | null;
   actor_name: string | null;
   created_at: Date | string;
 };
@@ -232,7 +246,11 @@ function summaryFromRow(row: MigrationRow): PortalMigrationSummary {
     id: Number(row.id),
     name: row.name,
     root_company_ref: row.root_company_ref,
+    owner_admin_user_id: row.owner_admin_user_id === null ? null : Number(row.owner_admin_user_id),
     owner_name: row.owner_name,
+    created_by_admin_user_id: row.created_by_admin_user_id === null ? null : Number(row.created_by_admin_user_id),
+    created_by_username: row.created_by_username,
+    created_by_name: row.created_by_name,
     stage,
     target_date: dateOnly(row.target_date),
     notes: row.notes,
@@ -256,6 +274,7 @@ function taskFromRow(row: TaskRow): PortalMigrationTask {
     tool_href: row.tool_href,
     sort_order: Number(row.sort_order) || 0,
     status,
+    owner_admin_user_id: row.owner_admin_user_id === null ? null : Number(row.owner_admin_user_id),
     owner_name: row.owner_name,
     note: row.note,
     completed_at: iso(row.completed_at),
@@ -269,6 +288,8 @@ function eventFromRow(row: EventRow): PortalMigrationEvent {
     migration_id: Number(row.migration_id),
     event_type: row.event_type,
     message: row.message,
+    actor_admin_user_id: row.actor_admin_user_id === null ? null : Number(row.actor_admin_user_id),
+    actor_username: row.actor_username,
     actor_name: row.actor_name,
     created_at: iso(row.created_at) ?? "",
   };
@@ -292,7 +313,11 @@ export async function listPortalMigrations(): Promise<PortalMigrationSummary[]> 
       m.id,
       m.name,
       m.root_company_ref,
+      m.owner_admin_user_id,
       m.owner_name,
+      m.created_by_admin_user_id,
+      m.created_by_username,
+      m.created_by_name,
       m.stage,
       m.target_date,
       m.notes,
@@ -321,7 +346,11 @@ export async function getPortalMigration(id: number): Promise<PortalMigrationDet
       m.id,
       m.name,
       m.root_company_ref,
+      m.owner_admin_user_id,
       m.owner_name,
+      m.created_by_admin_user_id,
+      m.created_by_username,
+      m.created_by_name,
       m.stage,
       m.target_date,
       m.notes,
@@ -350,6 +379,7 @@ export async function getPortalMigration(id: number): Promise<PortalMigrationDet
         tool_href,
         sort_order,
         status,
+        owner_admin_user_id,
         owner_name,
         note,
         completed_at,
@@ -359,7 +389,7 @@ export async function getPortalMigration(id: number): Promise<PortalMigrationDet
       ORDER BY sort_order, task_key
     `,
     sql`
-      SELECT id, migration_id, event_type, message, actor_name, created_at
+      SELECT id, migration_id, event_type, message, actor_admin_user_id, actor_username, actor_name, created_at
       FROM css_admin.portal_migration_event
       WHERE migration_id = ${id}
       ORDER BY created_at DESC, id DESC
@@ -394,28 +424,53 @@ function optionalDate(value: string | null | undefined) {
   return normalized;
 }
 
+function optionalAdminUserId(value: number | null | undefined) {
+  if (value === null || value === undefined) return null;
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error("Magento admin user ID must be a positive integer.");
+  }
+  return value;
+}
+
+function requiredAdminUserId(value: number, label: string) {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${label} must be a positive Magento admin user ID.`);
+  }
+  return value;
+}
+
 export async function createPortalMigration(input: {
   name: string;
   rootCompanyRef: string;
+  ownerAdminUserId?: number | null;
   ownerName?: string | null;
   targetDate?: string | null;
   notes?: string | null;
-  actorName?: string | null;
+  createdByAdminUserId: number;
+  createdByUsername: string;
+  createdByName: string;
 }) {
   const sql = requirePortalMigrationStore();
   const name = requiredText(input.name, "Portal name");
   const rootCompanyRef = requiredText(input.rootCompanyRef, "Root company reference").toUpperCase();
+  const ownerAdminUserId = optionalAdminUserId(input.ownerAdminUserId);
   const ownerName = optionalText(input.ownerName);
   const targetDate = optionalDate(input.targetDate);
   const notes = optionalText(input.notes);
-  const actorName = optionalText(input.actorName) ?? "CSS Admin";
+  const createdByAdminUserId = requiredAdminUserId(input.createdByAdminUserId, "Creator");
+  const createdByUsername = requiredText(input.createdByUsername, "Creator username");
+  const createdByName = requiredText(input.createdByName, "Creator name");
 
   return sql.begin(async (tx) => {
     const rows = await tx`
       INSERT INTO css_admin.portal_migration (
         name,
         root_company_ref,
+        owner_admin_user_id,
         owner_name,
+        created_by_admin_user_id,
+        created_by_username,
+        created_by_name,
         stage,
         target_date,
         notes,
@@ -424,7 +479,11 @@ export async function createPortalMigration(input: {
       ) VALUES (
         ${name},
         ${rootCompanyRef},
+        ${ownerAdminUserId},
         ${ownerName},
+        ${createdByAdminUserId},
+        ${createdByUsername},
+        ${createdByName},
         'new',
         ${targetDate},
         ${notes},
@@ -465,12 +524,16 @@ export async function createPortalMigration(input: {
         migration_id,
         event_type,
         message,
+        actor_admin_user_id,
+        actor_username,
         actor_name
       ) VALUES (
         ${migrationId},
         'created',
         ${`Migration created for ${rootCompanyRef}.`},
-        ${actorName}
+        ${createdByAdminUserId},
+        ${createdByUsername},
+        ${createdByName}
       )
     `;
 
@@ -480,26 +543,33 @@ export async function createPortalMigration(input: {
 
 export async function updatePortalMigration(input: {
   id: number;
+  ownerAdminUserId?: number | null;
   ownerName?: string | null;
   stage: string;
   targetDate?: string | null;
   notes?: string | null;
-  actorName?: string | null;
+  actorAdminUserId: number;
+  actorUsername: string;
+  actorName: string;
 }) {
   if (!Number.isInteger(input.id) || input.id <= 0) throw new Error("Invalid migration id.");
   const stage = input.stage;
   if (!isPortalMigrationStage(stage)) throw new Error("Invalid migration stage.");
 
   const sql = requirePortalMigrationStore();
+  const ownerAdminUserId = optionalAdminUserId(input.ownerAdminUserId);
   const ownerName = optionalText(input.ownerName);
   const targetDate = optionalDate(input.targetDate);
   const notes = optionalText(input.notes);
-  const actorName = optionalText(input.actorName) ?? "CSS Admin";
+  const actorAdminUserId = requiredAdminUserId(input.actorAdminUserId, "Actor");
+  const actorUsername = requiredText(input.actorUsername, "Actor username");
+  const actorName = requiredText(input.actorName, "Actor name");
 
   await sql.begin(async (tx) => {
     const rows = await tx`
       UPDATE css_admin.portal_migration
       SET
+        owner_admin_user_id = ${ownerAdminUserId},
         owner_name = ${ownerName},
         stage = ${stage},
         target_date = ${targetDate},
@@ -516,11 +586,15 @@ export async function updatePortalMigration(input: {
         migration_id,
         event_type,
         message,
+        actor_admin_user_id,
+        actor_username,
         actor_name
       ) VALUES (
         ${input.id},
         'migration_updated',
         ${`Migration details updated. Stage: ${portalMigrationStageLabel(stage)}.`},
+        ${actorAdminUserId},
+        ${actorUsername},
         ${actorName}
       )
     `;
@@ -531,9 +605,12 @@ export async function updatePortalMigrationTask(input: {
   migrationId: number;
   taskKey: string;
   status: string;
+  ownerAdminUserId?: number | null;
   ownerName?: string | null;
   note?: string | null;
-  actorName?: string | null;
+  actorAdminUserId: number;
+  actorUsername: string;
+  actorName: string;
 }) {
   if (!Number.isInteger(input.migrationId) || input.migrationId <= 0) {
     throw new Error("Invalid migration id.");
@@ -545,15 +622,19 @@ export async function updatePortalMigrationTask(input: {
   if (!definition) throw new Error("Unknown migration task.");
 
   const sql = requirePortalMigrationStore();
+  const ownerAdminUserId = optionalAdminUserId(input.ownerAdminUserId);
   const ownerName = optionalText(input.ownerName);
   const note = optionalText(input.note);
-  const actorName = optionalText(input.actorName) ?? "CSS Admin";
+  const actorAdminUserId = requiredAdminUserId(input.actorAdminUserId, "Actor");
+  const actorUsername = requiredText(input.actorUsername, "Actor username");
+  const actorName = requiredText(input.actorName, "Actor name");
 
   await sql.begin(async (tx) => {
     const rows = await tx`
       UPDATE css_admin.portal_migration_task
       SET
         status = ${status},
+        owner_admin_user_id = ${ownerAdminUserId},
         owner_name = ${ownerName},
         note = ${note},
         completed_at = CASE
@@ -580,11 +661,15 @@ export async function updatePortalMigrationTask(input: {
         migration_id,
         event_type,
         message,
+        actor_admin_user_id,
+        actor_username,
         actor_name
       ) VALUES (
         ${input.migrationId},
         'task_updated',
         ${`${definition.label} marked ${portalMigrationTaskStatusLabel(status)}.`},
+        ${actorAdminUserId},
+        ${actorUsername},
         ${actorName}
       )
     `;
