@@ -208,7 +208,7 @@ export default async function PortalMigrationDetailPage({
                 </div>
               </div>
               <div className="button-row">
-                <button className="button" type="submit">Save migration details</button>
+                <button className="button" type="submit" disabled={Boolean(adminOwnersError)}>Save migration details</button>
                 <span className="muted small-text">Last updated {formatDateTime(migration.updated_at)}</span>
               </div>
             </form>
@@ -285,7 +285,7 @@ export default async function PortalMigrationDetailPage({
                         <input id={noteId} name="note" type="text" defaultValue={task.note ?? ""} placeholder="What changed, or what is blocking this step?" />
                       </div>
 
-                      <button className="button button-compact" type="submit">Save</button>
+                      <button className="button button-compact" type="submit" disabled={Boolean(adminOwnersError)}>Save</button>
                     </form>
                   </article>
                 );
