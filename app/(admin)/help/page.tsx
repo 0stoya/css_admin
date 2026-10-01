@@ -28,11 +28,15 @@ export default async function AdminHelpPage({
           <p className="eyebrow">Portal creation</p>
           <h1>Portal creation — quick guide</h1>
           <p className="muted">
-            Keep it simple: collect the source data, complete the templates in order, Preview, Apply, then QA.
+            Collect the source data, complete the request templates in order, then hand them to the migration team.
           </p>
         </div>
         <Link className="button button-secondary button-link" href="/migrations">Portal migrations</Link>
       </header>
+
+      <div className="notice">
+        <strong>No uploads required.</strong> Sales and Area Managers prepare the request only. The migration/admin team reviews, Previews and Applies all CSV imports.
+      </div>
 
       <section className={styles.guideIntro}>
         <div className={styles.introCard}>
@@ -96,7 +100,7 @@ export default async function AdminHelpPage({
 
         <div className={styles.moreHelpBody}>
           <p className="muted">
-            Only open this bit when you need it. The quick guide above is enough for the normal migration flow.
+            Only open this bit when you need it. The quick guide above is enough for preparing a normal portal request.
           </p>
 
           <form method="get" className={styles.searchForm}>
