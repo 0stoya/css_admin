@@ -1,0 +1,3 @@
+role_name,company_ref,sort_order,can_order,can_view_orders,can_manage_users,can_approve_orders,notes
+Buyer,ABC001,10,Yes,Yes,No,No,Standard buyer
+Manager,ABC001,20,Yes,Yes,Yes,Yes,Company manager

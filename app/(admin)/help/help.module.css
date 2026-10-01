@@ -1,0 +1,231 @@
+.guideIntro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.introCard {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.2rem;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: var(--css-surface);
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+
+.introCard h2 {
+  margin: 0;
+}
+
+.sourceList {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sourceItem {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--css-border);
+  border-radius: 9px;
+  background: #f8fbfd;
+  font-weight: 600;
+}
+
+.sourceNumber {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.steps {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: var(--css-surface);
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--css-primary);
+  color: #fff;
+  font-family: var(--font-secondary);
+  font-size: 1.1rem;
+}
+
+.stepBody {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.stepBody h2 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.stepBody p {
+  margin: 0;
+  color: var(--css-muted);
+}
+
+.stepBody ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.25rem;
+  color: var(--css-muted);
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  max-width: 430px;
+}
+
+.actionLink {
+  white-space: nowrap;
+}
+
+.moreHelp {
+  border-top: 1px solid var(--css-border);
+  padding-top: 0.25rem;
+}
+
+.moreHelp > summary {
+  cursor: pointer;
+  color: var(--css-primary);
+  font-weight: 700;
+  list-style-position: inside;
+  padding: 0.85rem 0;
+}
+
+.moreHelpBody {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.searchForm {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.4fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.faqList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.faqItem {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--css-border);
+  border-radius: 10px;
+  background: #fbfdfe;
+}
+
+.faqItem summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.faqItem p {
+  margin-bottom: 0;
+}
+
+.faqSections {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.faqSection {
+  padding-top: 0.7rem;
+  border-top: 1px solid #e7edf2;
+}
+
+.faqSection h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.92rem;
+}
+
+.faqSection p {
+  margin: 0;
+}
+
+.faqSection ul {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1000px) {
+  .guideIntro {
+    grid-template-columns: 1fr;
+  }
+
+  .step {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 2;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .searchForm {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .searchActions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .step {
+    grid-template-columns: 1fr;
+  }
+
+  .stepNumber {
+    width: 36px;
+    height: 36px;
+  }
+
+  .actions {
+    grid-column: auto;
+  }
+
+  .searchForm {
+    grid-template-columns: 1fr;
+  }
+
+  .searchActions {
+    grid-column: auto;
+  }
+}

@@ -1,0 +1,5 @@
+company_ref,record_type,template_name,sku,quantity_limit,duration_days,start_date,role_name
+ABC001,purchase_template,Monthly PPE,,,,,
+ABC001,purchase_rule,Monthly PPE,PPE-GLOVE-M,4,30,2026-10-01,
+ABC001,purchase_rule,Monthly PPE,PPE-MASK-01,10,30,2026-10-01,
+ABC001,template_role,Monthly PPE,,,,,Buyer
