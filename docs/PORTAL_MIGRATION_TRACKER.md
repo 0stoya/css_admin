@@ -18,11 +18,14 @@ The tracker uses the existing local Admin Postgres connection:
 CSS_ADMIN_DATABASE_URL=postgres://...
 ```
 
-Apply the schema before enabling the tracker in production:
+Apply the tracker schemas in order:
 
 ```bash
 psql "$CSS_ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 \
   -f deploy/postgres/003_portal_migrations.sql
+
+psql "$CSS_ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 \
+  -f deploy/postgres/004_portal_migration_admin_owners.sql
 ```
 
 The migration creates:
@@ -32,6 +35,16 @@ The migration creates:
 - `css_admin.portal_migration_event`
 
 One root OGL company reference can have only one migration record.
+
+## Ownership
+
+Migration and checklist ownership use the active Magento Admin directory already returned by Fluid's `css_admin_company_options.sales_representatives` contract.
+
+- Owner is selected from active Magento Admin users rather than typed as free text.
+- The selected Magento Admin user ID and a display-name snapshot are stored locally.
+- Submitted owner IDs are resolved again server-side against the current active Admin list before saving.
+- An inactive or removed historical owner remains readable on existing migration records but cannot be newly assigned.
+- Creator/current-user attribution is intentionally deferred until the backend can expose the authenticated Magento Admin identity.
 
 ## Standard checklist
 
@@ -85,9 +98,9 @@ This prevents a manually advanced stage from hiding unfinished checklist work.
 Keep the first release intentionally small:
 
 - one migration record per portal hierarchy
-- free-text internal owner
+- Magento Admin owner assignment
 - target go-live date
-- checklist item owner, status and note/blocker
+- Magento Admin checklist-item owner, status and note/blocker
 - append-only activity entries for tracker changes
 - searchable working guidance
 
