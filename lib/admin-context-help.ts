@@ -126,6 +126,27 @@ const topics: Record<string, AdminHelpTopic> = {
       { heading: "Danger zone", body: "Destructive lifecycle actions are intentionally separated from normal settings. Treat them as irreversible unless the underlying Magento operation explicitly provides recovery." },
     ],
   },
+  migrations: {
+    key: "migrations",
+    title: "About Portal migrations",
+    description: "The staff-only programme tracker for moving OGL / Tower portals into CSS Commerce.",
+    sections: [
+      { heading: "One hierarchy, one record", body: "Create one migration record for the root company hierarchy and use the OGL root company reference as the durable reference." },
+      { heading: "Checklist is the readiness signal", body: "Complete and Not applicable steps count as resolved. Blocked, In progress and Not started remain visible in the programme queue." },
+      { heading: "Stage is separate", body: "The migration stage is a manual programme status. Checklist progress is calculated independently so a portal cannot look ready merely because its stage was moved forward." },
+      { heading: "Staff only", body: "Migration tracking lives under the Admin authentication boundary and is not exposed through the customer Portal application." },
+    ],
+  },
+  help: {
+    key: "help",
+    title: "About Help & how-to",
+    description: "Searchable working guidance for Admin and portal migration tasks.",
+    sections: [
+      { heading: "Current workflow", body: "The articles describe the current Admin workflow and link the migration process back to the relevant import and configuration tools." },
+      { heading: "Search by problem", body: "Use a term such as roles, purchase controls, company products or preview errors rather than hunting through old chat attachments." },
+      { heading: "Contextual help", body: "The same Admin application also shows page-specific guidance beside supported page headings." },
+    ],
+  },
   bulkImport: {
     key: "bulk-import",
     title: "About Bulk import / export",
@@ -160,6 +181,8 @@ const topics: Record<string, AdminHelpTopic> = {
 
 export function adminHelpForPathname(pathname: string): AdminHelpTopic | null {
   if (!pathname.startsWith("/")) return null;
+  if (pathname === "/migrations" || pathname.startsWith("/migrations/")) return topics.migrations;
+  if (pathname === "/help" || pathname.startsWith("/help/")) return topics.help;
   if (pathname === "/bulk-import" || pathname.startsWith("/bulk-import/")) return topics.bulkImport;
   if (pathname === "/ogl/rep-profiles" || pathname.startsWith("/ogl/rep-profiles/")) return topics.repProfiles;
   if (pathname === "/ogl" || pathname.startsWith("/ogl/")) return topics.ogl;

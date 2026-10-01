@@ -12,8 +12,10 @@ import { getAdminToken } from "@/lib/session";
 
 const navigation: NavigationItem[] = [
   { href: "/companies", label: "Companies" },
+  { href: "/migrations", label: "Migrations" },
   { href: "/bulk-import", label: "Bulk import" },
   { href: "/ogl", label: "OGL" },
+  { href: "/help", label: "Help" },
 ];
 
 const companyNavigation: CompanySidebarNavigationItem[] = [
@@ -42,6 +44,7 @@ const sectionNavigation: SidebarSectionNavigation[] = [
       { href: "/bulk-import?view=roles", label: "Roles & permissions" },
       { href: "/bulk-import?view=role-products", label: "Role products" },
       { href: "/bulk-import?view=company-products", label: "Company products" },
+      { href: "/bulk-import?view=purchase-controls", label: "Purchase controls" },
       { href: "/bulk-import?view=company-descriptions", label: "Company descriptions" },
     ],
   },
