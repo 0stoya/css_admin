@@ -21,7 +21,7 @@ import {
 } from "@/lib/portal-migrations";
 import styles from "@/app/(admin)/migrations/migrations.module.css";
 
-const TASK_SECTIONS = [
+const TASK_SECTIONS: Array<{ label: string; keys: string[] }> = [
   {
     label: "Setup",
     keys: ["company_structure", "company_products"],
@@ -46,7 +46,7 @@ const TASK_SECTIONS = [
       "go_live",
     ],
   },
-] as const;
+];
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -306,7 +306,7 @@ export default async function PortalMigrationDetailPage({
 
             <div className={styles.taskSections}>
               {TASK_SECTIONS.map((section) => {
-                const sectionTasks = migration.tasks.filter((task) => section.keys.includes(task.task_key as never));
+                const sectionTasks = migration.tasks.filter((task) => section.keys.includes(task.task_key));
                 if (!sectionTasks.length) return null;
 
                 return (
