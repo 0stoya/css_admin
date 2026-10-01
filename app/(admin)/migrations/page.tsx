@@ -90,6 +90,7 @@ export default async function PortalMigrationsPage({
   const search = first(query.q)?.trim() ?? "";
   const requestedStage = first(query.stage)?.trim() ?? "";
   const owner = first(query.owner)?.trim() ?? "";
+  const ownerAdminUserId = owner ? Number(owner) : null;
   const blockedOnly = first(query.blocked) === "1";
   const notice = first(query.notice);
   const errorFromAction = first(query.error);
@@ -146,7 +147,10 @@ export default async function PortalMigrationsPage({
   const filtered = migrations.filter((migration) => (
     matchesSearch(migration, search)
     && (!stageFilter || migration.stage === stageFilter)
-    && (!owner || (migration.owner_name ?? "").toLowerCase().includes(owner.toLowerCase()))
+    && (
+      ownerAdminUserId === null
+      || (Number.isInteger(ownerAdminUserId) && migration.owner_admin_user_id === ownerAdminUserId)
+    )
     && (!blockedOnly || migration.blocked_count > 0)
   ));
 
@@ -266,7 +270,7 @@ export default async function PortalMigrationsPage({
             <select id="migration-owner-filter" name="owner" defaultValue={owner}>
               <option value="">All owners</option>
               {admins.map((admin) => (
-                <option value={magentoAdminDisplayName(admin)} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
               ))}
             </select>
           </div>
