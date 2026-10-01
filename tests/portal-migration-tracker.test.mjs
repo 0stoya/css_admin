@@ -75,16 +75,28 @@ test("migration pages expose queue, filters, checklist, blockers and activity", 
   assert.match(detail, /updatePortalMigrationTaskAction/);
 });
 
-test("staff help replaces chat archaeology with searchable migration guidance", () => {
+test("staff help leads with a concise portal-creation flow and keeps deeper FAQ optional", () => {
   const page = source("app/(admin)/help/page.tsx");
+  const guide = source("lib/portal-creation-guide.ts");
   const library = source("lib/admin-help-library.ts");
   const contextual = source("lib/admin-context-help.ts");
 
-  assert.match(page, /Help & how-to/);
-  assert.match(page, /Search help/);
-  assert.match(library, /How do I migrate a portal\?/);
+  assert.match(page, /Portal creation — quick guide/);
+  assert.match(page, /You should receive/);
+  assert.match(page, /More help \/ common questions/);
+  assert.match(guide, /Current company hierarchy/);
+  assert.match(guide, /Proposed SKU list/);
+  assert.match(guide, /Build the company hierarchy/);
+  assert.match(guide, /Create roles, then users/);
+  assert.match(guide, /Add restrictions only when needed/);
+  assert.match(guide, /Add content, preview, then QA/);
+  assert.match(guide, /\/api\/bulk-import\/examples\/company-structure/);
+  assert.match(guide, /\/api\/bulk-import\/examples\/company-products/);
+  assert.match(guide, /\/api\/bulk-import\/examples\/roles/);
+  assert.match(guide, /\/api\/bulk-import\/examples\/users/);
+  assert.match(guide, /\/api\/bulk-import\/examples\/role-products/);
+  assert.match(guide, /\/api\/bulk-import\/examples\/purchase-controls/);
   assert.match(library, /What is the difference between company products and role products\?/);
-  assert.match(library, /What do Purchase Controls actually restrict\?/);
   assert.match(contextual, /About Portal migrations/);
   assert.match(contextual, /Staff only/);
 });
