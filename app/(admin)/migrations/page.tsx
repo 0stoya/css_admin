@@ -220,7 +220,7 @@ export default async function PortalMigrationsPage({
             </div>
           </div>
           <div className="button-row">
-            <button className="button" type="submit">Create migration</button>
+            <button className="button" type="submit" disabled={Boolean(adminOwnersError)}>Create migration</button>
             <span className="muted small-text">The standard portal checklist is created automatically.</span>
           </div>
         </form>
