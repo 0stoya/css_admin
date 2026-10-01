@@ -45,8 +45,10 @@ export type SidebarSectionNavigation = {
 
 const adminTopLevelIcons: Record<string, LucideIcon> = {
   "/companies": Building2,
+  "/migrations": ClipboardList,
   "/bulk-import": Upload,
   "/ogl": Database,
+  "/help": BookOpen,
 };
 
 const adminCompanyIcons: Record<string, LucideIcon> = {
@@ -71,6 +73,8 @@ const adminSectionIcons: Record<string, LucideIcon> = {
   "/bulk-import?view=roles": Shield,
   "/bulk-import?view=role-products": Package,
   "/bulk-import?view=company-products": Package,
+  "/bulk-import?view=purchase-controls": SlidersHorizontal,
+  "/bulk-import?view=company-descriptions": Palette,
   "/ogl": Building2,
   "/ogl?view=mappings": Network,
   "/ogl/rep-profiles": Contact,
