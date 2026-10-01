@@ -1,0 +1,350 @@
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem 1.1rem;
+  background: var(--css-surface);
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 5px rgb(0 35 72 / 3%);
+}
+
+.summaryValue {
+  color: var(--css-primary);
+  font-family: var(--font-secondary);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.summaryLabel {
+  color: var(--css-muted);
+  font-size: 0.86rem;
+}
+
+.toolbar {
+  display: grid;
+  gap: 1rem;
+}
+
+.filterGrid,
+.createGrid,
+.metadataGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: end;
+}
+
+.filterActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.createPanel summary {
+  cursor: pointer;
+  color: var(--css-primary);
+  font-weight: 700;
+  list-style-position: inside;
+}
+
+.createBody {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.span2 {
+  grid-column: span 2;
+}
+
+.span4 {
+  grid-column: 1 / -1;
+}
+
+.progressCell {
+  min-width: 160px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  margin-top: 0.4rem;
+  background: #e8eef3;
+  border-radius: 999px;
+}
+
+.progressBar {
+  display: block;
+  height: 100%;
+  background: var(--css-primary);
+  border-radius: inherit;
+}
+
+.progressBarReady {
+  background: var(--css-success);
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--css-muted);
+  font-size: 0.78rem;
+}
+
+.portalCell {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 190px;
+}
+
+.portalRef {
+  color: var(--css-muted);
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.detailLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.stageFlow {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.stageStep {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--css-border);
+  border-radius: 999px;
+  color: var(--css-muted);
+  background: var(--css-surface);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.stageCurrent {
+  border-color: var(--css-primary);
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.readiness {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.readinessHeadline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.readinessValue {
+  font-family: var(--font-secondary);
+  font-size: 1.7rem;
+  color: var(--css-primary);
+}
+
+.readinessList {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--css-muted);
+}
+
+.taskList {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.taskCard {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  background: var(--css-surface);
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+}
+
+.taskBlocked {
+  border-color: #efb7b1;
+  box-shadow: inset 3px 0 var(--css-danger);
+}
+
+.taskDone {
+  border-color: #b7dfc9;
+}
+
+.taskHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.taskTitle {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.taskTitle h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.taskTitle p {
+  margin: 0;
+  color: var(--css-muted);
+  font-size: 0.88rem;
+}
+
+.taskForm {
+  display: grid;
+  grid-template-columns: minmax(145px, 0.55fr) minmax(150px, 0.75fr) minmax(240px, 2fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.taskTool {
+  display: inline-flex;
+  width: fit-content;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.eventList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eventItem {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #e7edf2;
+}
+
+.eventItem:last-child {
+  border-bottom: 0;
+}
+
+.eventMeta {
+  color: var(--css-muted);
+  font-size: 0.78rem;
+}
+
+.helpSearch {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.35fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.helpGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.helpArticle {
+  scroll-margin-top: 110px;
+}
+
+.helpArticle summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.helpArticle summary h2 {
+  display: inline;
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.helpSummary {
+  margin: 0.6rem 0 0;
+  color: var(--css-muted);
+}
+
+.helpSection {
+  padding-top: 0.85rem;
+  border-top: 1px solid #e7edf2;
+}
+
+.helpSection h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.helpSection p {
+  margin: 0;
+}
+
+.helpSection ul {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1000px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterGrid,
+  .createGrid,
+  .metadataGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .span4 {
+    grid-column: 1 / -1;
+  }
+
+  .taskForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detailLayout,
+  .helpGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .summaryGrid,
+  .filterGrid,
+  .createGrid,
+  .metadataGrid,
+  .taskForm,
+  .helpSearch {
+    grid-template-columns: 1fr;
+  }
+
+  .span2,
+  .span4 {
+    grid-column: auto;
+  }
+
+  .taskHeader,
+  .readinessHeadline {
+    display: grid;
+  }
+}
