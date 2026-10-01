@@ -487,7 +487,8 @@ export async function updatePortalMigration(input: {
   actorName?: string | null;
 }) {
   if (!Number.isInteger(input.id) || input.id <= 0) throw new Error("Invalid migration id.");
-  if (!isPortalMigrationStage(input.stage)) throw new Error("Invalid migration stage.");
+  const stage = input.stage;
+  if (!isPortalMigrationStage(stage)) throw new Error("Invalid migration stage.");
 
   const sql = requirePortalMigrationStore();
   const ownerName = optionalText(input.ownerName);
@@ -500,7 +501,7 @@ export async function updatePortalMigration(input: {
       UPDATE css_admin.portal_migration
       SET
         owner_name = ${ownerName},
-        stage = ${input.stage},
+        stage = ${stage},
         target_date = ${targetDate},
         notes = ${notes},
         updated_at = now()
@@ -519,7 +520,7 @@ export async function updatePortalMigration(input: {
       ) VALUES (
         ${input.id},
         'migration_updated',
-        ${`Migration details updated. Stage: ${portalMigrationStageLabel(input.stage)}.`},
+        ${`Migration details updated. Stage: ${portalMigrationStageLabel(stage)}.`},
         ${actorName}
       )
     `;
@@ -537,7 +538,8 @@ export async function updatePortalMigrationTask(input: {
   if (!Number.isInteger(input.migrationId) || input.migrationId <= 0) {
     throw new Error("Invalid migration id.");
   }
-  if (!isPortalMigrationTaskStatus(input.status)) throw new Error("Invalid task status.");
+  const status = input.status;
+  if (!isPortalMigrationTaskStatus(status)) throw new Error("Invalid task status.");
 
   const definition = portalMigrationTaskDefinition(input.taskKey);
   if (!definition) throw new Error("Unknown migration task.");
@@ -551,11 +553,11 @@ export async function updatePortalMigrationTask(input: {
     const rows = await tx`
       UPDATE css_admin.portal_migration_task
       SET
-        status = ${input.status},
+        status = ${status},
         owner_name = ${ownerName},
         note = ${note},
         completed_at = CASE
-          WHEN ${input.status} IN ('complete', 'not_applicable')
+          WHEN ${status} IN ('complete', 'not_applicable')
             THEN COALESCE(completed_at, now())
           ELSE NULL
         END,
@@ -582,7 +584,7 @@ export async function updatePortalMigrationTask(input: {
       ) VALUES (
         ${input.migrationId},
         'task_updated',
-        ${`${definition.label} marked ${portalMigrationTaskStatusLabel(input.status)}.`},
+        ${`${definition.label} marked ${portalMigrationTaskStatusLabel(status)}.`},
         ${actorName}
       )
     `;
