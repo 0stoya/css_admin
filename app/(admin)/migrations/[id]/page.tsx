@@ -4,6 +4,12 @@ import {
   updatePortalMigrationAction,
   updatePortalMigrationTaskAction,
 } from "@/app/(admin)/migrations/actions";
+import { graphQLErrorMessage } from "@/lib/graphql/client";
+import {
+  getActiveMagentoAdmins,
+  magentoAdminDisplayName,
+  type MagentoAdminUser,
+} from "@/lib/graphql/admin-users";
 import {
   getPortalMigration,
   isPortalMigrationStoreConfigured,
@@ -17,6 +23,24 @@ import styles from "@/app/(admin)/migrations/migrations.module.css";
 
 function first(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function adminOptionLabel(admin: MagentoAdminUser) {
+  const name = magentoAdminDisplayName(admin);
+  return admin.username && admin.username !== name
+    ? `${name} (@${admin.username})`
+    : name;
+}
+
+async function loadAdminOwners() {
+  try {
+    return { admins: await getActiveMagentoAdmins(), error: null };
+  } catch (error) {
+    return {
+      admins: [] as MagentoAdminUser[],
+      error: graphQLErrorMessage(error),
+    };
+  }
 }
 
 function taskBadgeClass(task: PortalMigrationTask) {
@@ -86,6 +110,7 @@ export default async function PortalMigrationDetailPage({
 
   if (!migration) notFound();
 
+  const { admins, error: adminOwnersError } = await loadAdminOwners();
   const incomplete = migration.tasks.filter(
     (task) => task.status !== "complete" && task.status !== "not_applicable",
   );
@@ -115,6 +140,7 @@ export default async function PortalMigrationDetailPage({
 
       {notice ? <div className="notice">{notice}</div> : null}
       {actionError ? <div className="error">{actionError}</div> : null}
+      {adminOwnersError ? <div className="error">Magento Admin owners are unavailable: {adminOwnersError}</div> : null}
 
       <section className="card stack">
         <div className="section-heading">
@@ -148,7 +174,32 @@ export default async function PortalMigrationDetailPage({
               <div className={styles.metadataGrid}>
                 <div className="field">
                   <label htmlFor="migration-owner">Owner</label>
-                  <input id="migration-owner" name="ownerName" type="text" defaultValue={migration.owner_name ?? ""} placeholder="Unassigned" />
+                  <select
+                    id="migration-owner"
+                    name="ownerAdminUserId"
+                    defaultValue={migration.owner_admin_user_id ? String(migration.owner_admin_user_id) : ""}
+                    disabled={Boolean(adminOwnersError)}
+                  >
+                    <option value="">Unassigned</option>
+                    {migration.owner_admin_user_id
+                      && !admins.some((admin) => admin.user_id === migration.owner_admin_user_id)
+                      ? <option value={migration.owner_admin_user_id}>{migration.owner_name ?? `Admin #${migration.owner_admin_user_id}`} (inactive/unavailable)</option>
+                      : null}
+                    {admins.map((admin) => (
+                      <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="migration-creator">Creator</label>
+                  <input
+                    id="migration-creator"
+                    value={migration.created_by_name
+                      ? `${migration.created_by_name}${migration.created_by_username ? ` (@${migration.created_by_username})` : ""}`
+                      : "Legacy migration — creator not recorded"}
+                    readOnly
+                    aria-readonly="true"
+                  />
                 </div>
                 <div className="field">
                   <label htmlFor="migration-stage">Stage</label>
@@ -223,7 +274,21 @@ export default async function PortalMigrationDetailPage({
 
                       <div className="field">
                         <label htmlFor={ownerId}>Owner</label>
-                        <input id={ownerId} name="ownerName" type="text" defaultValue={task.owner_name ?? ""} placeholder={migration.owner_name ?? "Unassigned"} />
+                        <select
+                          id={ownerId}
+                          name="ownerAdminUserId"
+                          defaultValue={task.owner_admin_user_id ? String(task.owner_admin_user_id) : ""}
+                          disabled={Boolean(adminOwnersError)}
+                        >
+                          <option value="">Use migration owner / unassigned</option>
+                          {task.owner_admin_user_id
+                            && !admins.some((admin) => admin.user_id === task.owner_admin_user_id)
+                            ? <option value={task.owner_admin_user_id}>{task.owner_name ?? `Admin #${task.owner_admin_user_id}`} (inactive/unavailable)</option>
+                            : null}
+                          {admins.map((admin) => (
+                            <option value={admin.user_id} key={admin.user_id}>{adminOptionLabel(admin)}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="field">
@@ -283,7 +348,10 @@ export default async function PortalMigrationDetailPage({
                 {migration.events.map((event) => (
                   <li className={styles.eventItem} key={event.id}>
                     <strong>{event.message}</strong>
-                    <span className={styles.eventMeta}>{event.actor_name ?? "CSS Admin"} · {formatDateTime(event.created_at)}</span>
+                    <span className={styles.eventMeta}>
+                      {event.actor_name ?? "Legacy Admin"}
+                      {event.actor_username ? ` (@${event.actor_username})` : ""} · {formatDateTime(event.created_at)}
+                    </span>
                   </li>
                 ))}
               </ol>
