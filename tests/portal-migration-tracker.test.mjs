@@ -21,8 +21,9 @@ test("portal migration tracker stays inside the staff Admin boundary", () => {
   assert.match(actions, /updatePortalMigrationTaskAction/);
 });
 
-test("portal migration storage has migrations, checklist tasks and append-only events", () => {
+test("portal migration storage has migrations, checklist tasks, events and Magento admin attribution", () => {
   const sql = source("deploy/postgres/003_portal_migrations.sql");
+  const adminSql = source("deploy/postgres/004_portal_migration_admin_owners.sql");
 
   assert.match(sql, /CREATE TABLE IF NOT EXISTS css_admin\.portal_migration \(/);
   assert.match(sql, /CREATE TABLE IF NOT EXISTS css_admin\.portal_migration_task \(/);
@@ -30,6 +31,12 @@ test("portal migration storage has migrations, checklist tasks and append-only e
   assert.match(sql, /ON DELETE CASCADE/);
   assert.match(sql, /'not_applicable'/);
   assert.match(sql, /portal_migration_root_company_ref_unique/);
+
+  assert.match(adminSql, /owner_admin_user_id/);
+  assert.match(adminSql, /created_by_admin_user_id/);
+  assert.match(adminSql, /created_by_username/);
+  assert.match(adminSql, /actor_admin_user_id/);
+  assert.match(adminSql, /actor_username/);
 });
 
 test("new migrations receive the standard portal checklist and real readiness states", () => {
@@ -57,6 +64,33 @@ test("new migrations receive the standard portal checklist and real readiness st
   assert.match(store, /blocked_count/);
   assert.match(store, /ready: taskCount > 0 && doneCount === taskCount && blockedCount === 0/);
   assert.match(store, /Open the relevant Admin tool|toolHref/);
+});
+
+test("migration owner and creator are resolved from authenticated Magento admins", () => {
+  const identity = source("lib/graphql/admin-users.ts");
+  const actions = source("app/(admin)/migrations/actions.ts");
+  const queue = source("app/(admin)/migrations/page.tsx");
+  const detail = source("app/(admin)/migrations/[id]/page.tsx");
+  const store = source("lib/portal-migrations.ts");
+
+  assert.match(identity, /css_admin_company_options/);
+  assert.match(identity, /sales_representatives/);
+  assert.match(identity, /css_admin_current_user/);
+  assert.match(actions, /getActiveMagentoAdmins/);
+  assert.match(actions, /getCurrentMagentoAdmin/);
+  assert.match(actions, /selected migration owner is no longer an active Magento administrator/);
+  assert.match(actions, /createdByAdminUserId: currentAdmin\.user_id/);
+  assert.doesNotMatch(actions, /ownerName: value\(formData, "ownerName"\)/);
+
+  assert.match(queue, /name="ownerAdminUserId"/);
+  assert.match(queue, /Creator/);
+  assert.match(queue, /readOnly/);
+  assert.match(detail, /name="ownerAdminUserId"/);
+  assert.match(detail, /created_by_name/);
+
+  assert.match(store, /owner_admin_user_id/);
+  assert.match(store, /created_by_admin_user_id/);
+  assert.match(store, /actor_admin_user_id/);
 });
 
 test("migration pages expose queue, filters, checklist, blockers and activity", () => {
