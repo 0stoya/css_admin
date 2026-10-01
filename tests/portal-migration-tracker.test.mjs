@@ -96,8 +96,13 @@ test("migration pages expose queue, filters, checklist, blockers and activity", 
   assert.match(detail, /Portal readiness/);
   assert.match(detail, /Not applicable/);
   assert.match(detail, /Recent activity/);
-  assert.match(detail, /Open the relevant Admin tool/);
+  assert.match(detail, /Open Admin tool/);
   assert.match(detail, /updatePortalMigrationTaskAction/);
+  assert.match(detail, /TASK_SECTIONS/);
+  assert.match(detail, /Open a step only when you need to update it/);
+  assert.match(detail, /Inherit: \{migration\.owner_name \?\? "Unassigned"\}/);
+  assert.match(detail, /Edit details/);
+  assert.match(detail, /taskDisclosureClass/);
 });
 
 test("staff help replaces chat archaeology with searchable migration guidance", () => {
