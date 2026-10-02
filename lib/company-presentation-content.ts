@@ -27,11 +27,15 @@ function decodeHtmlEntities(value: string) {
   return value
     .replace(/&#(\d+);/g, (_, code: string) => {
       const point = Number(code);
-      return Number.isFinite(point) ? String.fromCodePoint(point) : _;
+      return Number.isInteger(point) && point >= 0 && point <= 0x10ffff
+        ? String.fromCodePoint(point)
+        : _;
     })
     .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => {
       const point = Number.parseInt(code, 16);
-      return Number.isFinite(point) ? String.fromCodePoint(point) : _;
+      return Number.isInteger(point) && point >= 0 && point <= 0x10ffff
+        ? String.fromCodePoint(point)
+        : _;
     })
     .replace(/&([a-z]+);/gi, (match, name: string) => named[name.toLowerCase()] ?? match);
 }
