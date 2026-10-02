@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { productNameWithoutLeadingSku } from "@/lib/purchase-product-label";
 import {
   PurchaseProductPicker,
   type PurchaseProductPickerItem,
@@ -32,7 +33,7 @@ function toDraft(rule: PurchaseRuleEditorValue, key: number): DraftRule {
   return {
     key,
     sku: rule.sku,
-    productName: rule.product_name?.trim() ?? "",
+    productName: productNameWithoutLeadingSku(rule.sku, rule.product_name),
     quantity: String(rule.quantity_limit),
     duration: String(rule.duration_days),
     shortQuantity: rule.short_term_quantity_limit == null ? "" : String(rule.short_term_quantity_limit),
@@ -118,7 +119,7 @@ export function PurchaseRuleEditor({
         .map((product) => ({
           key: key++,
           sku: product.sku,
-          productName: product.name,
+          productName: productNameWithoutLeadingSku(product.sku, product.name),
           quantity: "1",
           duration: "30",
           shortQuantity: "",
