@@ -7,12 +7,13 @@ import {
   applyCompanyPortalPurchaseControlTemplate,
   assignCompanyPortalPurchaseControlTemplate,
   deleteCompanyPortalPurchaseControlTemplate,
+  getCompanyPortalPurchaseControls,
   resetCompanyPortalPurchaseControlCounters,
   saveCompanyPortalPurchaseControlTemplate,
 } from "@/lib/graphql/company-portal-purchase-controls";
 import {
   affectedUsersNotice, assignmentNotice, checkboxChecked, requiredId,
-  optionalId, requireAcknowledgement, templateInput,
+  optionalId, parsePurchaseRules, requireAcknowledgement, templateInput,
 } from "@/lib/purchase-control-forms";
 
 const PURCHASE_CONTROLS_PATH = "/portal/purchase-controls";
@@ -37,6 +38,53 @@ export async function savePortalPurchaseControlTemplateAction(formData: FormData
   return runMutation("templates", async () => {
     await saveCompanyPortalPurchaseControlTemplate(templateInput(formData));
     return "Template saved. New products are added automatically to Employees inheriting this template through Purchase Role. Existing SKU limits and counters are unchanged; use Apply when you want existing limits refreshed.";
+  });
+}
+
+export async function updatePortalPurchaseControlRuleAction(formData: FormData) {
+  return runMutation("templates", async () => {
+    const templateId = requiredId(formData, "templateId");
+    const ruleId = requiredId(formData, "ruleId");
+    const controls = await getCompanyPortalPurchaseControls();
+    const template = controls.templates.find((item) => item.template_id === templateId);
+    if (!template) throw new Error("This purchase-control template is no longer available.");
+
+    const existing = template.rules.find((rule) => rule.rule_id === ruleId);
+    if (!existing) throw new Error("This purchase-control rule is no longer available.");
+
+    const rawRule = [
+      existing.sku,
+      String(formData.get("quantityLimit") ?? "").trim(),
+      String(formData.get("durationDays") ?? "").trim(),
+      String(formData.get("startDate") ?? "").trim(),
+      String(formData.get("shortQuantityLimit") ?? "").trim(),
+      String(formData.get("shortDurationDays") ?? "").trim(),
+    ].join(" | ");
+    const [updatedRule] = parsePurchaseRules(rawRule);
+
+    const rules = template.rules.map((rule) => {
+      if (rule.rule_id === ruleId) return updatedRule;
+      return {
+        sku: rule.sku,
+        quantity_limit: rule.quantity_limit,
+        duration_days: rule.duration_days,
+        start_date: rule.start_date,
+        ...(rule.short_term_quantity_limit === null
+          ? {}
+          : { short_term_quantity_limit: rule.short_term_quantity_limit }),
+        ...(rule.short_term_duration_days === null
+          ? {}
+          : { short_term_duration_days: rule.short_term_duration_days }),
+      };
+    });
+
+    await saveCompanyPortalPurchaseControlTemplate({
+      template_id: template.template_id,
+      name: template.name,
+      rules,
+    });
+
+    return `Rule ${existing.sku} updated. Existing buyer and Employee allowances are unchanged until Apply is used.`;
   });
 }
 
