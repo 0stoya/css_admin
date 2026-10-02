@@ -20,6 +20,19 @@
   box-shadow: 0 18px 48px rgb(0 35 72 / 8%);
 }
 
+.heroSingle {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 230px;
+}
+
+.heroSingle h1 {
+  max-width: 1120px;
+}
+
+.heroSingle .heroLead {
+  max-width: 860px;
+}
+
 .hero::after {
   content: "";
   position: absolute;
@@ -363,6 +376,54 @@
   box-shadow: 0 8px 24px rgb(0 35 72 / 5%);
 }
 
+.managementSectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.managementSectionHeader > div {
+  min-width: 0;
+}
+
+.managementSectionHeader h2 {
+  margin-bottom: 0.35rem;
+}
+
+.portalModalForm {
+  min-width: 0;
+}
+
+.modalHint {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #c8dced;
+  border-radius: 10px;
+  background: #f4f9fd;
+}
+
+.modalHint strong {
+  color: var(--css-text);
+  font-size: 0.88rem;
+}
+
+.modalHint span {
+  color: var(--css-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.inlineGuidance {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #d8e3ea;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--css-muted);
+  font-size: 0.84rem;
+}
+
 .accessDetails {
   overflow: hidden;
   border: 1px solid #d9e4eb;
@@ -456,4 +517,5 @@
   .sectionHeading { align-items: flex-start; flex-direction: column; }
   .switcher { grid-template-columns: 1fr; }
   .managementNav { grid-template-columns: 1fr; }
+  .managementSectionHeader { display: grid; }
 }

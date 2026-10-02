@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
+  addCompanyPortalUser,
   deleteCompanyPortalRole,
   getCompanyPortalAdministration,
   removeCompanyPortalUser,
@@ -122,6 +123,35 @@ export async function deletePortalRoleAction(formData: FormData) {
     if (confirmation !== role.name) throw new Error(`Enter ${role.name} exactly to delete this role.`);
 
     await deleteCompanyPortalRole(roleId);
+  });
+}
+
+export async function addPortalUserAction(formData: FormData) {
+  await runPortalMutation("Company user added.", async () => {
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      throw new Error("Enter the existing Magento customer's email address.");
+    }
+
+    const roleId = positiveInt(formData.get("roleId"), "Role");
+    const managerId = nullablePositiveInt(formData.get("managerId"));
+    const approvalType = String(formData.get("approvalType") ?? "all").trim().toLowerCase() || "all";
+    if (!["all", "template", "value", "none"].includes(approvalType)) {
+      throw new Error("Approval type must be all, template, value, or none.");
+    }
+
+    const approvalThreshold = nullableNumber(formData.get("approvalThreshold"));
+    if (approvalThreshold !== null && approvalThreshold < 0) {
+      throw new Error("Approval threshold must be zero or greater.");
+    }
+
+    await addCompanyPortalUser({
+      email,
+      role_id: roleId,
+      manager_id: managerId,
+      approval_type: approvalType,
+      approval_threshold: approvalThreshold,
+    });
   });
 }
 

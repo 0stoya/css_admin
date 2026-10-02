@@ -1,14 +1,22 @@
 import { Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { PortalHeaderCompanySwitcher } from "@/components/portal/portal-header-company-switcher";
 import styles from "@/components/portal/portal-shell.module.css";
 import { getStorefrontUrl } from "@/lib/config";
+import type { CompanyPortalContext } from "@/lib/graphql/company-portal";
 
-export function PortalHeader() {
+export function PortalHeader({
+  context,
+}: {
+  context: CompanyPortalContext | null;
+}) {
+  const selectedCompany = context?.companies.find((company) => company.selected) ?? null;
+  const title = selectedCompany?.name?.trim() || "Company Portal";
   return (
     <header className={styles.header}>
       <div className={styles.headerInner}>
-        <Link href="/portal" className={styles.brand} aria-label="Chelmsford Safety Supplies Company Portal">
+        <Link href="/portal" className={styles.brand} aria-label={`Chelmsford Safety Supplies ${title}`}>
           <Image
             className={styles.brandLogo}
             src="/css-logo.png"
@@ -19,10 +27,16 @@ export function PortalHeader() {
             priority
           />
           <span className={styles.brandDivider} aria-hidden="true" />
-          <span className={styles.brandLabel}>Company Portal</span>
+          <span className={styles.brandLabel}>{title}</span>
         </Link>
 
         <div className={styles.headerActions}>
+          {context ? (
+            <PortalHeaderCompanySwitcher
+              companies={context.companies}
+              selectedCompanyId={context.selected_company_id}
+            />
+          ) : null}
           <a className={styles.appSwitchLink} href={`${getStorefrontUrl()}/api/auth/sso/start`}>
             <Store size={17} strokeWidth={2.1} aria-hidden="true" />
             <span>Shop</span>

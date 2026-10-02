@@ -83,6 +83,14 @@ export type SaveCompanyPortalRoleInput = {
   allowed_resources: string[];
 };
 
+export type AddCompanyPortalUserInput = {
+  email: string;
+  role_id: number;
+  manager_id?: number | null;
+  approval_type?: string;
+  approval_threshold?: number | null;
+};
+
 export type UpdateCompanyPortalUserInput = {
   user_id: number;
   role_id: number;
@@ -96,6 +104,7 @@ type SelectCompanyData = { cssSelectCompany: CompanyPortalContext };
 type AdministrationData = { css_company_admin: CompanyPortalAdministration };
 type SaveRoleData = { cssSaveCompanyRole: CompanyPortalRole };
 type DeleteRoleData = { cssDeleteCompanyRole: boolean };
+type AddUserData = { cssAddCompanyUser: CompanyPortalUser };
 type UpdateUserData = { cssUpdateCompanyUser: CompanyPortalUser };
 type RemoveUserData = { cssRemoveCompanyUser: boolean };
 
@@ -222,6 +231,26 @@ const DELETE_ROLE_MUTATION = /* GraphQL */ `
   }
 `;
 
+const ADD_USER_MUTATION = /* GraphQL */ `
+  mutation CompanyPortalAddUser($input: CssAddCompanyUserInput!) {
+    cssAddCompanyUser(input: $input) {
+      user_id
+      customer_id
+      firstname
+      lastname
+      email
+      is_company_admin
+      manager_user_id
+      approval_type
+      approval_threshold
+      can_checkout
+      can_approve_credit_orders
+      can_auto_approve_credit_order
+      roles { role_id name sort_order allowed_resources user_count purchase_employee_count manageable }
+    }
+  }
+`;
+
 const UPDATE_USER_MUTATION = /* GraphQL */ `
   mutation CompanyPortalUpdateUser($input: CssUpdateCompanyUserInput!) {
     cssUpdateCompanyUser(input: $input) {
@@ -283,6 +312,14 @@ export async function deleteCompanyPortalRole(roleId: number) {
     { roleId },
   );
   return data.cssDeleteCompanyRole;
+}
+
+export async function addCompanyPortalUser(input: AddCompanyPortalUserInput) {
+  const data = await customerGraphqlRequest<AddUserData, { input: AddCompanyPortalUserInput }>(
+    ADD_USER_MUTATION,
+    { input },
+  );
+  return data.cssAddCompanyUser;
 }
 
 export async function updateCompanyPortalUser(input: UpdateCompanyPortalUserInput) {

@@ -7,7 +7,10 @@ import {
 } from "@/components/portal/portal-sidebar";
 import styles from "@/components/portal/portal-shell.module.css";
 import { GraphQLRequestError } from "@/lib/graphql/client";
-import { getCompanyPortalAdministration } from "@/lib/graphql/company-portal";
+import {
+  getCompanyPortalAdministration,
+  getCompanyPortalContext,
+} from "@/lib/graphql/company-portal";
 import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
 import { getCompanyToken } from "@/lib/session";
 
@@ -16,12 +19,13 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
     redirect("/login");
   }
 
-  const [administrationResult, employeeResult] = await Promise.allSettled([
+  const [administrationResult, employeeResult, contextResult] = await Promise.allSettled([
     getCompanyPortalAdministration(),
     getPortalEmployeeConfiguration(),
+    getCompanyPortalContext(),
   ]);
 
-  const sessionExpired = [administrationResult, employeeResult].some(
+  const sessionExpired = [administrationResult, employeeResult, contextResult].some(
     (result) => result.status === "rejected"
       && result.reason instanceof GraphQLRequestError
       && result.reason.status === 401,
@@ -31,6 +35,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   }
 
   const capabilities = administrationResult.status === "fulfilled" ? administrationResult.value : null;
+  const context = contextResult.status === "fulfilled" ? contextResult.value : null;
   // Employee ACL is independent of Users/Roles administration ACL, so the
   // configuration query remains the capability probe. The feature must also be
   // enabled for the selected company before Portal exposes Employees.
@@ -56,7 +61,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   return (
     <div className={styles.shell}>
       <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
-      <PortalHeader />
+      <PortalHeader context={context} />
       <div className={styles.workspace}>
         <PortalSidebar navigation={navigation} />
         <main id="portal-main" className={styles.content} tabIndex={-1}>{children}</main>
