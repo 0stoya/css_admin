@@ -86,12 +86,14 @@ export function PurchaseRuleEditor({
   label = "Rules",
   autoOpenProductPicker = true,
   searchMode = "admin",
+  excludedSkus = [],
 }: {
   companyId?: number;
   initialRules?: PurchaseRuleEditorValue[];
   label?: string;
   autoOpenProductPicker?: boolean;
   searchMode?: "admin" | "portal";
+  excludedSkus?: string[];
 }) {
   const pathname = usePathname();
   const resolvedCompanyId = companyId ?? companyIdFromPath(pathname);
@@ -118,7 +120,11 @@ export function PurchaseRuleEditor({
   function addProducts(products: PurchaseProductPickerItem[]) {
     if (!products.length) return;
     setRows((current) => {
-      const existing = new Set(current.map((row) => row.sku.trim().toLocaleLowerCase("en")));
+      const existing = new Set(
+        [...excludedSkus, ...current.map((row) => row.sku)]
+          .map((sku) => sku.trim().toLocaleLowerCase("en"))
+          .filter(Boolean),
+      );
       let key = nextKey;
       const additions = products
         .filter((product) => !existing.has(product.sku.trim().toLocaleLowerCase("en")))
@@ -196,7 +202,7 @@ export function PurchaseRuleEditor({
       {pickerOpen && resolvedCompanyId ? (
         <PurchaseProductPicker
           companyId={resolvedCompanyId}
-          excludedSkus={rows.map((row) => row.sku)}
+          excludedSkus={[...excludedSkus, ...rows.map((row) => row.sku)]}
           onAdd={addProducts}
           searchMode={searchMode}
         />
