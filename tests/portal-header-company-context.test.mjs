@@ -24,6 +24,7 @@ test("Portal header exposes the existing company memberships as a compact switch
   const header = source("components/portal/portal-header.tsx");
   const switcher = source("components/portal/portal-header-company-switcher.tsx");
   const actions = source("app/(portal)/portal/actions.ts");
+  const layout = source("app/(portal)/layout.tsx");
 
   assert.match(header, /PortalHeaderCompanySwitcher/);
   assert.match(header, /companies=\{context\.companies\}/);
