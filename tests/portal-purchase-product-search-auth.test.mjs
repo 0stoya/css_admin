@@ -15,7 +15,18 @@ test("Portal purchase-control pickers do not auto-search while their modal is cl
   for (const editor of editors) {
     assert.match(editor, /searchMode="portal"/);
     assert.match(editor, /autoOpenProductPicker=\{false\}/);
+    assert.match(editor, /allowManualSku/);
   }
+});
+
+test("Portal purchase-control editors provide an exact-SKU fallback", () => {
+  const editor = source("components/purchase-rule-editor.tsx");
+
+  assert.match(editor, /allowManualSku\?: boolean/);
+  assert.match(editor, /Add by SKU/);
+  assert.match(editor, /manualSku: true/);
+  assert.match(editor, /resolvedCompanyId && !row\.manualSku/);
+  assert.match(editor, /Enter exact product SKU/);
 });
 
 test("Portal product picker selects customer-authenticated search explicitly", () => {
