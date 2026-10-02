@@ -9,6 +9,7 @@ type PortalModalProps = {
   triggerLabel: string;
   triggerHint?: string;
   variant?: "primary" | "row";
+  size?: "default" | "wide";
   triggerIcon?: "plus" | "edit" | "arrow";
   children: ReactNode;
 };
@@ -45,6 +46,7 @@ export function PortalModal({
   triggerLabel,
   triggerHint,
   variant = "primary",
+  size = "default",
   triggerIcon,
   children,
 }: PortalModalProps) {
@@ -88,7 +90,7 @@ export function PortalModal({
 
       <dialog
         ref={dialogRef}
-        className={styles.dialog}
+        className={`${styles.dialog} ${size === "wide" ? styles.wideDialog : ""}`}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
