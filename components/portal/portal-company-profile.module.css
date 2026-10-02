@@ -90,6 +90,52 @@
   gap: 0.7rem;
 }
 
+.groupFinanceStatus {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #d8e3ea;
+  border-left: 4px solid var(--css-secondary);
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #536b80;
+  font-size: 0.84rem;
+}
+
+.groupFinanceStatus strong {
+  color: var(--css-text);
+}
+
+.groupFinanceStatus a {
+  color: var(--css-primary);
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.groupFinanceStatus a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.groupBreakdown {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid #e4ebf0;
+}
+
+.groupBreakdown table {
+  min-width: 720px;
+}
+
+.groupBreakdown td,
+.groupBreakdown th {
+  vertical-align: top;
+}
+
 .financeCard {
   display: grid;
   gap: 0.35rem;
@@ -459,6 +505,8 @@
 
 @media (max-width: 680px) {
   .header, .financeHeader, .monthlyHeader { align-items: flex-start; flex-direction: column; }
+  .groupFinanceStatus { grid-template-columns: 1fr; }
+  .groupFinanceStatus a { white-space: normal; }
   .financeUpdated { min-width: 0; text-align: left; }
   .banner { min-height: 180px; padding: 1rem; }
   .logoWrap { width: 86px; height: 86px; }
