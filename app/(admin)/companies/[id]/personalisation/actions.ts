@@ -7,6 +7,7 @@ import {
   clearAdminCompanyPresentationMedia,
   saveAdminCompanyPresentation,
   uploadAdminCompanyPresentationMedia,
+  type CompanyPresentationInput,
 } from "@/lib/graphql/company-presentation";
 
 const MAX_MEDIA_BYTES = 3 * 1024 * 1024;
@@ -43,16 +44,26 @@ function mediaFile(formData: FormData) {
 export async function saveCompanyPresentationAction(formData: FormData) {
   const companyId = companyIdFrom(formData);
   try {
-    await saveAdminCompanyPresentation(companyId, {
+    const input: CompanyPresentationInput = {
       enabled: formData.get("enabled") === "on",
       portal_title: nullableString(formData, "portalTitle"),
       welcome_heading: nullableString(formData, "welcomeHeading"),
-      welcome_text: nullableString(formData, "welcomeText"),
-      company_description: nullableString(formData, "companyDescription"),
       contact_phone: nullableString(formData, "contactPhone"),
       contact_email: nullableString(formData, "contactEmail"),
       procurement_email: nullableString(formData, "procurementEmail"),
-    });
+    };
+
+    // Legacy Magento Page Builder fields are deliberately omitted from the
+    // form, so saving unrelated CSS presentation settings must not rewrite
+    // or blank their canonical Fluid values.
+    if (formData.has("welcomeText")) {
+      input.welcome_text = nullableString(formData, "welcomeText");
+    }
+    if (formData.has("companyDescription")) {
+      input.company_description = nullableString(formData, "companyDescription");
+    }
+
+    await saveAdminCompanyPresentation(companyId, input);
     finish(companyId, "notice", "Company personalisation saved.");
   } catch (error) {
     finish(companyId, "error", graphQLErrorMessage(error));

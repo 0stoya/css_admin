@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { presentationText } from "@/lib/company-presentation-content";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { getAdminCompanyPresentation } from "@/lib/graphql/company-presentation";
 import {
@@ -43,6 +44,8 @@ export default async function CompanyPersonalisationPage({
   const bannerStyle = presentation.banner_url
     ? { backgroundImage: `linear-gradient(rgb(0 35 72 / 28%), rgb(0 35 72 / 28%)), url("${presentation.banner_url}")` }
     : undefined;
+  const welcomeContent = presentationText(presentation.welcome_text);
+  const descriptionContent = presentationText(presentation.company_description);
 
   return (
     <div className={styles.workspace}>
@@ -91,14 +94,49 @@ export default async function CompanyPersonalisationPage({
                 <label htmlFor="welcomeHeading">Welcome heading</label>
                 <input id="welcomeHeading" name="welcomeHeading" maxLength={255} defaultValue={presentation.welcome_heading ?? ""} placeholder="Welcome to your PPE ordering portal" />
               </div>
-              <div className={`field ${styles.spanTwo}`}>
-                <label htmlFor="welcomeText">Welcome text</label>
-                <textarea id="welcomeText" name="welcomeText" rows={5} defaultValue={presentation.welcome_text ?? ""} />
-              </div>
-              <div className={`field ${styles.spanTwo}`}>
-                <label htmlFor="companyDescription">Company description</label>
-                <textarea id="companyDescription" name="companyDescription" rows={5} defaultValue={presentation.company_description ?? ""} />
-              </div>
+              {welcomeContent.legacyPageBuilder ? (
+                <div className={`${styles.legacyField} ${styles.spanTwo}`}>
+                  <div className={styles.legacyFieldHeader}>
+                    <div>
+                      <strong>Welcome text</strong>
+                      <p className="muted">Legacy Magento Page Builder content detected. The original source is preserved; Admin and Portal show readable text only.</p>
+                    </div>
+                    <span className="badge badge-neutral">Legacy content</span>
+                  </div>
+                  {welcomeContent.text ? <p className={styles.legacyPreviewText}>{welcomeContent.text}</p> : null}
+                  <details className={styles.legacySource}>
+                    <summary>View legacy source</summary>
+                    <pre>{welcomeContent.raw}</pre>
+                  </details>
+                </div>
+              ) : (
+                <div className={`field ${styles.spanTwo}`}>
+                  <label htmlFor="welcomeText">Welcome text</label>
+                  <textarea id="welcomeText" name="welcomeText" rows={5} defaultValue={presentation.welcome_text ?? ""} />
+                </div>
+              )}
+
+              {descriptionContent.legacyPageBuilder ? (
+                <div className={`${styles.legacyField} ${styles.spanTwo}`}>
+                  <div className={styles.legacyFieldHeader}>
+                    <div>
+                      <strong>Company description</strong>
+                      <p className="muted">Legacy Magento Page Builder content detected. The original source is preserved; Admin and Portal show readable text only.</p>
+                    </div>
+                    <span className="badge badge-neutral">Legacy content</span>
+                  </div>
+                  {descriptionContent.text ? <p className={styles.legacyPreviewText}>{descriptionContent.text}</p> : null}
+                  <details className={styles.legacySource}>
+                    <summary>View legacy source</summary>
+                    <pre>{descriptionContent.raw}</pre>
+                  </details>
+                </div>
+              ) : (
+                <div className={`field ${styles.spanTwo}`}>
+                  <label htmlFor="companyDescription">Company description</label>
+                  <textarea id="companyDescription" name="companyDescription" rows={5} defaultValue={presentation.company_description ?? ""} />
+                </div>
+              )}
               <div className="field">
                 <label htmlFor="contactPhone">Display telephone</label>
                 <input id="contactPhone" name="contactPhone" maxLength={64} defaultValue={presentation.contact_phone ?? ""} placeholder={presentation.company_phone ?? ""} />
@@ -163,7 +201,8 @@ export default async function CompanyPersonalisationPage({
                 <p className="eyebrow">Live preview</p>
                 <h2>{presentation.portal_title || presentation.company_name || "Company portal"}</h2>
                 <h3>{presentation.welcome_heading || "Welcome"}</h3>
-                {presentation.welcome_text ? <p>{presentation.welcome_text}</p> : <p className="muted">Add welcome text to introduce the company ordering portal.</p>}
+                {welcomeContent.text ? <p>{welcomeContent.text}</p> : <p className="muted">Add welcome text to introduce the company ordering portal.</p>}
+                {descriptionContent.text ? <p className={styles.previewDescription}>{descriptionContent.text}</p> : null}
               </div>
               <div className={styles.companyDetails}>
                 <div className={styles.detail}><span>Company</span><strong>{presentation.company_name || "—"}</strong></div>
