@@ -14,7 +14,7 @@ test("company users expose Shop as customer through the trusted Store origin", (
   assert.match(page, /\/api\/auth\/impersonate\/start\?companyId=/);
   assert.match(page, /userId=/);
   assert.match(page, /target="_blank"/);
-  assert.match(page, />Shop<\/span>/);
+  assert.match(page, />Shop as user<\/span>/);
 });
 
 test("admin impersonation uses Magento native token issuance then existing app-switch ticket", () => {
