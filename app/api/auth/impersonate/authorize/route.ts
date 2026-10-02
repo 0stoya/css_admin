@@ -3,7 +3,9 @@ import { isAppSwitchValue } from "@/lib/app-switch-session";
 import { getStorefrontUrl } from "@/lib/config";
 import {
   createCustomerAppSwitch,
+  getCustomerSupportContext,
   revokeCustomerToken,
+  selectCustomerCompany,
   validateCompanyCustomerToken,
 } from "@/lib/graphql/customer-app-switch";
 import { GraphQLRequestError } from "@/lib/graphql/client";
@@ -64,8 +66,29 @@ export async function GET(request: NextRequest) {
     }
 
     customerToken = await generateCustomerTokenAsAdmin(user.email);
-    if (!(await validateCompanyCustomerToken(customerToken, user.email))) {
+    const supportContext = await getCustomerSupportContext(customerToken);
+    const expectedEmail = user.email.trim().toLocaleLowerCase();
+    if (
+      !supportContext.authenticated
+      || !supportContext.isCompanyCustomer
+      || supportContext.email.toLocaleLowerCase() !== expectedEmail
+      || !supportContext.companyIds.includes(companyId)
+    ) {
       return failure(companyId, "Magento did not authenticate the selected company customer.");
+    }
+
+    if (supportContext.selectedCompanyId !== companyId) {
+      if (supportContext.cartQuantity > 0) {
+        return failure(
+          companyId,
+          "The customer has items in their basket under another company. Empty the basket before starting this support session.",
+        );
+      }
+      await selectCustomerCompany(customerToken, companyId);
+    }
+
+    if (!(await validateCompanyCustomerToken(customerToken, user.email, companyId))) {
+      return failure(companyId, "Magento did not select the requested company context.");
     }
 
     const code = await createCustomerAppSwitch(customerToken, "STORE", challenge);
