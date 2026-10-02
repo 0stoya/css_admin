@@ -12,9 +12,9 @@ export type PurchaseControlProductSearchActionResult =
   | { ok: false; error: string };
 
 type PortalProductsData = {
-  products: {
+  css_company_purchase_control_products: {
     total_count: number;
-    items: Array<{ id: number; sku: string; name: string }>;
+    items: Array<{ product_id: number; sku: string; name: string }>;
     page_info: { page_size: number; current_page: number; total_pages: number };
   };
 };
@@ -25,14 +25,13 @@ const PORTAL_PRODUCTS_QUERY = /* GraphQL */ `
     $pageSize: Int!
     $search: String
   ) {
-    products(
+    css_company_purchase_control_products(
       currentPage: $currentPage
       pageSize: $pageSize
       search: $search
-      filter: { price: { from: "0" } }
     ) {
       total_count
-      items { id sku name }
+      items { product_id sku name }
       page_info { page_size current_page total_pages }
     }
   }
@@ -70,16 +69,17 @@ export async function searchPortalPurchaseControlProducts(
       ...(search.trim() ? { search: search.trim() } : {}),
     });
 
+    const products = data.css_company_purchase_control_products;
     return {
       ok: true,
       result: {
-        total_count: data.products.total_count,
-        items: data.products.items.map((product) => ({
-          product_id: Number(product.id),
+        total_count: products.total_count,
+        items: products.items.map((product) => ({
+          product_id: Number(product.product_id),
           sku: product.sku,
           name: product.name,
         })),
-        page_info: data.products.page_info,
+        page_info: products.page_info,
       },
     };
   } catch (error) {
