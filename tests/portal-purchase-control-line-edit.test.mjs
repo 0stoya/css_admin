@@ -16,65 +16,48 @@ class Navigation extends Error {
   }
 }
 
-test("Portal template modal shows SKU — name and edits one current rule at a time", () => {
-  const page = source("app/(portal)/portal/purchase-controls/page.tsx");
-
-  assert.match(page, /Current template rules/);
-  assert.match(page, /Products are shown as SKU — name/);
-  assert.match(page, /purchaseProductLabel\(rule\.sku, rule\.product_name\)/);
-  assert.match(page, /action=\{updatePortalPurchaseControlRuleAction\}/);
-  assert.match(page, /name="ruleId"/);
-  assert.match(page, /name="quantityLimit"/);
-  assert.match(page, /name="durationDays"/);
-  assert.match(page, /name="shortQuantityLimit"/);
-  assert.match(page, /name="shortDurationDays"/);
-  assert.match(page, /name="startDate"/);
-  assert.match(page, />Save rule<\/button>/);
-  assert.match(page, /Add\/remove products or rename template/);
+const templateFixture = () => ({
+  company_id: 12,
+  templates: [{
+    template_id: 7,
+    name: "Welfare Agency",
+    assigned_roles: [],
+    rules: [
+      {
+        rule_id: 81,
+        product_id: 1001,
+        sku: "A4806",
+        product_name: "A4806 Nitrile disposable gloves",
+        quantity_limit: 24,
+        duration_days: 365,
+        start_date: "2026-08-21",
+        short_term_quantity_limit: null,
+        short_term_duration_days: null,
+      },
+      {
+        rule_id: 82,
+        product_id: 1002,
+        sku: "E2103",
+        product_name: "Smoke Lens Safety Spectacle",
+        quantity_limit: 4,
+        duration_days: 365,
+        start_date: "2026-08-21",
+        short_term_quantity_limit: 2,
+        short_term_duration_days: 7,
+      },
+    ],
+  }],
 });
 
-test("line edit reloads the current template and preserves every other SKU", async () => {
+function actionHarness() {
   const calls = [];
-  const navigation = new Navigation("/sentinel");
   const api = {
-    getCompanyPortalPurchaseControls: async () => ({
-      company_id: 12,
-      templates: [{
-        template_id: 7,
-        name: "Welfare Agency",
-        assigned_roles: [],
-        rules: [
-          {
-            rule_id: 81,
-            product_id: 1001,
-            sku: "A4806",
-            product_name: "Nitrile disposable gloves",
-            quantity_limit: 24,
-            duration_days: 365,
-            start_date: "2026-08-21",
-            short_term_quantity_limit: null,
-            short_term_duration_days: null,
-          },
-          {
-            rule_id: 82,
-            product_id: 1002,
-            sku: "E2103",
-            product_name: "Smoke Lens Safety Spectacle",
-            quantity_limit: 4,
-            duration_days: 365,
-            start_date: "2026-08-21",
-            short_term_quantity_limit: 2,
-            short_term_duration_days: 7,
-          },
-        ],
-      }],
-    }),
+    getCompanyPortalPurchaseControls: async () => templateFixture(),
     saveCompanyPortalPurchaseControlTemplate: async (input) => {
-      calls.push(input);
-      return { cssSaveCompanyPurchaseControlTemplate: { template_id: 7, name: "Welfare Agency" } };
+      calls.push(JSON.parse(JSON.stringify(input)));
+      return { cssSaveCompanyPurchaseControlTemplate: { template_id: 7, name: input.name } };
     },
   };
-
   const actions = load(root, "app/(portal)/portal/purchase-controls/actions.ts", {
     "next/cache": { revalidatePath: () => {} },
     "next/navigation": {
@@ -87,7 +70,39 @@ test("line edit reloads the current template and preserves every other SKU", asy
     }),
     "@/lib/purchase-control-forms": forms,
   });
+  return { actions, calls };
+}
 
+async function redirected(work) {
+  try {
+    await work();
+    assert.fail("expected redirect");
+  } catch (error) {
+    assert.ok(error instanceof Navigation, String(error));
+    return error.location;
+  }
+}
+
+test("Portal template view is current-rule first with focused edit delete add and rename controls", () => {
+  const page = source("app/(portal)/portal/purchase-controls/page.tsx");
+
+  assert.match(page, /Current template rules/);
+  assert.match(page, /Products are shown as SKU — name/);
+  assert.match(page, /purchaseProductLabel\(rule\.sku, rule\.product_name\)/);
+  assert.match(page, /action=\{updatePortalPurchaseControlRuleAction\}/);
+  assert.match(page, /formAction=\{deletePortalPurchaseControlRuleAction\}/);
+  assert.match(page, />Delete rule<\/button>/);
+  assert.match(page, />Save rule<\/button>/);
+  assert.match(page, /action=\{addPortalPurchaseControlRulesAction\}/);
+  assert.match(page, /<strong>Add products<\/strong>/);
+  assert.match(page, /action=\{renamePortalPurchaseControlTemplateAction\}/);
+  assert.match(page, /<summary>Edit name<\/summary>/);
+  assert.doesNotMatch(page, /Add\/remove products or rename template/);
+  assert.doesNotMatch(page, /Save structural changes/);
+});
+
+test("line edit reloads the current template and preserves every other SKU", async () => {
+  const { actions, calls } = actionHarness();
   const data = new FormData();
   data.set("templateId", "7");
   data.set("ruleId", "81");
@@ -97,19 +112,10 @@ test("line edit reloads the current template and preserves every other SKU", asy
   data.set("shortDurationDays", "7");
   data.set("startDate", "2026-08-21");
 
-  try {
-    await actions.updatePortalPurchaseControlRuleAction(data);
-    assert.fail("expected redirect");
-  } catch (error) {
-    assert.ok(error instanceof Navigation);
-    assert.match(error.location, /section=templates/);
-    assert.match(error.location, /Rule\+A4806\+updated|Rule%20A4806%20updated/);
-  }
-
-  assert.equal(calls.length, 1);
-  // The action module is evaluated in the TypeScript test helper's VM realm,
-  // so normalise the returned input before a strict structural comparison.
-  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), {
+  const location = await redirected(() => actions.updatePortalPurchaseControlRuleAction(data));
+  assert.match(location, /section=templates/);
+  assert.match(location, /Rule\+A4806\+updated|Rule%20A4806%20updated/);
+  assert.deepEqual(calls, [{
     template_id: 7,
     name: "Welfare Agency",
     rules: [
@@ -130,21 +136,86 @@ test("line edit reloads the current template and preserves every other SKU", asy
         short_term_duration_days: 7,
       },
     ],
+  }]);
+});
+
+test("delete removes only the selected current rule", async () => {
+  const { actions, calls } = actionHarness();
+  const data = new FormData();
+  data.set("templateId", "7");
+  data.set("ruleId", "81");
+
+  const location = await redirected(() => actions.deletePortalPurchaseControlRuleAction(data));
+  assert.match(location, /deleted/);
+  assert.deepEqual(calls, [{
+    template_id: 7,
+    name: "Welfare Agency",
+    rules: [{
+      sku: "E2103",
+      quantity_limit: 4,
+      duration_days: 365,
+      start_date: "2026-08-21",
+      short_term_quantity_limit: 2,
+      short_term_duration_days: 7,
+    }],
+  }]);
+});
+
+test("add products merges new rules without changing existing rules", async () => {
+  const { actions, calls } = actionHarness();
+  const data = new FormData();
+  data.set("templateId", "7");
+  data.set("rules", "WS615 | 1 | 365 | 2026-08-21");
+
+  const location = await redirected(() => actions.addPortalPurchaseControlRulesAction(data));
+  assert.match(location, /1\+product\+rule|1%20product%20rule/);
+  assert.equal(calls[0].rules.length, 3);
+  assert.deepEqual(calls[0].rules.at(-1), {
+    sku: "WS615",
+    quantity_limit: 1,
+    duration_days: 365,
+    start_date: "2026-08-21",
   });
 });
 
-test("bulk structural editor keeps product names alongside catalogue SKUs", () => {
+test("add products rejects an SKU already present in the template", async () => {
+  const { actions, calls } = actionHarness();
+  const data = new FormData();
+  data.set("templateId", "7");
+  data.set("rules", "a4806 | 1 | 365 | 2026-08-21");
+
+  const location = await redirected(() => actions.addPortalPurchaseControlRulesAction(data));
+  assert.match(location, /already\+in\+this\+template|already%20in%20this%20template/);
+  assert.equal(calls.length, 0);
+});
+
+test("rename changes only the template name and preserves current rules", async () => {
+  const { actions, calls } = actionHarness();
+  const data = new FormData();
+  data.set("templateId", "7");
+  data.set("name", "Welfare Main");
+
+  const location = await redirected(() => actions.renamePortalPurchaseControlTemplateAction(data));
+  assert.match(location, /Welfare\+Main|Welfare%20Main/);
+  assert.equal(calls[0].name, "Welfare Main");
+  assert.equal(calls[0].rules.length, 2);
+  assert.equal(calls[0].rules[0].sku, "A4806");
+  assert.equal(calls[0].rules[1].sku, "E2103");
+});
+
+test("catalogue-backed add editor keeps SKU and product name but defers search until requested", () => {
   const editor = source("components/purchase-rule-editor.tsx");
+  const page = source("app/(portal)/portal/purchase-controls/page.tsx");
   const styles = source("app/purchase-controls.css");
 
   assert.match(editor, /product_name\?: string \| null/);
-  assert.match(editor, /productName: productNameWithoutLeadingSku\(rule\.sku, rule\.product_name\)/);
-  assert.match(editor, /productName: productNameWithoutLeadingSku\(product\.sku, product\.name\)/);
+  assert.match(editor, /productNameWithoutLeadingSku\(rule\.sku, rule\.product_name\)/);
+  assert.match(editor, /productNameWithoutLeadingSku\(product\.sku, product\.name\)/);
+  assert.match(editor, /autoOpenProductPicker = true/);
+  assert.match(page, /autoOpenProductPicker=\{false\}/);
   assert.match(editor, /purchase-rule-product-identity/);
-  assert.match(editor, /Product name unavailable/);
   assert.match(styles, /\.purchase-rule-product-identity/);
 });
-
 
 test("product labels do not repeat an SKU already prefixed to Magento product name", () => {
   assert.equal(
