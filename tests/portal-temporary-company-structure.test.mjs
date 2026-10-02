@@ -22,7 +22,7 @@ test("temporary Portal company structure is explicitly short-lived", () => {
   assert.match(docs, /presentation data only\. It is not an authorization source/);
 });
 
-test("Portal structure route remains company-admin-only and read-only", () => {
+test("Portal structure route remains company-admin-only with switching limited to existing memberships", () => {
   const layout = source("app/(portal)/layout.tsx");
   const page = source("app/(portal)/portal/company-structure/page.tsx");
 
@@ -36,7 +36,10 @@ test("Portal structure route remains company-admin-only and read-only", () => {
   assert.match(page, /notFound\(\)/);
   assert.match(page, /getTemporaryPortalCompanyStructure\(selected\.company_id\)/);
   assert.match(page, />Read only</);
-  assert.doesNotMatch(page, /selectPortalCompanyAction/);
+  assert.match(page, /selectPortalCompanyAction/);
+  assert.match(page, /context\?\.companies\.map\(\(company\) => company\.company_id\)/);
+  assert.match(page, /switchableCompanyIds\.includes\(node\.company\.company_id\)/);
+  assert.match(page, /name="returnTo" value="\/portal\/company-structure"/);
   assert.doesNotMatch(page, /href=\{?`?\/companies\//);
 });
 
@@ -44,7 +47,7 @@ test("temporary snapshot stays server-side and fails closed", () => {
   const bridge = source("lib/temporary-portal-company-structure.ts");
   const env = source(".env.example");
 
-  assert.match(bridge, /readFile\(snapshotPath, "utf8"\)/);
+  assert.match(bridge, /readFile\(\/\* turbopackIgnore: true \*\/ snapshotPath, "utf8"\)/);
   assert.match(bridge, /DEFAULT_SNAPSHOT_PATH = "\/etc\/css-admin\/portal-company-structure\.json"/);
   assert.match(bridge, /reason: "missing"/);
   assert.match(bridge, /reason: "invalid"/);
@@ -68,4 +71,21 @@ test("temporary group finance is explicit, head-only and never treats missing ch
   assert.match(profile, /Group head view/);
   assert.match(profile, /View company structure/);
   assert.match(docs, /Child companies never inherit group finance/);
+});
+
+
+test("structure company switch uses existing Fluid membership enforcement and safe return path", () => {
+  const actions = source("app/(portal)/portal/actions.ts");
+  const page = source("app/(portal)/portal/company-structure/page.tsx");
+
+  assert.match(actions, /await selectCompanyPortalCompany\(companyId\)/);
+  assert.match(actions, /returnToStructure = String\(formData\.get\("returnTo"\)/);
+  assert.match(actions, /returnToStructure && isCompanyAdminAfterSwitch/);
+  assert.match(actions, /redirect\("\/portal\/company-structure"\)/);
+  assert.match(actions, /revalidatePath\("\/portal\/company-structure"\)/);
+
+  assert.match(page, /SwitchCompanyControl/);
+  assert.match(page, /type="submit">Switch<\/button>/);
+  assert.match(page, /currentPositionLabel/);
+  assert.match(page, /"Group company"/);
 });
