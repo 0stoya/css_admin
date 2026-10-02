@@ -43,9 +43,9 @@ test("Portal product search uses customer GraphQL and never the Admin catalogue 
       customerGraphqlRequest: async (query, variables) => {
         calls.push({ query, variables: JSON.parse(JSON.stringify(variables)) });
         return {
-          css_company_purchase_control_products: {
+          products: {
             total_count: 1,
-            items: [{ product_id: 77, sku: "A4806", name: "Nitrile disposable gloves" }],
+            items: [{ id: 77, sku: "A4806", name: "Nitrile disposable gloves" }],
             page_info: { page_size: 50, current_page: 1, total_pages: 1 },
           },
         };
@@ -60,8 +60,7 @@ test("Portal product search uses customer GraphQL and never the Admin catalogue 
 
   assert.equal(adminCalls, 0);
   assert.equal(calls.length, 1);
-  assert.match(calls[0].query, /css_company_purchase_control_products\s*\(/);
-  assert.doesNotMatch(calls[0].query, /\n\s*products\s*\(/);
+  assert.match(calls[0].query, /\bproducts\s*\(/);
   assert.deepEqual(calls[0].variables, {
     currentPage: 1,
     pageSize: 50,
