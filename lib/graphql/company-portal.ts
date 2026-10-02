@@ -19,6 +19,21 @@ export type CompanyPortalContext = {
   companies: CompanyPortalMembership[];
 };
 
+export type CompanyPortalStructureCompany = {
+  company_id: number;
+  name: string | null;
+  reference: string | null;
+  active: boolean;
+  parent_company_id: number | null;
+  selected: boolean;
+};
+
+export type CompanyPortalStructure = {
+  company_id: number;
+  root_company_id: number;
+  companies: CompanyPortalStructureCompany[];
+};
+
 export type CompanyPortalRole = {
   role_id: number;
   name: string;
@@ -92,6 +107,7 @@ export type UpdateCompanyPortalUserInput = {
 };
 
 type ContextData = { css_company_context: CompanyPortalContext };
+type StructureData = { css_company_structure: CompanyPortalStructure };
 type SelectCompanyData = { cssSelectCompany: CompanyPortalContext };
 type AdministrationData = { css_company_admin: CompanyPortalAdministration };
 type SaveRoleData = { cssSaveCompanyRole: CompanyPortalRole };
@@ -114,6 +130,23 @@ const CONTEXT_QUERY = /* GraphQL */ `
         name
         reference
         active
+        selected
+      }
+    }
+  }
+`;
+
+const STRUCTURE_QUERY = /* GraphQL */ `
+  query CompanyPortalStructure {
+    css_company_structure {
+      company_id
+      root_company_id
+      companies {
+        company_id
+        name
+        reference
+        active
+        parent_company_id
         selected
       }
     }
@@ -251,6 +284,14 @@ const REMOVE_USER_MUTATION = /* GraphQL */ `
 export async function getCompanyPortalContext() {
   const data = await customerGraphqlRequest<ContextData, Record<string, never>>(CONTEXT_QUERY, {});
   return data.css_company_context;
+}
+
+export async function getCompanyPortalStructure() {
+  const data = await customerGraphqlRequest<StructureData, Record<string, never>>(
+    STRUCTURE_QUERY,
+    {},
+  );
+  return data.css_company_structure;
 }
 
 export async function selectCompanyPortalCompany(companyId: number) {
