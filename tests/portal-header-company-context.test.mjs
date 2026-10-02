@@ -13,7 +13,7 @@ test("Portal header uses configured Portal Title with a safe fallback", () => {
 
   assert.match(layout, /getPortalCompanyPresentation\(\)/);
   assert.match(layout, /presentationResult\.value\.portal_title/);
-  assert.match(layout, /<PortalHeader context=\{context\} portalTitle=\{portalTitle\}/);
+  assert.match(layout, /<PortalHeader[\s\S]*context=\{context\}[\s\S]*portalTitle=\{portalTitle\}[\s\S]*portalTitles=\{portalTitles\}/);
 
   assert.match(header, /portalTitle\?\.trim\(\) \|\| "Company Portal"/);
   assert.match(header, /<span className=\{styles\.brandLabel\}>\{title\}<\/span>/);
