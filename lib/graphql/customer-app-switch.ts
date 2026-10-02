@@ -23,7 +23,30 @@ const EXCHANGE_TICKET = /* GraphQL */ `
 const VALIDATE_CUSTOMER = /* GraphQL */ `
   query ValidateCustomerAppSwitch {
     customer { email }
-    css_company_context { authenticated is_company_customer }
+    css_company_context { authenticated is_company_customer selected_company_id }
+  }
+`;
+
+const SUPPORT_CONTEXT = /* GraphQL */ `
+  query CustomerSupportContext {
+    customer { email }
+    css_company_context {
+      authenticated
+      is_company_customer
+      selected_company_id
+      companies { company_id }
+    }
+    customerCart { total_quantity }
+  }
+`;
+
+const SELECT_COMPANY = /* GraphQL */ `
+  mutation SelectCustomerSupportCompany($companyId: Int) {
+    cssSelectCompany(company_id: $companyId) {
+      authenticated
+      is_company_customer
+      selected_company_id
+    }
   }
 `;
 
@@ -101,10 +124,18 @@ export async function exchangeCustomerAppSwitch(
   return data.cssExchangeCustomerAppSwitch;
 }
 
-export async function validateCompanyCustomerToken(token: string, expectedEmail?: string) {
+export async function validateCompanyCustomerToken(
+  token: string,
+  expectedEmail?: string,
+  expectedCompanyId?: number,
+) {
   const data = await request<{
     customer: { email: string };
-    css_company_context: { authenticated: boolean; is_company_customer: boolean };
+    css_company_context: {
+      authenticated: boolean;
+      is_company_customer: boolean;
+      selected_company_id: number | null;
+    };
   }>(VALIDATE_CUSTOMER, {}, token);
 
   const email = data.customer.email.trim().toLocaleLowerCase();
@@ -113,7 +144,41 @@ export async function validateCompanyCustomerToken(token: string, expectedEmail?
   return data.css_company_context.authenticated
     && data.css_company_context.is_company_customer
     && Boolean(email)
-    && (!expected || email === expected);
+    && (!expected || email === expected)
+    && (!expectedCompanyId || data.css_company_context.selected_company_id === expectedCompanyId);
+}
+
+export async function getCustomerSupportContext(token: string) {
+  const data = await request<{
+    customer: { email: string };
+    css_company_context: {
+      authenticated: boolean;
+      is_company_customer: boolean;
+      selected_company_id: number | null;
+      companies: Array<{ company_id: number }>;
+    };
+    customerCart: { total_quantity: number } | null;
+  }>(SUPPORT_CONTEXT, {}, token);
+
+  return {
+    email: data.customer.email.trim(),
+    authenticated: data.css_company_context.authenticated,
+    isCompanyCustomer: data.css_company_context.is_company_customer,
+    selectedCompanyId: data.css_company_context.selected_company_id,
+    companyIds: data.css_company_context.companies.map((company) => company.company_id),
+    cartQuantity: Number(data.customerCart?.total_quantity || 0),
+  };
+}
+
+export async function selectCustomerCompany(token: string, companyId: number) {
+  const data = await request<{
+    cssSelectCompany: {
+      authenticated: boolean;
+      is_company_customer: boolean;
+      selected_company_id: number | null;
+    };
+  }>(SELECT_COMPANY, { companyId }, token);
+  return data.cssSelectCompany;
 }
 
 export async function revokeCustomerToken(token: string) {
