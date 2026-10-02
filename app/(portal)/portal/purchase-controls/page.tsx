@@ -153,7 +153,12 @@ export default async function CompanyPortalPurchaseControlsPage({
               >
                 <form className={styles.modalStack} action={savePortalPurchaseControlTemplateAction}>
                   <div className="field"><label htmlFor="newTemplateName">Template name</label><input id="newTemplateName" name="name" required placeholder="e.g. Monthly PPE allowance" /></div>
-                  <PurchaseRuleEditor companyId={administration.company_id} label="Template rules" />
+                  <PurchaseRuleEditor
+                    companyId={administration.company_id}
+                    label="Template rules"
+                    autoOpenProductPicker={false}
+                    searchMode="portal"
+                  />
                   <div><button className="button" type="submit">Create template</button></div>
                 </form>
               </PortalModal>
@@ -308,6 +313,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                                     companyId={administration.company_id}
                                     label="New product rules"
                                     autoOpenProductPicker={false}
+                                    searchMode="portal"
                                   />
                                   <div className={styles.addProductsActions}>
                                     <button className="button" type="submit">Add selected products</button>
