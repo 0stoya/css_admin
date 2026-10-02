@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { presentationText } from "@/lib/company-presentation-content";
 import {
+  flattenCompanyStructure,
+  type CompanyStructureNode,
+} from "@/lib/company-structure";
+import { findCompanyPortalStructureContext } from "@/lib/company-portal-structure";
+import {
   defaultCompanyFinanceVisibility,
   getCompanyFinanceVisibility,
   getLatestCompanyFinanceSnapshot,
+  getLatestCompanyFinanceSnapshotsForCompanies,
   type CompanyFinanceVisibility,
   type StoredCompanyFinancialSummary,
 } from "@/lib/company-finance-local";
@@ -11,6 +17,7 @@ import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
   getCompanyPortalAdministration,
   getCompanyPortalContext,
+  getCompanyPortalStructure,
 } from "@/lib/graphql/company-portal";
 import { getPortalCompanyPresentation } from "@/lib/graphql/company-presentation";
 import styles from "@/components/portal/portal-company-profile.module.css";
@@ -75,6 +82,84 @@ function formatTimestamp(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function aggregateGroupFinance(
+  snapshots: StoredCompanyFinancialSummary[],
+  companyId: number,
+  cref: string | null,
+): StoredCompanyFinancialSummary | null {
+  if (!snapshots.length) return null;
+
+  const currencies = new Set(snapshots.map((snapshot) => snapshot.currency));
+  const years = new Set(snapshots.map((snapshot) => snapshot.year));
+  if (currencies.size !== 1 || years.size !== 1) return null;
+
+  const aggregatePeriod = (
+    key: "year_to_date" | "last_7_days" | "last_30_days" | "last_3_months" | "last_6_months",
+  ) => snapshots.reduce(
+    (total, snapshot) => ({
+      order_count: total.order_count + snapshot[key].order_count,
+      value: total.value + snapshot[key].value,
+    }),
+    { order_count: 0, value: 0 },
+  );
+
+  const last365 = snapshots.map((snapshot) => snapshot.last_365_days);
+  const last365Days = last365.some((period) => period === null)
+    ? null
+    : last365.reduce(
+        (total, period) => ({
+          order_count: total.order_count + (period?.order_count ?? 0),
+          value: total.value + (period?.value ?? 0),
+        }),
+        { order_count: 0, value: 0 },
+      );
+
+  const monthly = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    return snapshots.reduce(
+      (total, snapshot) => {
+        const value = snapshot.monthly.find((item) => item.month === month);
+        return {
+          month,
+          order_count: total.order_count + (value?.order_count ?? 0),
+          value: total.value + (value?.value ?? 0),
+        };
+      },
+      { month, order_count: 0, value: 0 },
+    );
+  });
+
+  const lastOrder = snapshots
+    .map((snapshot) => snapshot.last_order_date)
+    .filter((value): value is string => Boolean(value))
+    .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? null;
+
+  const refreshTimes = snapshots
+    .map((snapshot) => Date.parse(snapshot.refreshed_at))
+    .filter(Number.isFinite);
+  const oldestRefresh = refreshTimes.length
+    ? new Date(Math.min(...refreshTimes)).toISOString()
+    : snapshots[0].refreshed_at;
+
+  return {
+    company_id: companyId,
+    cref,
+    currency: snapshots[0].currency,
+    year: snapshots[0].year,
+    year_to_date: aggregatePeriod("year_to_date"),
+    last_7_days: aggregatePeriod("last_7_days"),
+    last_30_days: aggregatePeriod("last_30_days"),
+    last_3_months: aggregatePeriod("last_3_months"),
+    last_6_months: aggregatePeriod("last_6_months"),
+    last_365_days: last365Days,
+    monthly,
+    last_order_date: lastOrder,
+    refreshed_at: oldestRefresh,
+    captured_at: null,
+    source_kind: "PORTAL_GROUP_AGGREGATE",
+  };
 }
 
 function financePeriods(
@@ -150,11 +235,17 @@ export default async function PortalCompanyProfilePage() {
   let finance: StoredCompanyFinancialSummary | null = null;
   let visibility: CompanyFinanceVisibility | null = null;
   let financeError: string | null = null;
+  let groupFinanceNodes: CompanyStructureNode[] = [];
+  let groupFinanceSnapshots = new Map<number, StoredCompanyFinancialSummary>();
+  let groupFinanceEnabled = false;
+  let groupFinanceComplete = false;
+  let groupFinanceError: string | null = null;
 
   if (canViewFinance && selected) {
-    const [financeResult, visibilityResult] = await Promise.allSettled([
+    const [financeResult, visibilityResult, structureResult] = await Promise.allSettled([
       getLatestCompanyFinanceSnapshot(selected.company_id, selected.reference),
       getCompanyFinanceVisibility(selected.company_id),
+      getCompanyPortalStructure(),
     ]);
 
     if (financeResult.status === "fulfilled") {
@@ -168,6 +259,54 @@ export default async function PortalCompanyProfilePage() {
     visibility = visibilityResult.status === "fulfilled"
       ? visibilityResult.value
       : defaultCompanyFinanceVisibility(selected.company_id);
+
+    const structure = structureResult.status === "fulfilled"
+      ? structureResult.value
+      : null;
+    const structureContext = structure
+      ? findCompanyPortalStructureContext(structure, selected.company_id)
+      : null;
+    const isGroupHead = Boolean(
+      structureContext
+      && structureContext.root.company.company_id === selected.company_id
+      && structureContext.root.company.parent_company_id === null
+      && structureContext.root.children.length > 0
+    );
+
+    if (isGroupHead && structureContext) {
+      groupFinanceEnabled = true;
+      groupFinanceNodes = flattenCompanyStructure(structureContext.root);
+
+      try {
+        groupFinanceSnapshots = await getLatestCompanyFinanceSnapshotsForCompanies(
+          groupFinanceNodes.map((node) => node.company),
+        );
+        if (finance && !groupFinanceSnapshots.has(selected.company_id)) {
+          groupFinanceSnapshots.set(selected.company_id, finance);
+        }
+
+        const synced = groupFinanceNodes
+          .map((node) => groupFinanceSnapshots.get(node.company.company_id) ?? null)
+          .filter((snapshot): snapshot is StoredCompanyFinancialSummary => snapshot !== null);
+
+        groupFinanceComplete = synced.length === groupFinanceNodes.length;
+        const aggregate = aggregateGroupFinance(
+          synced,
+          selected.company_id,
+          selected.reference,
+        );
+
+        if (aggregate) {
+          finance = aggregate;
+        } else if (synced.length) {
+          groupFinanceError = "Group snapshots use different currencies or financial years, so a safe group total cannot be shown.";
+        }
+      } catch (error) {
+        groupFinanceError = error instanceof Error
+          ? error.message
+          : "Group finance snapshots are unavailable.";
+      }
+    }
   }
 
   const rep = presentation.can_view_rep_contacts ? presentation.rep_contacts[0] ?? null : null;
@@ -275,18 +414,34 @@ export default async function PortalCompanyProfilePage() {
           <div className={styles.financeHeader}>
             <div>
               <span className="eyebrow">Financial overview</span>
-              <h2 id="company-finance-heading">Order activity</h2>
-              <p>Read-only OGL order value for your company. These figures are not the accounting ledger balance.</p>
+              <h2 id="company-finance-heading">{groupFinanceEnabled ? "Group order activity" : "Order activity"}</h2>
+              <p>
+                {groupFinanceEnabled
+                  ? `Read-only OGL order value across the group head and its child companies. ${groupFinanceSnapshots.size} of ${groupFinanceNodes.length} companies currently have stored snapshots.`
+                  : "Read-only OGL order value for your company. These figures are not the accounting ledger balance."}
+              </p>
             </div>
             {finance ? (
               <div className={styles.financeUpdated}>
-                <span>Updated</span>
+                <span>{groupFinanceEnabled ? "Oldest snapshot" : "Updated"}</span>
                 <strong>{formatTimestamp(finance.refreshed_at)}</strong>
               </div>
             ) : null}
           </div>
 
           {financeError ? <div className="error">{financeError}</div> : null}
+          {groupFinanceError ? <div className="error">{groupFinanceError}</div> : null}
+          {groupFinanceEnabled ? (
+            <div className={styles.groupFinanceStatus}>
+              <strong>Group head view</strong>
+              <span>
+                {groupFinanceComplete
+                  ? `All ${groupFinanceNodes.length} company snapshots are included.`
+                  : `${groupFinanceSnapshots.size} of ${groupFinanceNodes.length} company snapshots are included; missing companies are not treated as zero spend.`}
+              </span>
+              <Link href="/portal/company-structure">View company structure →</Link>
+            </div>
+          ) : null}
 
           {finance ? (
             <>
@@ -309,6 +464,60 @@ export default async function PortalCompanyProfilePage() {
               ) : (
                 <div className={styles.financeEmpty}>Financial summary periods are currently hidden by your company settings.</div>
               )}
+
+              {groupFinanceEnabled && groupFinanceNodes.length ? (
+                <section className={styles.groupBreakdown} aria-labelledby="portal-group-finance-breakdown-heading">
+                  <div className={styles.monthlyHeader}>
+                    <div>
+                      <span className="eyebrow">Company breakdown</span>
+                      <h3 id="portal-group-finance-breakdown-heading">Group companies</h3>
+                    </div>
+                    <span className={styles.monthlyCurrency}>{finance.currency}</span>
+                  </div>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Company</th>
+                          <th>{finance.year} spend to date</th>
+                          <th>Last 30 days</th>
+                          <th>Snapshot</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {groupFinanceNodes.map((node) => {
+                          const snapshot = groupFinanceSnapshots.get(node.company.company_id) ?? null;
+                          return (
+                            <tr key={node.company.company_id}>
+                              <td>
+                                <div className="cell-stack">
+                                  <strong>{node.company.name}</strong>
+                                  <span className="muted small-text">
+                                    {node.company.reference || `Company ${node.company.company_id}`}
+                                    {node.company.company_id === selected?.company_id ? " · Group head" : ""}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>{snapshot ? formatAmount(snapshot.year_to_date.value, snapshot.currency) : "—"}</td>
+                              <td>{snapshot ? formatAmount(snapshot.last_30_days.value, snapshot.currency) : "—"}</td>
+                              <td>
+                                {snapshot ? (
+                                  <div className="cell-stack">
+                                    <strong>{formatTimestamp(snapshot.refreshed_at)}</strong>
+                                    <span className="muted small-text">OGL refreshed</span>
+                                  </div>
+                                ) : (
+                                  <span className="badge badge-neutral">Not synced</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              ) : null}
 
               <section className={styles.monthlySection} aria-labelledby="portal-monthly-spend-heading">
                 <div className={styles.monthlyHeader}>
