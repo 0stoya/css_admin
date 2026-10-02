@@ -38,6 +38,10 @@ Expected format:
   "generated_at": "2026-10-02T08:00:00Z",
   "expires_at": "2026-10-10T23:59:59Z",
   "group_finance_company_ids": [496],
+  "portal_titles": {
+    "496": "BioMarch Main",
+    "5275": "BioMarch North"
+  },
   "companies": [
     {
       "company_id": 496,
@@ -52,6 +56,8 @@ Expected format:
 ```
 
 The reader fails closed when the file is missing, malformed, expired, or has a lifetime greater than 14 days.
+
+`portal_titles` is presentation-only metadata used to label header switch destinations before the user changes company. It does not grant access; switch authorization still comes from the customer's Fluid company memberships.
 
 `group_finance_company_ids` is an explicit presentation-only allowlist for group-head finance. An ID only enables aggregation when that selected company is the canonical root of a multi-company structure. Child companies never inherit group finance from the snapshot.
 
