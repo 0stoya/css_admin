@@ -137,7 +137,7 @@ export async function getTemporaryPortalCompanyStructure(
 
   let raw: string;
   try {
-    raw = await readFile(snapshotPath, "utf8");
+    raw = await readFile(/* turbopackIgnore: true */ snapshotPath, "utf8");
   } catch {
     return { status: "unavailable", reason: "missing" };
   }
