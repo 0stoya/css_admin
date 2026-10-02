@@ -5,7 +5,6 @@ export type CompanyPortalMembership = {
   company_user_id: number;
   name: string | null;
   reference: string | null;
-  portal_title: string | null;
   active: boolean;
   selected: boolean;
 };
@@ -130,7 +129,6 @@ const CONTEXT_QUERY = /* GraphQL */ `
         company_user_id
         name
         reference
-        portal_title
         active
         selected
       }
@@ -169,7 +167,6 @@ const SELECT_COMPANY_MUTATION = /* GraphQL */ `
         company_user_id
         name
         reference
-        portal_title
         active
         selected
       }
