@@ -9,6 +9,7 @@ import {
 
 export type PurchaseRuleEditorValue = {
   sku: string;
+  product_name?: string | null;
   quantity_limit: number;
   duration_days: number;
   start_date: string;
@@ -19,6 +20,7 @@ export type PurchaseRuleEditorValue = {
 type DraftRule = {
   key: number;
   sku: string;
+  productName: string;
   quantity: string;
   duration: string;
   shortQuantity: string;
@@ -30,6 +32,7 @@ function toDraft(rule: PurchaseRuleEditorValue, key: number): DraftRule {
   return {
     key,
     sku: rule.sku,
+    productName: rule.product_name?.trim() ?? "",
     quantity: String(rule.quantity_limit),
     duration: String(rule.duration_days),
     shortQuantity: rule.short_term_quantity_limit == null ? "" : String(rule.short_term_quantity_limit),
@@ -115,6 +118,7 @@ export function PurchaseRuleEditor({
         .map((product) => ({
           key: key++,
           sku: product.sku,
+          productName: product.name,
           quantity: "1",
           duration: "30",
           shortQuantity: "",
@@ -135,6 +139,7 @@ export function PurchaseRuleEditor({
       {
         key,
         sku: "",
+        productName: "",
         quantity: "1",
         duration: "30",
         shortQuantity: "",
@@ -192,7 +197,7 @@ export function PurchaseRuleEditor({
       {rows.length ? (
         <div className="purchase-rule-grid" role="group" aria-label={label}>
           <div className="purchase-rule-head" aria-hidden="true">
-            <span>SKU</span>
+            <span>Product</span>
             <span>Main limit</span>
             <span>Main period</span>
             <span>Short-term max</span>
@@ -206,19 +211,23 @@ export function PurchaseRuleEditor({
             return (
               <div className="purchase-rule-row" key={row.key}>
                 <div className="field purchase-rule-field">
-                  <label htmlFor={`${prefix}-sku`}>
-                    SKU <span className="purchase-mobile-only">rule {index + 1}</span>
+                  <label htmlFor={resolvedCompanyId ? undefined : `${prefix}-sku`}>
+                    Product <span className="purchase-mobile-only">rule {index + 1}</span>
                   </label>
-                  <input
-                    id={`${prefix}-sku`}
-                    value={row.sku}
-                    required
-                    readOnly={Boolean(resolvedCompanyId)}
-                    aria-readonly={resolvedCompanyId ? "true" : undefined}
-                    placeholder="Product SKU"
-                    title={resolvedCompanyId ? "Choose a different product by removing this row and adding another catalogue product." : undefined}
-                    onChange={resolvedCompanyId ? undefined : (event) => updateRow(row.key, "sku", event.target.value)}
-                  />
+                  {resolvedCompanyId ? (
+                    <div className="purchase-rule-product-identity">
+                      <strong>{row.sku || "SKU unavailable"}</strong>
+                      <span>{row.productName || "Product name unavailable"}</span>
+                    </div>
+                  ) : (
+                    <input
+                      id={`${prefix}-sku`}
+                      value={row.sku}
+                      required
+                      placeholder="Product SKU"
+                      onChange={(event) => updateRow(row.key, "sku", event.target.value)}
+                    />
+                  )}
                 </div>
                 <div className="field purchase-rule-field">
                   <label htmlFor={`${prefix}-quantity`}>Main quantity limit</label>
