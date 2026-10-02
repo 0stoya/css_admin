@@ -18,6 +18,8 @@ test("temporary Portal company structure is explicitly short-lived", () => {
   assert.match(bridge, /group_finance_company_ids/);
   assert.match(bridge, /isCanonicalGroupHead/);
   assert.match(bridge, /snapshot\.group_finance_company_ids\.includes\(companyId\)/);
+  assert.match(bridge, /portal_titles/);
+  assert.match(bridge, /portal_titles: snapshot\.portal_titles/);
   assert.match(docs, /Remove after the Fluid customer-authorised hierarchy API is deployed/);
   assert.match(docs, /presentation data only\. It is not an authorization source/);
 });
