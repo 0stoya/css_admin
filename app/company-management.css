@@ -149,7 +149,7 @@
 }
 .management-user-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1.45fr) minmax(130px, 0.8fr) minmax(120px, 0.75fr) minmax(110px, 0.65fr) minmax(180px, 1.1fr) 150px;
+  grid-template-columns: minmax(220px, 1.45fr) minmax(130px, 0.8fr) minmax(120px, 0.75fr) minmax(110px, 0.65fr) minmax(180px, 1.1fr) 190px;
   gap: 0.8rem;
 }
 .management-role-grid {
