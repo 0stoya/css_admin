@@ -12,23 +12,20 @@ import {
   getCompanyPortalContext,
 } from "@/lib/graphql/company-portal";
 import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
-import { getPortalCompanyPresentation } from "@/lib/graphql/company-presentation";
 import { getCompanyToken } from "@/lib/session";
-import { getTemporaryPortalCompanyStructure } from "@/lib/temporary-portal-company-structure";
 
 export default async function CompanyPortalLayout({ children }: Readonly<{ children: ReactNode }>) {
   if (!(await getCompanyToken())) {
     redirect("/login");
   }
 
-  const [administrationResult, employeeResult, contextResult, presentationResult] = await Promise.allSettled([
+  const [administrationResult, employeeResult, contextResult] = await Promise.allSettled([
     getCompanyPortalAdministration(),
     getPortalEmployeeConfiguration(),
     getCompanyPortalContext(),
-    getPortalCompanyPresentation(),
   ]);
 
-  const sessionExpired = [administrationResult, employeeResult, contextResult, presentationResult].some(
+  const sessionExpired = [administrationResult, employeeResult, contextResult].some(
     (result) => result.status === "rejected"
       && result.reason instanceof GraphQLRequestError
       && result.reason.status === 401,
@@ -39,15 +36,6 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
 
   const capabilities = administrationResult.status === "fulfilled" ? administrationResult.value : null;
   const context = contextResult.status === "fulfilled" ? contextResult.value : null;
-  const portalTitle = presentationResult.status === "fulfilled"
-    ? presentationResult.value.portal_title
-    : null;
-  const temporaryStructure = context?.selected_company_id
-    ? await getTemporaryPortalCompanyStructure(context.selected_company_id)
-    : null;
-  const portalTitles = temporaryStructure?.status === "ready"
-    ? temporaryStructure.portal_titles
-    : {};
   // Employee ACL is independent of Users/Roles administration ACL, so the
   // configuration query remains the capability probe. The feature must also be
   // enabled for the selected company before Portal exposes Employees.
@@ -73,11 +61,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   return (
     <div className={styles.shell}>
       <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
-      <PortalHeader
-        context={context}
-        portalTitle={portalTitle}
-        portalTitles={portalTitles}
-      />
+      <PortalHeader context={context} />
       <div className={styles.workspace}>
         <PortalSidebar navigation={navigation} />
         <main id="portal-main" className={styles.content} tabIndex={-1}>{children}</main>
