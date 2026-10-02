@@ -32,7 +32,7 @@ test("Portal add-user action validates input and delegates authorization to Flui
 test("company managers with user-edit capability get an add-user panel", () => {
   const page = source("app/(portal)/portal/page.tsx");
 
-  assert.match(page, /administration\.can_manage_users \? \(/);
+  assert.match(page, /administration\.can_manage_users && administration\.roles\.length \? \(/);
   assert.match(page, /Add company user/);
   assert.match(page, /action=\{addPortalUserAction\}/);
   assert.match(page, /name="email"/);
