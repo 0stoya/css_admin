@@ -158,7 +158,6 @@ export default async function CompanyPortalPurchaseControlsPage({
                     label="Template rules"
                     autoOpenProductPicker={false}
                     searchMode="portal"
-                    allowManualSku
                   />
                   <div><button className="button" type="submit">Create template</button></div>
                 </form>
@@ -304,7 +303,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                                 <summary>
                                   <span>
                                     <strong>Add products</strong>
-                                    <small>Use catalogue search or enter an exact SKU. Edit or delete existing lines above.</small>
+                                    <small>Add new catalogue products only. Edit or delete existing lines above.</small>
                                   </span>
                                 </summary>
                                 <form className={styles.modalStack} action={addPortalPurchaseControlRulesAction}>
@@ -314,10 +313,9 @@ export default async function CompanyPortalPurchaseControlsPage({
                                     label="New product rules"
                                     autoOpenProductPicker={false}
                                     searchMode="portal"
-                                    allowManualSku
                                   />
                                   <div className={styles.addProductsActions}>
-                                    <button className="button" type="submit">Add product rules</button>
+                                    <button className="button" type="submit">Add selected products</button>
                                   </div>
                                 </form>
                               </details>
