@@ -217,6 +217,26 @@ test("catalogue-backed add editor keeps SKU and product name but defers search u
   assert.match(styles, /\.purchase-rule-product-identity/);
 });
 
+test("Portal picker shows existing template SKUs as disabled rather than hiding them", () => {
+  const page = source("app/(portal)/portal/purchase-controls/page.tsx");
+  const editor = source("components/purchase-rule-editor.tsx");
+  const picker = source("components/purchase-product-picker.tsx");
+  const pickerStyles = source("app/purchase-product-picker.css");
+  const modal = source("components/portal/portal-modal.tsx");
+
+  assert.match(page, /excludedSkus=\{template\.rules\.map\(\(rule\) => rule\.sku\)\}/);
+  assert.match(page, /size="wide"/);
+  assert.match(editor, /excludedSkus\?: string\[\]/);
+  assert.match(editor, /\.\.\.excludedSkus, \.\.\.rows\.map\(\(row\) => row\.sku\)/);
+  assert.match(picker, /Already added/);
+  assert.match(picker, /disabled=\{isExcluded\}/);
+  assert.match(picker, /selectableItems\.forEach/);
+  assert.match(picker, /is-selected/);
+  assert.match(modal, /size\?: "default" \| "wide"/);
+  assert.doesNotMatch(pickerStyles, /max-height:\s*430px/);
+  assert.doesNotMatch(pickerStyles, /overflow:\s*auto/);
+});
+
 test("product labels do not repeat an SKU already prefixed to Magento product name", () => {
   assert.equal(
     labels.purchaseProductLabel("A4806", "A4806 Nitrile disposable gloves, powder free version"),
