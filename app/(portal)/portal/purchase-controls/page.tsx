@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PortalModal } from "@/components/portal/portal-modal";
 import { PurchaseRuleEditor } from "@/components/purchase-rule-editor";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { purchaseProductLabel } from "@/lib/purchase-product-label";
 import { getCompanyPortalAdministration, getCompanyPortalContext } from "@/lib/graphql/company-portal";
 import {
   getCompanyPortalAppliedPurchaseControls,
@@ -9,11 +10,15 @@ import {
   getCompanyPortalPurchaseControls,
 } from "@/lib/graphql/company-portal-purchase-controls";
 import {
+  addPortalPurchaseControlRulesAction,
   applyPortalPurchaseControlTemplateAction,
   assignPortalPurchaseControlTemplateAction,
+  deletePortalPurchaseControlRuleAction,
   deletePortalPurchaseControlTemplateAction,
+  renamePortalPurchaseControlTemplateAction,
   resetPortalPurchaseControlCountersAction,
   savePortalPurchaseControlTemplateAction,
+  updatePortalPurchaseControlRuleAction,
 } from "./actions";
 import styles from "@/components/portal/portal-purchase-controls.module.css";
 
@@ -148,7 +153,7 @@ export default async function CompanyPortalPurchaseControlsPage({
               >
                 <form className={styles.modalStack} action={savePortalPurchaseControlTemplateAction}>
                   <div className="field"><label htmlFor="newTemplateName">Template name</label><input id="newTemplateName" name="name" required placeholder="e.g. Monthly PPE allowance" /></div>
-                  <PurchaseRuleEditor label="Template rules" />
+                  <PurchaseRuleEditor companyId={administration.company_id} label="Template rules" />
                   <div><button className="button" type="submit">Create template</button></div>
                 </form>
               </PortalModal>
@@ -180,7 +185,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                   </div>
 
                   <div className={styles.templateFooter}>
-                    <span>{template.rules.length ? `${template.rules.slice(0, 2).map((rule) => rule.product_name || rule.sku).join(", ")}${template.rules.length > 2 ? ` +${template.rules.length - 2} more` : ""}` : "No product rules yet"}</span>
+                    <span>{template.rules.length ? `${template.rules.slice(0, 2).map((rule) => `${purchaseProductLabel(rule.sku, rule.product_name)}`).join(", ")}${template.rules.length > 2 ? ` +${template.rules.length - 2} more` : ""}` : "No product rules yet"}</span>
                     <PortalModal
                       variant="row"
                       title={template.name}
@@ -195,16 +200,92 @@ export default async function CompanyPortalPurchaseControlsPage({
                           <div><span>Status</span><strong>{template.assigned_roles.length ? "In use" : "Unassigned"}</strong></div>
                         </section>
 
+                        {canManage ? (
+                          <section className={styles.templateIdentity}>
+                            <div>
+                              <span>Template name</span>
+                              <strong>{template.name}</strong>
+                            </div>
+                            <details className={styles.templateNameEditor}>
+                              <summary>Edit name</summary>
+                              <form action={renamePortalPurchaseControlTemplateAction}>
+                                <input type="hidden" name="templateId" value={template.template_id} />
+                                <div className="field">
+                                  <label htmlFor={`rename-template-${template.template_id}`}>Template name</label>
+                                  <input
+                                    id={`rename-template-${template.template_id}`}
+                                    name="name"
+                                    defaultValue={template.name}
+                                    required
+                                  />
+                                </div>
+                                <button className="button" type="submit">Save name</button>
+                              </form>
+                            </details>
+                          </section>
+                        ) : null}
+
                         <section className={styles.modalSection}>
-                          <div className={styles.modalSectionHeading}><div><p className="eyebrow">Products</p><h3>Template rules</h3></div></div>
+                          <div className={styles.modalSectionHeading}>
+                            <div>
+                              <p className="eyebrow">Current</p>
+                              <h3>Current template rules</h3>
+                              <p>Products are shown as SKU — name. Edit only the line that needs changing.</p>
+                            </div>
+                          </div>
                           <div className={styles.ruleTable}>
-                            <div className={`${styles.ruleRow} ${styles.tableHeader}`} aria-hidden="true"><span>Product</span><span>Limit</span><span>Window</span><span>Starts</span></div>
+                            <div className={`${styles.ruleRow} ${styles.tableHeader}`} aria-hidden="true">
+                              <span>Product</span><span>Limit</span><span>Window</span><span>Starts</span><span>{canManage ? "Edit" : ""}</span>
+                            </div>
                             {template.rules.map((rule) => (
                               <div className={styles.ruleRow} key={rule.rule_id}>
-                                <span><strong>{rule.product_name}</strong><small>{rule.sku}</small></span>
+                                <span className={styles.ruleProductIdentity}>
+                                  <strong>{purchaseProductLabel(rule.sku, rule.product_name)}</strong>
+                                </span>
                                 <span>{rule.quantity_limit}</span>
                                 <span>{rule.duration_days} days</span>
                                 <span>{rule.start_date}</span>
+                                {canManage ? (
+                                  <details className={styles.ruleEditDetails}>
+                                    <summary>Edit</summary>
+                                    <form className={styles.ruleEditForm} action={updatePortalPurchaseControlRuleAction}>
+                                      <input type="hidden" name="templateId" value={template.template_id} />
+                                      <input type="hidden" name="ruleId" value={rule.rule_id} />
+                                      <div className={styles.ruleEditHeading}>
+                                        <strong>{purchaseProductLabel(rule.sku, rule.product_name)}</strong>
+                                        <small>This changes the template definition only. Existing allowances change when Apply is used.</small>
+                                      </div>
+                                      <div className={styles.ruleEditFields}>
+                                        <div className="field">
+                                          <label htmlFor={`rule-quantity-${rule.rule_id}`}>Main limit</label>
+                                          <input id={`rule-quantity-${rule.rule_id}`} name="quantityLimit" type="number" min="1" step="1" defaultValue={rule.quantity_limit} required />
+                                        </div>
+                                        <div className="field">
+                                          <label htmlFor={`rule-duration-${rule.rule_id}`}>Main period (days)</label>
+                                          <input id={`rule-duration-${rule.rule_id}`} name="durationDays" type="number" min="1" step="1" defaultValue={rule.duration_days} required />
+                                        </div>
+                                        <div className="field">
+                                          <label htmlFor={`rule-short-quantity-${rule.rule_id}`}>Short-term max</label>
+                                          <input id={`rule-short-quantity-${rule.rule_id}`} name="shortQuantityLimit" type="number" min="1" step="1" defaultValue={rule.short_term_quantity_limit ?? ""} placeholder="Optional" />
+                                        </div>
+                                        <div className="field">
+                                          <label htmlFor={`rule-short-duration-${rule.rule_id}`}>Rolling days</label>
+                                          <input id={`rule-short-duration-${rule.rule_id}`} name="shortDurationDays" type="number" min="1" step="1" defaultValue={rule.short_term_duration_days ?? ""} placeholder="Optional" />
+                                        </div>
+                                        <div className="field">
+                                          <label htmlFor={`rule-start-${rule.rule_id}`}>Starts</label>
+                                          <input id={`rule-start-${rule.rule_id}`} name="startDate" type="date" defaultValue={rule.start_date} required />
+                                        </div>
+                                      </div>
+                                      <div className={styles.ruleEditActions}>
+                                        <button className="button button-danger" type="submit" formAction={deletePortalPurchaseControlRuleAction}>
+                                          Delete rule
+                                        </button>
+                                        <button className="button" type="submit">Save rule</button>
+                                      </div>
+                                    </form>
+                                  </details>
+                                ) : <span />}
                               </div>
                             ))}
                             {!template.rules.length ? <div className={styles.emptyRow}>No product rules in this template.</div> : null}
@@ -214,13 +295,25 @@ export default async function CompanyPortalPurchaseControlsPage({
                         {canManage ? (
                           <>
                             <section className={styles.modalSection}>
-                              <div className={styles.modalSectionHeading}><div><p className="eyebrow">Edit</p><h3>Template settings</h3></div></div>
-                              <form className={styles.modalStack} action={savePortalPurchaseControlTemplateAction}>
-                                <input type="hidden" name="templateId" value={template.template_id} />
-                                <div className="field"><label htmlFor={`template-name-${template.template_id}`}>Template name</label><input id={`template-name-${template.template_id}`} name="name" required defaultValue={template.name} /></div>
-                                <PurchaseRuleEditor initialRules={template.rules} label="Template rules" />
-                                <div><button className="button" type="submit">Save template</button></div>
-                              </form>
+                              <details className={styles.addProducts}>
+                                <summary>
+                                  <span>
+                                    <strong>Add products</strong>
+                                    <small>Add new catalogue products only. Edit or delete existing lines above.</small>
+                                  </span>
+                                </summary>
+                                <form className={styles.modalStack} action={addPortalPurchaseControlRulesAction}>
+                                  <input type="hidden" name="templateId" value={template.template_id} />
+                                  <PurchaseRuleEditor
+                                    companyId={administration.company_id}
+                                    label="New product rules"
+                                    autoOpenProductPicker={false}
+                                  />
+                                  <div className={styles.addProductsActions}>
+                                    <button className="button" type="submit">Add selected products</button>
+                                  </div>
+                                </form>
+                              </details>
                             </section>
 
                             <section className={styles.modalSection}>
