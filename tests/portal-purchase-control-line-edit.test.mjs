@@ -7,6 +7,7 @@ import load from "./helpers/load-typescript.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 const forms = load(root, "lib/purchase-control-forms.ts");
+const labels = load(root, "lib/purchase-product-label.ts");
 
 class Navigation extends Error {
   constructor(location) {
@@ -20,7 +21,7 @@ test("Portal template modal shows SKU — name and edits one current rule at a t
 
   assert.match(page, /Current template rules/);
   assert.match(page, /Products are shown as SKU — name/);
-  assert.match(page, /rule\.sku} — \{rule\.product_name/);
+  assert.match(page, /purchaseProductLabel\(rule\.sku, rule\.product_name\)/);
   assert.match(page, /action=\{updatePortalPurchaseControlRuleAction\}/);
   assert.match(page, /name="ruleId"/);
   assert.match(page, /name="quantityLimit"/);
@@ -137,9 +138,25 @@ test("bulk structural editor keeps product names alongside catalogue SKUs", () =
   const styles = source("app/purchase-controls.css");
 
   assert.match(editor, /product_name\?: string \| null/);
-  assert.match(editor, /productName: rule\.product_name\?\.trim\(\) \?\? ""/);
-  assert.match(editor, /productName: product\.name/);
+  assert.match(editor, /productName: productNameWithoutLeadingSku\(rule\.sku, rule\.product_name\)/);
+  assert.match(editor, /productName: productNameWithoutLeadingSku\(product\.sku, product\.name\)/);
   assert.match(editor, /purchase-rule-product-identity/);
   assert.match(editor, /Product name unavailable/);
   assert.match(styles, /\.purchase-rule-product-identity/);
+});
+
+
+test("product labels do not repeat an SKU already prefixed to Magento product name", () => {
+  assert.equal(
+    labels.purchaseProductLabel("A4806", "A4806 Nitrile disposable gloves, powder free version"),
+    "A4806 — Nitrile disposable gloves, powder free version",
+  );
+  assert.equal(
+    labels.purchaseProductLabel("A6202", "A6202 - Red PVC fully coated cotton lined knitwrist glove"),
+    "A6202 — Red PVC fully coated cotton lined knitwrist glove",
+  );
+  assert.equal(
+    labels.purchaseProductLabel("E2103", "Smoke Lens Safety Spectacle"),
+    "E2103 — Smoke Lens Safety Spectacle",
+  );
 });
