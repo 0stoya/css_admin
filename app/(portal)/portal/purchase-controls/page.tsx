@@ -150,6 +150,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                 description="Create a reusable set of product quantity and time-window rules."
                 triggerLabel="Create template"
                 triggerHint="Add a reusable rule set"
+                size="wide"
               >
                 <form className={styles.modalStack} action={savePortalPurchaseControlTemplateAction}>
                   <div className="field"><label htmlFor="newTemplateName">Template name</label><input id="newTemplateName" name="name" required placeholder="e.g. Monthly PPE allowance" /></div>
@@ -196,6 +197,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                       description={canManage ? "Review and manage this purchase-control template." : "Review this purchase-control template."}
                       triggerLabel={canManage ? "Manage" : "View"}
                       triggerIcon={canManage ? "edit" : "arrow"}
+                      size="wide"
                     >
                       <div className={styles.templateModal}>
                         <section className={styles.modalSummary}>
@@ -313,6 +315,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                                     label="New product rules"
                                     autoOpenProductPicker={false}
                                     searchMode="portal"
+                                    excludedSkus={template.rules.map((rule) => rule.sku)}
                                   />
                                   <div className={styles.addProductsActions}>
                                     <button className="button" type="submit">Add selected products</button>

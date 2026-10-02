@@ -106,6 +106,12 @@
   box-shadow: 0 28px 80px rgb(0 35 72 / 28%);
 }
 
+.wideDialog {
+  width: min(1280px, calc(100vw - 1.5rem));
+  max-height: min(94vh, 1040px);
+  max-height: min(94dvh, 1040px);
+}
+
 .dialog::backdrop {
   background: rgb(0 27 55 / 48%);
   backdrop-filter: blur(3px);

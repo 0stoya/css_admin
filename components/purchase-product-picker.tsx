@@ -77,11 +77,17 @@ export function PurchaseProductPicker({
     };
   }, [companyId, query, searchMode]);
 
-  const availableItems = (result?.items ?? []).filter(
+  const visibleItems = result?.items ?? [];
+  const selectableItems = visibleItems.filter(
     (product) => !excluded.has(product.sku.toLocaleLowerCase("en")),
   );
+  const selectedCount = Array.from(selected.values()).filter(
+    (product) => !excluded.has(product.sku.toLocaleLowerCase("en")),
+  ).length;
 
   function toggle(product: PurchaseProductPickerItem) {
+    if (excluded.has(product.sku.toLocaleLowerCase("en"))) return;
+
     setSelected((current) => {
       const next = new Map(current);
       if (next.has(product.product_id)) next.delete(product.product_id);
@@ -93,7 +99,7 @@ export function PurchaseProductPicker({
   function selectVisible() {
     setSelected((current) => {
       const next = new Map(current);
-      availableItems.forEach((product) => next.set(product.product_id, product));
+      selectableItems.forEach((product) => next.set(product.product_id, product));
       return next;
     });
   }
@@ -101,7 +107,7 @@ export function PurchaseProductPicker({
   function clearVisible() {
     setSelected((current) => {
       const next = new Map(current);
-      availableItems.forEach((product) => next.delete(product.product_id));
+      selectableItems.forEach((product) => next.delete(product.product_id));
       return next;
     });
   }
@@ -121,14 +127,16 @@ export function PurchaseProductPicker({
         <div>
           <strong>Choose products</strong>
           <small className="muted">
-            {result ? `${result.total_count} products in the company catalogue` : "Search the company catalogue"}
+            {result
+              ? `${result.total_count} products in the company catalogue${selectedCount ? ` · ${selectedCount} selected` : ""}`
+              : "Search the company catalogue"}
           </small>
         </div>
         <div className="purchase-product-picker-actions">
           <button
             className="button button-secondary button-compact"
             type="button"
-            disabled={!availableItems.length}
+            disabled={!selectableItems.length}
             onClick={selectVisible}
           >
             Select visible
@@ -136,13 +144,13 @@ export function PurchaseProductPicker({
           <button
             className="button button-secondary button-compact"
             type="button"
-            disabled={!availableItems.some((product) => selected.has(product.product_id))}
+            disabled={!selectableItems.some((product) => selected.has(product.product_id))}
             onClick={clearVisible}
           >
             Clear visible
           </button>
-          <button className="button button-compact" type="button" disabled={!selected.size} onClick={addSelected}>
-            Add selected{selected.size ? ` (${selected.size})` : ""}
+          <button className="button button-compact" type="button" disabled={!selectedCount} onClick={addSelected}>
+            Add selected{selectedCount ? ` (${selectedCount})` : ""}
           </button>
         </div>
       </div>
@@ -164,21 +172,41 @@ export function PurchaseProductPicker({
 
       {result ? (
         <div className="purchase-product-options" aria-busy={loading}>
-          {availableItems.length ? availableItems.map((product) => (
-            <label className="purchase-product-option" key={product.product_id}>
-              <input
-                type="checkbox"
-                checked={selected.has(product.product_id)}
-                onChange={() => toggle(product)}
-              />
-              <span>
-                <strong>{product.name}</strong>
-                <small><code>{product.sku}</code> · Product #{product.product_id}</small>
-              </span>
-            </label>
-          )) : (
+          {visibleItems.length ? visibleItems.map((product) => {
+            const skuKey = product.sku.toLocaleLowerCase("en");
+            const isExcluded = excluded.has(skuKey);
+            const isSelected = selected.has(product.product_id);
+            return (
+              <label
+                className={[
+                  "purchase-product-option",
+                  isSelected ? "is-selected" : "",
+                  isExcluded ? "is-excluded" : "",
+                ].filter(Boolean).join(" ")}
+                key={product.product_id}
+                aria-disabled={isExcluded || undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={isExcluded ? false : isSelected}
+                  disabled={isExcluded}
+                  onChange={() => toggle(product)}
+                />
+                <span className="purchase-product-option-copy">
+                  <span className="purchase-product-option-title">
+                    <strong>{product.name}</strong>
+                    {isExcluded ? <span className="purchase-product-status">Already added</span> : null}
+                  </span>
+                  <small>
+                    <code>{product.sku}</code>
+                    {searchMode === "admin" ? <span>Product #{product.product_id}</span> : null}
+                  </small>
+                </span>
+              </label>
+            );
+          }) : (
             <div className="purchase-product-picker-state">
-              {result.items.length ? "All matching products are already in this template." : "No company-catalogue products match this search."}
+              No company-catalogue products match this search.
             </div>
           )}
         </div>
