@@ -12,6 +12,7 @@ import {
 } from "@/lib/graphql/company-portal";
 import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
 import {
+  addPortalUserAction,
   deletePortalRoleAction,
   removePortalUserAction,
   savePortalRoleAction,
@@ -260,6 +261,83 @@ export default async function CompanyPortalPage({
                 <h2>Company users</h2>
                 <p className="muted">Maintain role, manager and approval settings for your company team.</p>
               </div>
+
+              {administration.can_manage_users ? (
+                administration.roles.length ? (
+                  <details className="management-create-panel nested-card">
+                    <summary>
+                      <span>
+                        <strong>Add company user</strong>
+                        <small>Add an existing Magento customer to this company and assign their role.</small>
+                      </span>
+                    </summary>
+                    <form className="management-panel-body stack" action={addPortalUserAction}>
+                      <div className="notice">
+                        The customer account must already exist in Magento. Adding a user here creates company membership; it does not create a new Magento login.
+                      </div>
+                      <div className="form-grid">
+                        <div className="field">
+                          <label htmlFor="newUserEmail">Customer email</label>
+                          <input
+                            id="newUserEmail"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            placeholder="name@company.co.uk"
+                            required
+                          />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="newUserRole">Role</label>
+                          <select id="newUserRole" name="roleId" defaultValue="" required>
+                            <option value="" disabled>Select a role</option>
+                            {administration.roles.map((role) => (
+                              <option key={role.role_id} value={role.role_id}>{role.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label htmlFor="newUserManager">Manager</label>
+                          <select id="newUserManager" name="managerId" defaultValue="">
+                            <option value="">No manager</option>
+                            {administration.users.map((candidate) => (
+                              <option key={candidate.user_id} value={candidate.user_id}>
+                                {userName(candidate)} · {candidate.email}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label htmlFor="newUserApprovalType">Approval type</label>
+                          <select id="newUserApprovalType" name="approvalType" defaultValue="all">
+                            <option value="all">All</option>
+                            <option value="template">Template</option>
+                            <option value="value">Value</option>
+                            <option value="none">None</option>
+                          </select>
+                        </div>
+                        <div className="field">
+                          <label htmlFor="newUserApprovalThreshold">Approval threshold</label>
+                          <input
+                            id="newUserApprovalThreshold"
+                            name="approvalThreshold"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Optional"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <button className="button" type="submit">Add company user</button>
+                      </div>
+                    </form>
+                  </details>
+                ) : (
+                  <div className="notice">Create a company role before adding another user.</div>
+                )
+              ) : null}
+
               {administration.users.length ? (
                 <div className="table-wrap management-table">
                   <table>
