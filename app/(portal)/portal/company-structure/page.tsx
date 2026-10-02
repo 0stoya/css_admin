@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import styles from "@/components/portal/portal-company-structure.module.css";
+import { selectPortalCompanyAction } from "../actions";
 import {
   buildCompanyStructure,
   countStructureCompanies,
@@ -36,12 +37,38 @@ function CrownIcon() {
   );
 }
 
+function SwitchCompanyControl({
+  companyId,
+  current,
+  switchable,
+}: {
+  companyId: number;
+  current: boolean;
+  switchable: boolean;
+}) {
+  if (current) {
+    return <span className="badge badge-ok">Current company</span>;
+  }
+
+  if (!switchable) return null;
+
+  return (
+    <form action={selectPortalCompanyAction} className={styles.switchForm}>
+      <input type="hidden" name="companyId" value={companyId} />
+      <input type="hidden" name="returnTo" value="/portal/company-structure" />
+      <button className={styles.switchButton} type="submit">Switch</button>
+    </form>
+  );
+}
+
 function StructureTree({
   nodes,
   currentCompanyId,
+  switchableCompanyIds,
 }: {
   nodes: CompanyStructureNode[];
   currentCompanyId: number;
+  switchableCompanyIds: number[];
 }) {
   return (
     <ul className="company-tree-list company-detail-tree">
@@ -58,10 +85,18 @@ function StructureTree({
                   {node.children.length ? ` · ${node.descendant_count + 1} in branch` : ""}
                 </span>
               </div>
-              {current ? <span className="badge badge-ok">Current company</span> : null}
+              <SwitchCompanyControl
+                companyId={node.company.company_id}
+                current={current}
+                switchable={switchableCompanyIds.includes(node.company.company_id)}
+              />
             </div>
             {node.children.length ? (
-              <StructureTree nodes={node.children} currentCompanyId={currentCompanyId} />
+              <StructureTree
+                nodes={node.children}
+                currentCompanyId={currentCompanyId}
+                switchableCompanyIds={switchableCompanyIds}
+              />
             ) : null}
           </li>
         );
@@ -131,11 +166,18 @@ export default async function PortalCompanyStructurePage() {
   const companyCount = countStructureCompanies(root);
   const independent = companyCount === 1 && root.company.parent_company_id === null;
   const canonicalRoot = root.company.parent_company_id === null;
+  const currentIsRoot = root.company.company_id === selected.company_id;
+  const switchableCompanyIds = context?.companies.map((company) => company.company_id) ?? [];
   const rootLabel = independent
     ? "Independent company"
     : canonicalRoot
       ? "Group head"
       : "Highest visible branch";
+  const currentPositionLabel = independent
+    ? "Independent company"
+    : currentIsRoot
+      ? rootLabel
+      : "Group company";
 
   return (
     <div className={styles.page}>
@@ -164,7 +206,7 @@ export default async function PortalCompanyStructurePage() {
           <span className={styles.summaryLabel}>Current company</span>
         </article>
         <article className={styles.summaryCard}>
-          <span className={styles.summaryValue}>{rootLabel}</span>
+          <span className={styles.summaryValue}>{currentPositionLabel}</span>
           <span className={styles.summaryLabel}>Structure position</span>
         </article>
       </section>
@@ -206,13 +248,16 @@ export default async function PortalCompanyStructurePage() {
                   {root.company.reference || `Company ${root.company.company_id}`} · {rootLabel}
                 </span>
               </div>
-              {root.company.company_id === selected.company_id
-                ? <span className="badge badge-ok">Current company</span>
-                : null}
+              <SwitchCompanyControl
+                companyId={root.company.company_id}
+                current={root.company.company_id === selected.company_id}
+                switchable={switchableCompanyIds.includes(root.company.company_id)}
+              />
             </div>
             <StructureTree
               nodes={root.children}
               currentCompanyId={selected.company_id}
+              switchableCompanyIds={switchableCompanyIds}
             />
           </div>
         ) : null}
