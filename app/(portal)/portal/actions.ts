@@ -60,23 +60,25 @@ async function runPortalMutation(success: string, mutation: () => Promise<unknow
 
 export async function selectPortalCompanyAction(formData: FormData) {
   let errorMessage: string | null = null;
-  let openProfile = false;
+  let isCompanyAdminAfterSwitch = false;
   const landing = String(formData.get("landing") ?? "") === "1";
+  const returnToStructure = String(formData.get("returnTo") ?? "") === "/portal/company-structure";
 
   try {
     const companyId = positiveInt(formData.get("companyId"), "Company");
     await selectCompanyPortalCompany(companyId);
 
-    if (landing) {
+    if (landing || returnToStructure) {
       try {
-        openProfile = (await getCompanyPortalAdministration()).is_company_admin;
+        isCompanyAdminAfterSwitch = (await getCompanyPortalAdministration()).is_company_admin;
       } catch {
-        openProfile = false;
+        isCompanyAdminAfterSwitch = false;
       }
     }
 
     revalidatePath("/portal");
     revalidatePath("/portal/company-profile");
+    revalidatePath("/portal/company-structure");
   } catch (error) {
     errorMessage = graphQLErrorMessage(error);
   }
@@ -84,7 +86,10 @@ export async function selectPortalCompanyAction(formData: FormData) {
   if (errorMessage) {
     redirect(`/portal?error=${encodeURIComponent(errorMessage)}`);
   }
-  redirect(openProfile ? "/portal/company-profile" : "/portal");
+  if (returnToStructure && isCompanyAdminAfterSwitch) {
+    redirect("/portal/company-structure");
+  }
+  redirect(landing && isCompanyAdminAfterSwitch ? "/portal/company-profile" : "/portal");
 }
 
 export async function savePortalRoleAction(formData: FormData) {
