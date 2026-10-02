@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { presentationText } from "@/lib/company-presentation-content";
 import {
   defaultCompanyFinanceVisibility,
   getCompanyFinanceVisibility,
@@ -170,6 +171,8 @@ export default async function PortalCompanyProfilePage() {
   }
 
   const rep = presentation.can_view_rep_contacts ? presentation.rep_contacts[0] ?? null : null;
+  const welcomeContent = presentationText(presentation.welcome_text);
+  const descriptionContent = presentationText(presentation.company_description);
   const bannerStyle = presentation.banner_url
     ? { backgroundImage: `linear-gradient(rgb(0 35 72 / 18%), rgb(0 35 72 / 18%)), url("${presentation.banner_url}")` }
     : undefined;
@@ -207,8 +210,8 @@ export default async function PortalCompanyProfilePage() {
             <div className={styles.welcome}>
               <span className="eyebrow">Welcome</span>
               <h2>{presentation.welcome_heading || `Welcome to ${presentation.company_name || "your company account"}`}</h2>
-              {presentation.welcome_text ? <p>{presentation.welcome_text}</p> : null}
-              {presentation.company_description ? <p className={styles.description}>{presentation.company_description}</p> : null}
+              {welcomeContent.text ? <p>{welcomeContent.text}</p> : null}
+              {descriptionContent.text ? <p className={styles.description}>{descriptionContent.text}</p> : null}
             </div>
 
             <section className={styles.detailSection} aria-labelledby="company-details-heading">
