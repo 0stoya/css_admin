@@ -20,7 +20,6 @@ export type PurchaseRuleEditorValue = {
 
 type DraftRule = {
   key: number;
-  manualSku: boolean;
   sku: string;
   productName: string;
   quantity: string;
@@ -33,7 +32,6 @@ type DraftRule = {
 function toDraft(rule: PurchaseRuleEditorValue, key: number): DraftRule {
   return {
     key,
-    manualSku: false,
     sku: rule.sku,
     productName: productNameWithoutLeadingSku(rule.sku, rule.product_name),
     quantity: String(rule.quantity_limit),
@@ -88,14 +86,12 @@ export function PurchaseRuleEditor({
   label = "Rules",
   autoOpenProductPicker = true,
   searchMode = "admin",
-  allowManualSku = false,
 }: {
   companyId?: number;
   initialRules?: PurchaseRuleEditorValue[];
   label?: string;
   autoOpenProductPicker?: boolean;
   searchMode?: "admin" | "portal";
-  allowManualSku?: boolean;
 }) {
   const pathname = usePathname();
   const resolvedCompanyId = companyId ?? companyIdFromPath(pathname);
@@ -111,7 +107,7 @@ export function PurchaseRuleEditor({
 
   function updateRow(
     key: number,
-    field: keyof Omit<DraftRule, "key" | "manualSku">,
+    field: keyof Omit<DraftRule, "key">,
     value: string,
   ) {
     setRows((current) =>
@@ -128,7 +124,6 @@ export function PurchaseRuleEditor({
         .filter((product) => !existing.has(product.sku.trim().toLocaleLowerCase("en")))
         .map((product) => ({
           key: key++,
-          manualSku: false,
           sku: product.sku,
           productName: productNameWithoutLeadingSku(product.sku, product.name),
           quantity: "1",
@@ -150,7 +145,6 @@ export function PurchaseRuleEditor({
       ...current,
       {
         key,
-        manualSku: true,
         sku: "",
         productName: "",
         quantity: "1",
@@ -160,7 +154,6 @@ export function PurchaseRuleEditor({
         startDate: "",
       },
     ]);
-    setPickerOpen(false);
   }
 
   function removeRule(key: number) {
@@ -179,27 +172,15 @@ export function PurchaseRuleEditor({
           </span>
         </div>
         {resolvedCompanyId ? (
-          <div className="purchase-rule-toolbar-actions">
-            {allowManualSku ? (
-              <button
-                className="button button-secondary button-compact icon-button-label"
-                type="button"
-                onClick={addManualRule}
-              >
-                <PlusIcon />
-                Add by SKU
-              </button>
-            ) : null}
-            <button
-              className="button button-secondary button-compact icon-button-label"
-              type="button"
-              aria-expanded={pickerOpen}
-              onClick={() => setPickerOpen((current) => !current)}
-            >
-              <PlusIcon />
-              {pickerOpen ? "Close product picker" : "Add products"}
-            </button>
-          </div>
+          <button
+            className="button button-secondary button-compact icon-button-label"
+            type="button"
+            aria-expanded={pickerOpen}
+            onClick={() => setPickerOpen((current) => !current)}
+          >
+            <PlusIcon />
+            {pickerOpen ? "Close product picker" : "Add products"}
+          </button>
         ) : (
           <button
             className="button button-secondary button-compact icon-button-label"
@@ -238,10 +219,10 @@ export function PurchaseRuleEditor({
             return (
               <div className="purchase-rule-row" key={row.key}>
                 <div className="field purchase-rule-field">
-                  <label htmlFor={resolvedCompanyId && !row.manualSku ? undefined : `${prefix}-sku`}>
+                  <label htmlFor={resolvedCompanyId ? undefined : `${prefix}-sku`}>
                     Product <span className="purchase-mobile-only">rule {index + 1}</span>
                   </label>
-                  {resolvedCompanyId && !row.manualSku ? (
+                  {resolvedCompanyId ? (
                     <div className="purchase-rule-product-identity">
                       <strong>{row.sku || "SKU unavailable"}</strong>
                       <span>{row.productName || "Product name unavailable"}</span>
@@ -251,7 +232,7 @@ export function PurchaseRuleEditor({
                       id={`${prefix}-sku`}
                       value={row.sku}
                       required
-                      placeholder={resolvedCompanyId ? "Enter exact product SKU" : "Product SKU"}
+                      placeholder="Product SKU"
                       onChange={(event) => updateRow(row.key, "sku", event.target.value)}
                     />
                   )}
@@ -334,9 +315,7 @@ export function PurchaseRuleEditor({
           <strong>No product rules yet</strong>
           <span className="muted small-text">
             {resolvedCompanyId
-              ? allowManualSku
-                ? "Choose products from the catalogue, or add an exact SKU manually."
-                : "Choose one or more products from this company's catalogue to add rule rows."
+              ? "Choose one or more products from this company's catalogue to add rule rows."
               : "Add a rule when this template should limit a specific SKU."}
           </span>
         </div>
