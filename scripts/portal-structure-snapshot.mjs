@@ -59,6 +59,15 @@ const storeCode = process.env.MAGENTO_STORE_CODE?.trim() || "default";
 
 if (!graphqlUrl) fail("MAGENTO_GRAPHQL_URL or MAGENTO_BASE_URL must be configured.");
 
+const presentationQuery = `
+  query AdminCompanyPresentation($companyId: Int!) {
+    css_admin_company_presentation(company_id: $companyId) {
+      company_id
+      portal_title
+    }
+  }
+`;
+
 const query = `
   query AdminCompanyList($currentPage: Int!, $pageSize: Int!) {
     css_admin_companies(currentPage: $currentPage, pageSize: $pageSize) {
@@ -105,6 +114,38 @@ async function page(currentPage) {
   const result = body.data?.css_admin_companies;
   if (!result) fail("Magento GraphQL returned no company list.");
   return result;
+}
+
+async function portalTitle(companyId) {
+  const response = await fetch(graphqlUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Store: storeCode,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: presentationQuery,
+      variables: { companyId },
+    }),
+  });
+
+  if (!response.ok) {
+    fail(`Magento GraphQL returned HTTP ${response.status} while loading Portal Title for company ${companyId}.`);
+  }
+
+  const body = await response.json();
+  if (body.errors?.length) {
+    fail(body.errors[0]?.message || `Magento GraphQL could not load Portal Title for company ${companyId}.`);
+  }
+
+  const presentation = body.data?.css_admin_company_presentation;
+  if (!presentation) {
+    fail(`Magento GraphQL returned no presentation for company ${companyId}.`);
+  }
+
+  const title = String(presentation.portal_title ?? "").trim();
+  return title || null;
 }
 
 const first = await page(1);
@@ -162,6 +203,14 @@ if (allowGroupFinance && target.company_id !== root.company_id) {
   fail("--allow-group-finance may only be used when --company-ref identifies the canonical group head.");
 }
 
+const portalTitles = {};
+for (const company of structure) {
+  const title = await portalTitle(company.company_id);
+  if (title) {
+    portalTitles[String(company.company_id)] = title;
+  }
+}
+
 const snapshot = {
   kind: SNAPSHOT_KIND,
   generated_at: generatedAt.toISOString(),
@@ -169,6 +218,7 @@ const snapshot = {
   group_finance_company_ids: allowGroupFinance && structure.length > 1
     ? [root.company_id]
     : [],
+  portal_titles: portalTitles,
   companies: structure,
 };
 
@@ -184,4 +234,8 @@ console.log(
   snapshot.group_finance_company_ids.length
     ? "Temporary group-head finance aggregation: ENABLED."
     : "Temporary group-head finance aggregation: disabled.",
+);
+console.log(
+  `Captured ${Object.keys(snapshot.portal_titles).length} Portal Title`
+  + `${Object.keys(snapshot.portal_titles).length === 1 ? "" : "s"} for header switching.`,
 );
