@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  AdminActionModal,
+  AdminFormFooter,
+} from "@/components/admin-action-modal";
 import { CompanyPermissionPicker } from "@/components/company-permission-picker";
 import styles from "@/components/portal/portal-dashboard.module.css";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
@@ -256,24 +260,25 @@ export default async function CompanyPortalPage({
 
           {administration.can_view_users ? (
             <section className={`card stack management-section ${styles.managementCard}`} id="portal-users">
-              <div>
-                <p className="eyebrow">People</p>
-                <h2>Company users</h2>
-                <p className="muted">Maintain role, manager and approval settings for your company team.</p>
-              </div>
-
-              {administration.can_manage_users ? (
-                administration.roles.length ? (
-                  <details className="management-create-panel nested-card">
-                    <summary>
-                      <span>
-                        <strong>Add company user</strong>
-                        <small>Add an existing Magento customer to this company and assign their role.</small>
-                      </span>
-                    </summary>
-                    <form className="management-panel-body stack" action={addPortalUserAction}>
-                      <div className="notice">
-                        The customer account must already exist in Magento. Adding a user here creates company membership; it does not create a new Magento login.
+              <div className={styles.managementSectionHeader}>
+                <div>
+                  <p className="eyebrow">People</p>
+                  <h2>Company users</h2>
+                  <p className="muted">Maintain role, manager and approval settings for your company team.</p>
+                </div>
+                {administration.can_manage_users && administration.roles.length ? (
+                  <AdminActionModal
+                    title="Add company user"
+                    description="Link an existing Magento customer to this company and assign their access."
+                    triggerLabel="Add user"
+                    triggerIcon="plus"
+                    triggerVariant="primary"
+                    wide
+                  >
+                    <form className={`stack ${styles.portalModalForm}`} action={addPortalUserAction}>
+                      <div className={styles.modalHint}>
+                        <strong>Existing Magento customer required</strong>
+                        <span>This creates company membership only; it does not create a new Magento login.</span>
                       </div>
                       <div className="form-grid">
                         <div className="field">
@@ -328,14 +333,18 @@ export default async function CompanyPortalPage({
                           />
                         </div>
                       </div>
-                      <div>
-                        <button className="button" type="submit">Add company user</button>
-                      </div>
+                      <AdminFormFooter
+                        submitLabel="Add company user"
+                        pendingLabel="Adding user…"
+                        hint="Fluid checks company scope, duplicate membership and Users edit permission."
+                      />
                     </form>
-                  </details>
-                ) : (
-                  <div className="notice">Create a company role before adding another user.</div>
-                )
+                  </AdminActionModal>
+                ) : null}
+              </div>
+
+              {administration.can_manage_users && !administration.roles.length ? (
+                <div className={styles.inlineGuidance}>Create a company role before adding another user.</div>
               ) : null}
 
               {administration.users.length ? (
@@ -379,22 +388,42 @@ export default async function CompanyPortalPage({
 
           {administration.can_view_roles ? (
             <section className={`card stack management-section ${styles.managementCard}`} id="portal-roles">
-              <div>
-                <p className="eyebrow">Permissions</p>
-                <h2>Company roles</h2>
-                <p className="muted">Control the permissions assigned to each company role.</p>
+              <div className={styles.managementSectionHeader}>
+                <div>
+                  <p className="eyebrow">Permissions</p>
+                  <h2>Company roles</h2>
+                  <p className="muted">Control the permissions assigned to each company role.</p>
+                </div>
+                {administration.can_manage_roles ? (
+                  <AdminActionModal
+                    title="Create company role"
+                    description="Build a company role from the Fluid permissions available to this account."
+                    triggerLabel="Create role"
+                    triggerIcon="plus"
+                    triggerVariant="primary"
+                    wide
+                  >
+                    <form className={`stack ${styles.portalModalForm}`} action={savePortalRoleAction}>
+                      <div className="form-grid">
+                        <div className="field">
+                          <label htmlFor="newRoleName">Role name</label>
+                          <input id="newRoleName" name="name" required />
+                        </div>
+                        <div className="field">
+                          <label htmlFor="newRoleSort">Sort order</label>
+                          <input id="newRoleSort" name="sortOrder" type="number" step="1" />
+                        </div>
+                      </div>
+                      <CompanyPermissionPicker resources={administration.resources} label="Role permissions" />
+                      <AdminFormFooter
+                        submitLabel="Create role"
+                        pendingLabel="Creating role…"
+                        hint="Only assignable Fluid company permissions can be selected."
+                      />
+                    </form>
+                  </AdminActionModal>
+                ) : null}
               </div>
-
-              {administration.can_manage_roles ? (
-                <details className="management-create-panel nested-card">
-                  <summary><span><strong>Create role</strong><small>Select permissions by group.</small></span></summary>
-                  <form className="management-panel-body stack" action={savePortalRoleAction}>
-                    <div className="form-grid"><div className="field"><label htmlFor="newRoleName">Role name</label><input id="newRoleName" name="name" required /></div><div className="field"><label htmlFor="newRoleSort">Sort order</label><input id="newRoleSort" name="sortOrder" type="number" step="1" /></div></div>
-                    <CompanyPermissionPicker resources={administration.resources} label="Role permissions" />
-                    <div><button className="button" type="submit">Create role</button></div>
-                  </form>
-                </details>
-              ) : null}
 
               {administration.roles.length ? (
                 <div className="table-wrap management-table">
