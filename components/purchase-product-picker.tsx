@@ -121,11 +121,7 @@ export function PurchaseProductPicker({
         <div>
           <strong>Choose products</strong>
           <small className="muted">
-            {result
-              ? searchMode === "portal" && result.total_count === 0
-                ? "No products returned by Portal search"
-                : `${result.total_count} products in the company catalogue`
-              : "Search the company catalogue"}
+            {result ? `${result.total_count} products in the company catalogue` : "Search the company catalogue"}
           </small>
         </div>
         <div className="purchase-product-picker-actions">
@@ -182,11 +178,7 @@ export function PurchaseProductPicker({
             </label>
           )) : (
             <div className="purchase-product-picker-state">
-              {result.items.length
-                ? "All matching products are already in this template."
-                : searchMode === "portal"
-                  ? "No products are available through Portal search. Use Add by SKU above."
-                  : "No company-catalogue products match this search."}
+              {result.items.length ? "All matching products are already in this template." : "No company-catalogue products match this search."}
             </div>
           )}
         </div>
