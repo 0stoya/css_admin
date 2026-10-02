@@ -26,7 +26,6 @@ type SnapshotFile = {
   expires_at: string;
   companies: CompanySummary[];
   group_finance_company_ids: number[];
-  portal_titles: Record<string, string>;
 };
 
 export type TemporaryPortalCompanyStructure =
@@ -36,7 +35,6 @@ export type TemporaryPortalCompanyStructure =
       current_company_id: number;
       company_count: number;
       can_view_group_finance: boolean;
-      portal_titles: Record<string, string>;
       expires_at: string;
     }
   | {
@@ -122,33 +120,12 @@ function parseSnapshot(value: unknown): SnapshotFile | null {
 
   if (groupFinanceCompanyIds.some((companyId) => !ids.has(companyId))) return null;
 
-  const rawPortalTitles = value.portal_titles ?? {};
-  if (!isRecord(rawPortalTitles)) return null;
-
-  const portalTitles: Record<string, string> = {};
-  for (const [rawCompanyId, rawTitle] of Object.entries(rawPortalTitles)) {
-    const titleCompanyId = Number(rawCompanyId);
-    if (
-      !Number.isInteger(titleCompanyId)
-      || titleCompanyId < 1
-      || !ids.has(titleCompanyId)
-      || typeof rawTitle !== "string"
-    ) {
-      return null;
-    }
-
-    const title = rawTitle.trim();
-    if (!title || title.length > 255) return null;
-    portalTitles[String(titleCompanyId)] = title;
-  }
-
   return {
     kind: TEMPORARY_PORTAL_STRUCTURE_PATCH,
     generated_at: value.generated_at as string,
     expires_at: value.expires_at as string,
     companies: companies as CompanySummary[],
     group_finance_company_ids: Array.from(new Set(groupFinanceCompanyIds)),
-    portal_titles: portalTitles,
   };
 }
 
@@ -198,7 +175,6 @@ export async function getTemporaryPortalCompanyStructure(
     company_count: countStructureCompanies(context.root),
     can_view_group_finance: isCanonicalGroupHead
       && snapshot.group_finance_company_ids.includes(companyId),
-    portal_titles: snapshot.portal_titles,
     expires_at: snapshot.expires_at,
   };
 }
