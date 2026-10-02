@@ -9,9 +9,11 @@ import type { CompanyPortalContext } from "@/lib/graphql/company-portal";
 export function PortalHeader({
   context,
   portalTitle,
+  portalTitles,
 }: {
   context: CompanyPortalContext | null;
   portalTitle: string | null;
+  portalTitles: Record<string, string>;
 }) {
   const title = portalTitle?.trim() || "Company Portal";
   return (
@@ -36,6 +38,7 @@ export function PortalHeader({
             <PortalHeaderCompanySwitcher
               companies={context.companies}
               selectedCompanyId={context.selected_company_id}
+              portalTitles={portalTitles}
             />
           ) : null}
           <a className={styles.appSwitchLink} href={`${getStorefrontUrl()}/api/auth/sso/start`}>
