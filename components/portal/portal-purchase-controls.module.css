@@ -518,17 +518,80 @@
 
 .ruleEditActions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 0.65rem;
 }
 
-.advancedEditor {
+.templateIdentity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #dbe6ec;
+  border-radius: 11px;
+  background: #f8fbfd;
+}
+
+.templateIdentity > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.templateIdentity > div > span {
+  color: var(--css-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.templateIdentity > div > strong {
+  overflow-wrap: anywhere;
+}
+
+.templateNameEditor {
+  flex: 0 0 auto;
+}
+
+.templateNameEditor > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--css-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.templateNameEditor > summary::-webkit-details-marker {
+  display: none;
+}
+
+.templateNameEditor[open] {
+  flex: 1 1 100%;
+}
+
+.templateNameEditor[open] > summary {
+  width: fit-content;
+  margin-left: auto;
+}
+
+.templateNameEditor > form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+  margin-top: 0.7rem;
+}
+
+.addProducts {
   overflow: hidden;
   border: 1px solid #dbe6ec;
   border-radius: 12px;
   background: #fbfdfe;
 }
 
-.advancedEditor > summary {
+.addProducts > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -538,22 +601,22 @@
   list-style: none;
 }
 
-.advancedEditor > summary::-webkit-details-marker {
+.addProducts > summary::-webkit-details-marker {
   display: none;
 }
 
-.advancedEditor > summary span {
+.addProducts > summary span {
   display: grid;
   gap: 0.12rem;
 }
 
-.advancedEditor > summary small {
+.addProducts > summary small {
   color: var(--css-muted);
   font-size: 0.74rem;
   font-weight: 400;
 }
 
-.advancedEditor > summary::after {
+.addProducts > summary::after {
   content: "+";
   display: grid;
   width: 28px;
@@ -565,23 +628,19 @@
   color: var(--css-primary);
 }
 
-.advancedEditor[open] > summary::after {
+.addProducts[open] > summary::after {
   content: "−";
 }
 
-.advancedEditor > form {
+.addProducts > form {
   padding: 1rem;
   border-top: 1px solid #e4ecf1;
   background: #fff;
 }
 
-.tableHeader {
-  background: #f4f8fa;
-  color: #6c8192;
-  font-size: 0.67rem;
-  font-weight: 800;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
+.addProductsActions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .emptyRow {
@@ -799,6 +858,23 @@
   .modalSummary,
   .actionGrid,
   .ruleEditFields {
+    grid-template-columns: 1fr;
+  }
+
+  .templateIdentity {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .templateNameEditor {
+    width: 100%;
+  }
+
+  .templateNameEditor[open] > summary {
+    margin-left: 0;
+  }
+
+  .templateNameEditor > form {
     grid-template-columns: 1fr;
   }
 
