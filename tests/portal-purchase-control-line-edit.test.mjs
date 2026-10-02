@@ -106,7 +106,9 @@ test("line edit reloads the current template and preserves every other SKU", asy
   }
 
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0], {
+  // The action module is evaluated in the TypeScript test helper's VM realm,
+  // so normalise the returned input before a strict structural comparison.
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), {
     template_id: 7,
     name: "Welfare Agency",
     rules: [
