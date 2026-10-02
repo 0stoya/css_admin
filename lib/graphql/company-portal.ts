@@ -147,7 +147,6 @@ const STRUCTURE_QUERY = /* GraphQL */ `
         company_id
         name
         reference
-        portal_title
         active
         parent_company_id
         selected
