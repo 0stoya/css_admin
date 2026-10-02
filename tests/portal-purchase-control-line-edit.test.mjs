@@ -91,7 +91,7 @@ test("Portal template view is current-rule first with focused edit delete add an
   assert.match(page, /purchaseProductLabel\(rule\.sku, rule\.product_name\)/);
   assert.match(page, /action=\{updatePortalPurchaseControlRuleAction\}/);
   assert.match(page, /formAction=\{deletePortalPurchaseControlRuleAction\}/);
-  assert.match(page, />Delete rule<\/button>/);
+  assert.match(page, />\\s*Delete rule\\s*<\\/button>/);
   assert.match(page, />Save rule<\/button>/);
   assert.match(page, /action=\{addPortalPurchaseControlRulesAction\}/);
   assert.match(page, /<strong>Add products<\/strong>/);
