@@ -80,6 +80,8 @@ A helper is included only for the presentation bridge. It requires a short-lived
 cd /srv/css/css_admin
 export CSS_ADMIN_SNAPSHOT_ADMIN_TOKEN='PASTE_SHORT_LIVED_ADMIN_TOKEN'
 
+# Run this as the same Unix user that owns the PM2/Next.js process.
+# Do not assume a dedicated css_admin Unix account exists on every host.
 node scripts/portal-structure-snapshot.mjs \
   --company-ref BI0002 \
   --allow-group-finance \
