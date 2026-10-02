@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PortalModal } from "@/components/portal/portal-modal";
 import { PurchaseRuleEditor } from "@/components/purchase-rule-editor";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { purchaseProductLabel } from "@/lib/purchase-product-label";
 import { getCompanyPortalAdministration, getCompanyPortalContext } from "@/lib/graphql/company-portal";
 import {
   getCompanyPortalAppliedPurchaseControls,
@@ -181,7 +182,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                   </div>
 
                   <div className={styles.templateFooter}>
-                    <span>{template.rules.length ? `${template.rules.slice(0, 2).map((rule) => `${rule.sku} — ${rule.product_name || "Product name unavailable"}`).join(", ")}${template.rules.length > 2 ? ` +${template.rules.length - 2} more` : ""}` : "No product rules yet"}</span>
+                    <span>{template.rules.length ? `${template.rules.slice(0, 2).map((rule) => `${purchaseProductLabel(rule.sku, rule.product_name)}`).join(", ")}${template.rules.length > 2 ? ` +${template.rules.length - 2} more` : ""}` : "No product rules yet"}</span>
                     <PortalModal
                       variant="row"
                       title={template.name}
@@ -211,7 +212,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                             {template.rules.map((rule) => (
                               <div className={styles.ruleRow} key={rule.rule_id}>
                                 <span className={styles.ruleProductIdentity}>
-                                  <strong>{rule.sku} — {rule.product_name || "Product name unavailable"}</strong>
+                                  <strong>{purchaseProductLabel(rule.sku, rule.product_name)}</strong>
                                 </span>
                                 <span>{rule.quantity_limit}</span>
                                 <span>{rule.duration_days} days</span>
