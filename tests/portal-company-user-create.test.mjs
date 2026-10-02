@@ -43,3 +43,19 @@ test("company managers with user-edit capability get an add-user panel", () => {
   assert.match(page, /customer account must already exist in Magento/i);
   assert.match(page, /Create a company role before adding another user/);
 });
+
+
+test("Portal user and role creation use compact modal actions instead of wide inline expanders", () => {
+  const page = source("app/(portal)/portal/page.tsx");
+  const styles = source("components/portal/portal-dashboard.module.css");
+
+  assert.match(page, /AdminActionModal/);
+  assert.match(page, /triggerLabel="Add user"/);
+  assert.match(page, /triggerLabel="Create role"/);
+  assert.match(page, /AdminFormFooter/);
+  assert.doesNotMatch(page, /management-create-panel nested-card/);
+
+  assert.match(styles, /\.managementSectionHeader/);
+  assert.match(styles, /\.modalHint/);
+  assert.match(styles, /\.inlineGuidance/);
+});
