@@ -224,7 +224,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                                       <input type="hidden" name="templateId" value={template.template_id} />
                                       <input type="hidden" name="ruleId" value={rule.rule_id} />
                                       <div className={styles.ruleEditHeading}>
-                                        <strong>{rule.sku} — {rule.product_name || "Product name unavailable"}</strong>
+                                        <strong>{purchaseProductLabel(rule.sku, rule.product_name)}</strong>
                                         <small>This changes the template definition only. Existing allowances change when Apply is used.</small>
                                       </div>
                                       <div className={styles.ruleEditFields}>
