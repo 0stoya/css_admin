@@ -377,7 +377,7 @@ export default async function CompanyManagementPage({
                         title={`Open Shop as ${userName(user)}`}
                       >
                         <Store size={16} aria-hidden="true" />
-                        <span>Shop</span>
+                        <span>Shop as user</span>
                       </a>
                       <AdminActionModal
                         title={`Edit ${userName(user)}`}
