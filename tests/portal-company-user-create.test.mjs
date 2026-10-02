@@ -40,7 +40,8 @@ test("company managers with user-edit capability get an add-user panel", () => {
   assert.match(page, /name="managerId"/);
   assert.match(page, /name="approvalType"/);
   assert.match(page, /name="approvalThreshold"/);
-  assert.match(page, /customer account must already exist in Magento/i);
+  assert.match(page, /Existing Magento customer required/);
+  assert.match(page, /does not create a new Magento login/);
   assert.match(page, /Create a company role before adding another user/);
 });
 
