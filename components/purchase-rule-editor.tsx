@@ -84,10 +84,12 @@ export function PurchaseRuleEditor({
   companyId,
   initialRules = [],
   label = "Rules",
+  autoOpenProductPicker = true,
 }: {
   companyId?: number;
   initialRules?: PurchaseRuleEditorValue[];
   label?: string;
+  autoOpenProductPicker?: boolean;
 }) {
   const pathname = usePathname();
   const resolvedCompanyId = companyId ?? companyIdFromPath(pathname);
@@ -96,7 +98,9 @@ export function PurchaseRuleEditor({
   const [rows, setRows] = useState<DraftRule[]>(() =>
     initialRules.map((rule, index) => toDraft(rule, index + 1)),
   );
-  const [pickerOpen, setPickerOpen] = useState(Boolean(resolvedCompanyId) && initialRules.length === 0);
+  const [pickerOpen, setPickerOpen] = useState(
+    Boolean(resolvedCompanyId) && initialRules.length === 0 && autoOpenProductPicker,
+  );
   const serialized = useMemo(() => serialize(rows), [rows]);
 
   function updateRow(
