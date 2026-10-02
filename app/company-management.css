@@ -149,7 +149,7 @@
 }
 .management-user-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1.45fr) minmax(130px, 0.8fr) minmax(120px, 0.75fr) minmax(110px, 0.65fr) minmax(180px, 1.1fr) 82px;
+  grid-template-columns: minmax(220px, 1.45fr) minmax(130px, 0.8fr) minmax(120px, 0.75fr) minmax(110px, 0.65fr) minmax(180px, 1.1fr) 150px;
   gap: 0.8rem;
 }
 .management-role-grid {
@@ -210,6 +210,28 @@
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
+}
+.management-row-action {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 0;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  padding: 0.38rem 0.52rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--css-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.management-row-action:hover {
+  border-color: #c8dced;
+  background: var(--css-primary-soft);
+  color: var(--css-primary-hover);
 }
 .management-record-action > span {
   font-size: 1.15rem;
