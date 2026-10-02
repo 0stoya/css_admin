@@ -307,6 +307,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                                   <PurchaseRuleEditor
                                     companyId={administration.company_id}
                                     label="New product rules"
+                                    autoOpenProductPicker={false}
                                   />
                                   <div className={styles.addProductsActions}>
                                     <button className="button" type="submit">Add selected products</button>
