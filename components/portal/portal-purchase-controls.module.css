@@ -352,6 +352,10 @@
   gap: 1rem;
 }
 
+.templateFooter {
+  justify-content: flex-end;
+}
+
 .templateFooter > span,
 .assignmentFooter > span {
   min-width: 0;

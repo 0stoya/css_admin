@@ -190,7 +190,6 @@ export default async function CompanyPortalPurchaseControlsPage({
                   </div>
 
                   <div className={styles.templateFooter}>
-                    <span>{template.rules.length ? `${template.rules.slice(0, 2).map((rule) => `${purchaseProductLabel(rule.sku, rule.product_name)}`).join(", ")}${template.rules.length > 2 ? ` +${template.rules.length - 2} more` : ""}` : "No product rules yet"}</span>
                     <PortalModal
                       variant="row"
                       title={template.name}
