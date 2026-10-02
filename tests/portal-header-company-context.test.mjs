@@ -34,12 +34,15 @@ test("Portal header exposes the existing company memberships as a compact switch
   assert.match(switcher, /defaultValue=\{selectedCompanyId\}/);
   assert.match(switcher, /aria-label="Switch company"/);
   assert.match(switcher, /onChange=\{\(\) => formRef\.current\?\.requestSubmit\(\)\}/);
-  assert.match(switcher, /company\.reference \+ " · "/);
+  assert.match(switcher, /portalTitles\[String\(company\.company_id\)\]/);
+  assert.match(switcher, /destinationTitle/);
+  assert.match(switcher, /company\.reference \+ " · " \+ destinationLabel/);
 
   // The header reuses the existing Fluid membership-checked mutation; it does
   // not derive switch permissions from the temporary structure snapshot.
   assert.match(actions, /await selectCompanyPortalCompany\(companyId\)/);
   assert.doesNotMatch(switcher, /temporary-portal-company-structure/);
+  assert.match(layout, /getTemporaryPortalCompanyStructure\(context\.selected_company_id\)/);
 });
 
 test("Portal header company switcher stays compact on narrow screens", () => {
