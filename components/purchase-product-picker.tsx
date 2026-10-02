@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { searchPurchaseControlProducts } from "@/lib/actions/purchase-control-product-search";
+import {
+  searchPortalPurchaseControlProducts,
+  searchPurchaseControlProducts,
+} from "@/lib/actions/purchase-control-product-search";
 
 export type PurchaseProductPickerItem = {
   product_id: number;
@@ -23,10 +26,12 @@ export function PurchaseProductPicker({
   companyId,
   excludedSkus,
   onAdd,
+  searchMode = "admin",
 }: {
   companyId: number;
   excludedSkus: string[];
   onAdd: (products: PurchaseProductPickerItem[]) => void;
+  searchMode?: "admin" | "portal";
 }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<SearchResult | null>(null);
@@ -47,7 +52,9 @@ export function PurchaseProductPicker({
       setError(null);
 
       try {
-        const response = await searchPurchaseControlProducts(companyId, query.trim());
+        const response = searchMode === "portal"
+          ? await searchPortalPurchaseControlProducts(query.trim())
+          : await searchPurchaseControlProducts(companyId, query.trim());
         if (!active) return;
 
         if (!response.ok) {
@@ -68,7 +75,7 @@ export function PurchaseProductPicker({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [companyId, query]);
+  }, [companyId, query, searchMode]);
 
   const availableItems = (result?.items ?? []).filter(
     (product) => !excluded.has(product.sku.toLocaleLowerCase("en")),
