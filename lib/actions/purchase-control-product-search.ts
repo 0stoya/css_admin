@@ -5,6 +5,7 @@ import {
   type CompanyCatalogProductSearchResult,
 } from "@/lib/graphql/company-catalog-products";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { getCompanyPortalCatalogPolicy } from "@/lib/graphql/company-portal-catalog";
 import { customerGraphqlRequest } from "@/lib/graphql/customer-client";
 
 export type PurchaseControlProductSearchActionResult =
@@ -38,6 +39,46 @@ const PORTAL_PRODUCTS_QUERY = /* GraphQL */ `
   }
 `;
 
+function normalized(value: string) {
+  return value.trim().toLocaleLowerCase("en");
+}
+
+async function getPortalCompanyPolicyProducts(
+  search: string,
+): Promise<CompanyCatalogProductSearchResult | null> {
+  try {
+    const policy = await getCompanyPortalCatalogPolicy();
+    if (!policy.product_restriction) return null;
+
+    const query = normalized(search);
+    const products = policy.allowed_products
+      .filter((product) => {
+        if (!query) return true;
+        return normalized(product.sku).includes(query) || normalized(product.name).includes(query);
+      })
+      .sort((left, right) => left.sku.localeCompare(right.sku, "en", { sensitivity: "base" }));
+
+    const pageSize = 50;
+    return {
+      total_count: products.length,
+      items: products.slice(0, pageSize).map((product) => ({
+        product_id: product.product_id,
+        sku: product.sku,
+        name: product.name,
+      })),
+      page_info: {
+        page_size: pageSize,
+        current_page: 1,
+        total_pages: products.length === 0 ? 0 : Math.ceil(products.length / pageSize),
+      },
+    };
+  } catch {
+    // Catalogue-policy access is a separate company ACL. Fall back to the
+    // existing customer storefront search for purchase-control-only managers.
+    return null;
+  }
+}
+
 export async function searchPurchaseControlProducts(
   companyId: number,
   search: string,
@@ -61,6 +102,11 @@ export async function searchPortalPurchaseControlProducts(
   search: string,
 ): Promise<PurchaseControlProductSearchActionResult> {
   try {
+    const companyProducts = await getPortalCompanyPolicyProducts(search);
+    if (companyProducts) {
+      return { ok: true, result: companyProducts };
+    }
+
     const data = await customerGraphqlRequest<
       PortalProductsData,
       { currentPage: number; pageSize: number; search?: string }
