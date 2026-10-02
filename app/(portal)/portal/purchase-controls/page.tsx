@@ -10,9 +10,12 @@ import {
   getCompanyPortalPurchaseControls,
 } from "@/lib/graphql/company-portal-purchase-controls";
 import {
+  addPortalPurchaseControlRulesAction,
   applyPortalPurchaseControlTemplateAction,
   assignPortalPurchaseControlTemplateAction,
+  deletePortalPurchaseControlRuleAction,
   deletePortalPurchaseControlTemplateAction,
+  renamePortalPurchaseControlTemplateAction,
   resetPortalPurchaseControlCountersAction,
   savePortalPurchaseControlTemplateAction,
   updatePortalPurchaseControlRuleAction,
@@ -150,7 +153,7 @@ export default async function CompanyPortalPurchaseControlsPage({
               >
                 <form className={styles.modalStack} action={savePortalPurchaseControlTemplateAction}>
                   <div className="field"><label htmlFor="newTemplateName">Template name</label><input id="newTemplateName" name="name" required placeholder="e.g. Monthly PPE allowance" /></div>
-                  <PurchaseRuleEditor label="Template rules" />
+                  <PurchaseRuleEditor companyId={administration.company_id} label="Template rules" />
                   <div><button className="button" type="submit">Create template</button></div>
                 </form>
               </PortalModal>
@@ -196,6 +199,31 @@ export default async function CompanyPortalPurchaseControlsPage({
                           <div><span>Assigned roles</span><strong>{template.assigned_roles.length}</strong></div>
                           <div><span>Status</span><strong>{template.assigned_roles.length ? "In use" : "Unassigned"}</strong></div>
                         </section>
+
+                        {canManage ? (
+                          <section className={styles.templateIdentity}>
+                            <div>
+                              <span>Template name</span>
+                              <strong>{template.name}</strong>
+                            </div>
+                            <details className={styles.templateNameEditor}>
+                              <summary>Edit name</summary>
+                              <form action={renamePortalPurchaseControlTemplateAction}>
+                                <input type="hidden" name="templateId" value={template.template_id} />
+                                <div className="field">
+                                  <label htmlFor={`rename-template-${template.template_id}`}>Template name</label>
+                                  <input
+                                    id={`rename-template-${template.template_id}`}
+                                    name="name"
+                                    defaultValue={template.name}
+                                    required
+                                  />
+                                </div>
+                                <button className="button" type="submit">Save name</button>
+                              </form>
+                            </details>
+                          </section>
+                        ) : null}
 
                         <section className={styles.modalSection}>
                           <div className={styles.modalSectionHeading}>
@@ -250,6 +278,9 @@ export default async function CompanyPortalPurchaseControlsPage({
                                         </div>
                                       </div>
                                       <div className={styles.ruleEditActions}>
+                                        <button className="button button-danger" type="submit" formAction={deletePortalPurchaseControlRuleAction}>
+                                          Delete rule
+                                        </button>
                                         <button className="button" type="submit">Save rule</button>
                                       </div>
                                     </form>
@@ -264,21 +295,22 @@ export default async function CompanyPortalPurchaseControlsPage({
                         {canManage ? (
                           <>
                             <section className={styles.modalSection}>
-                              <details className={styles.advancedEditor}>
+                              <details className={styles.addProducts}>
                                 <summary>
                                   <span>
-                                    <strong>Add/remove products or rename template</strong>
-                                    <small>Use this only for structural template changes. Existing lines can be edited above.</small>
+                                    <strong>Add products</strong>
+                                    <small>Add new catalogue products only. Edit or delete existing lines above.</small>
                                   </span>
                                 </summary>
-                                <form className={styles.modalStack} action={savePortalPurchaseControlTemplateAction}>
+                                <form className={styles.modalStack} action={addPortalPurchaseControlRulesAction}>
                                   <input type="hidden" name="templateId" value={template.template_id} />
-                                  <div className="field">
-                                    <label htmlFor={`template-name-${template.template_id}`}>Template name</label>
-                                    <input id={`template-name-${template.template_id}`} name="name" required defaultValue={template.name} />
+                                  <PurchaseRuleEditor
+                                    companyId={administration.company_id}
+                                    label="New product rules"
+                                  />
+                                  <div className={styles.addProductsActions}>
+                                    <button className="button" type="submit">Add selected products</button>
                                   </div>
-                                  <PurchaseRuleEditor initialRules={template.rules} label="Products in template" />
-                                  <div><button className="button" type="submit">Save structural changes</button></div>
                                 </form>
                               </details>
                             </section>
