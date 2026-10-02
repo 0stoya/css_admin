@@ -423,7 +423,7 @@
 
 .ruleRow {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.7fr) 5rem 7rem 8rem;
+  grid-template-columns: minmax(16rem, 1.9fr) 5rem 7rem 8rem minmax(4rem, auto);
   gap: 0.8rem;
   align-items: center;
   padding: 0.78rem 0.9rem;
@@ -447,6 +447,132 @@
 .historyRow small {
   color: #768a9b;
   font-size: 0.72rem;
+}
+
+.ruleProductIdentity {
+  min-width: 0;
+}
+
+.ruleProductIdentity strong {
+  overflow-wrap: anywhere;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.ruleEditDetails {
+  min-width: 0;
+  justify-self: end;
+}
+
+.ruleEditDetails > summary {
+  width: fit-content;
+  cursor: pointer;
+  list-style: none;
+  color: var(--css-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.ruleEditDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ruleEditDetails[open] {
+  grid-column: 1 / -1;
+  width: 100%;
+  justify-self: stretch;
+  margin-top: 0.2rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #e4ecf1;
+}
+
+.ruleEditDetails[open] > summary {
+  margin-left: auto;
+}
+
+.ruleEditForm {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid #dbe6ec;
+  border-radius: 11px;
+  background: #f8fbfd;
+}
+
+.ruleEditHeading {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.ruleEditHeading small {
+  color: var(--css-muted);
+  line-height: 1.45;
+}
+
+.ruleEditFields {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.ruleEditActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.advancedEditor {
+  overflow: hidden;
+  border: 1px solid #dbe6ec;
+  border-radius: 12px;
+  background: #fbfdfe;
+}
+
+.advancedEditor > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0.95rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.advancedEditor > summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedEditor > summary span {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.advancedEditor > summary small {
+  color: var(--css-muted);
+  font-size: 0.74rem;
+  font-weight: 400;
+}
+
+.advancedEditor > summary::after {
+  content: "+";
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--css-primary-soft);
+  color: var(--css-primary);
+}
+
+.advancedEditor[open] > summary::after {
+  content: "−";
+}
+
+.advancedEditor > form {
+  padding: 1rem;
+  border-top: 1px solid #e4ecf1;
+  background: #fff;
 }
 
 .tableHeader {
@@ -671,7 +797,8 @@
   }
 
   .modalSummary,
-  .actionGrid {
+  .actionGrid,
+  .ruleEditFields {
     grid-template-columns: 1fr;
   }
 
@@ -700,6 +827,7 @@
   .ruleRow > :nth-child(2)::before { content: "Limit"; }
   .ruleRow > :nth-child(3)::before { content: "Window"; }
   .ruleRow > :nth-child(4)::before { content: "Starts"; }
+  .ruleRow > :nth-child(5)::before { content: "Edit"; }
 
   .allowanceRow > :nth-child(1)::before { content: "User"; }
   .allowanceRow > :nth-child(2)::before { content: "Product"; }
@@ -712,6 +840,8 @@
   .historyRow > :nth-child(3)::before { content: "Order"; }
   .historyRow > :nth-child(4)::before { content: "Quantity"; }
   .historyRow > :nth-child(5)::before { content: "Ordered"; }
+
+  .ruleEditDetails[open]::before { content: none; }
 
   .ruleRow > *::before,
   .allowanceRow > *::before,
