@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ShieldCheck, Trash2, UserMinus, UsersRound } from "lucide-react";
+import { ShieldCheck, Store, Trash2, UserMinus, UsersRound } from "lucide-react";
 import { AdminActionModal, AdminCloseFooter, AdminFormFooter } from "@/components/admin-action-modal";
 import { CompanyPermissionPicker } from "@/components/company-permission-picker";
 import { getCompany } from "@/lib/graphql/companies";
@@ -12,6 +12,7 @@ import {
   type CompanyManagement,
 } from "@/lib/graphql/company-management";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
+import { getStorefrontUrl } from "@/lib/config";
 import {
   addCompanyUserAction,
   deleteCompanyRoleAction,
@@ -368,6 +369,16 @@ export default async function CompanyManagementPage({
                     <span className="management-record-cell" data-label="Approval"><span className="badge badge-neutral">{approvalSummary(user)}</span></span>
                     <span className="management-record-cell" data-label="Access"><CapabilityPills user={user} /></span>
                     <div className="management-record-action">
+                      <a
+                        className="management-row-action"
+                        href={`${getStorefrontUrl()}/api/auth/impersonate/start?companyId=${company.company_id}&userId=${user.user_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Open Shop as ${userName(user)}`}
+                      >
+                        <Store size={16} aria-hidden="true" />
+                        <span>Shop as user</span>
+                      </a>
                       <AdminActionModal
                         title={`Edit ${userName(user)}`}
                         description={`Customer #${user.customer_id} · Company user #${user.user_id}. Fluid remains authoritative for effective permissions.`}
