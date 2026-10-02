@@ -427,6 +427,14 @@
   gap: 0.12rem;
 }
 
+.purchase-rule-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .purchase-rule-grid {
   overflow-x: auto;
   border: 1px solid var(--css-border);
