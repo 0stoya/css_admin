@@ -85,11 +85,13 @@ export function PurchaseRuleEditor({
   initialRules = [],
   label = "Rules",
   autoOpenProductPicker = true,
+  searchMode = "admin",
 }: {
   companyId?: number;
   initialRules?: PurchaseRuleEditorValue[];
   label?: string;
   autoOpenProductPicker?: boolean;
+  searchMode?: "admin" | "portal";
 }) {
   const pathname = usePathname();
   const resolvedCompanyId = companyId ?? companyIdFromPath(pathname);
@@ -196,6 +198,7 @@ export function PurchaseRuleEditor({
           companyId={resolvedCompanyId}
           excludedSkus={rows.map((row) => row.sku)}
           onAdd={addProducts}
+          searchMode={searchMode}
         />
       ) : null}
 
