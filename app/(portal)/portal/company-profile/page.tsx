@@ -105,13 +105,17 @@ function aggregateGroupFinance(
     { order_count: 0, value: 0 },
   );
 
+  type CompleteFinancePeriod = NonNullable<StoredCompanyFinancialSummary["last_365_days"]>;
   const last365 = snapshots.map((snapshot) => snapshot.last_365_days);
-  const last365Days = last365.some((period) => period === null)
+  const completeLast365 = last365.filter(
+    (period): period is CompleteFinancePeriod => period !== null,
+  );
+  const last365Days = completeLast365.length !== last365.length
     ? null
-    : last365.reduce(
+    : completeLast365.reduce<CompleteFinancePeriod>(
         (total, period) => ({
-          order_count: total.order_count + (period?.order_count ?? 0),
-          value: total.value + (period?.value ?? 0),
+          order_count: total.order_count + period.order_count,
+          value: total.value + period.value,
         }),
         { order_count: 0, value: 0 },
       );
