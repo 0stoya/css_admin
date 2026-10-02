@@ -158,6 +158,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                     label="Template rules"
                     autoOpenProductPicker={false}
                     searchMode="portal"
+                    allowManualSku
                   />
                   <div><button className="button" type="submit">Create template</button></div>
                 </form>
@@ -313,6 +314,7 @@ export default async function CompanyPortalPurchaseControlsPage({
                                     label="New product rules"
                                     autoOpenProductPicker={false}
                                     searchMode="portal"
+                    allowManualSku
                                   />
                                   <div className={styles.addProductsActions}>
                                     <button className="button" type="submit">Add selected products</button>
