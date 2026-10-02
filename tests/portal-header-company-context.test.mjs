@@ -49,3 +49,17 @@ test("Portal header company switcher stays compact on narrow screens", () => {
   assert.match(styles, /@media \(max-width: 620px\)[\s\S]*\.brandLabel \{ display: none; \}/);
   assert.match(styles, /@media \(max-width: 360px\)[\s\S]*\.headerCompanySwitcher \{ display: none; \}/);
 });
+
+
+test("Portal overview keeps company switching in the header and gives the company title full hero width", () => {
+  const page = source("app/(portal)/portal/page.tsx");
+  const styles = source("components/portal/portal-dashboard.module.css");
+
+  assert.match(page, /className=\{\`\$\{styles\.hero\} \$\{styles\.heroSingle\}\`\}/);
+  assert.match(styles, /\.heroSingle \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(styles, /\.heroSingle h1 \{[\s\S]*max-width: 1120px/);
+
+  const selectedHero = page.slice(page.indexOf("const accessItems"), page.indexOf("{(params.success || message)"));
+  assert.doesNotMatch(selectedHero, /styles\.heroContext/);
+  assert.doesNotMatch(selectedHero, /aria-label="Switch company"/);
+});
