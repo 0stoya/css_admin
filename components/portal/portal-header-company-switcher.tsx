@@ -8,9 +8,11 @@ import styles from "@/components/portal/portal-shell.module.css";
 export function PortalHeaderCompanySwitcher({
   companies,
   selectedCompanyId,
+  portalTitles,
 }: {
   companies: CompanyPortalMembership[];
   selectedCompanyId: number | null;
+  portalTitles: Record<string, string>;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -33,14 +35,21 @@ export function PortalHeaderCompanySwitcher({
         aria-label="Switch company"
         onChange={() => formRef.current?.requestSubmit()}
       >
-        {companies.map((company) => (
-          <option key={company.company_id} value={company.company_id}>
-            {company.reference
-              ? company.reference + " · " + (company.name || "Company " + company.company_id)
-              : company.name || "Company " + company.company_id}
-            {!company.active ? " — inactive" : ""}
-          </option>
-        ))}
+        {companies.map((company) => {
+          const destinationTitle = portalTitles[String(company.company_id)]?.trim();
+          const destinationLabel = destinationTitle
+            || company.name
+            || "Company " + company.company_id;
+
+          return (
+            <option key={company.company_id} value={company.company_id}>
+              {company.reference
+                ? company.reference + " · " + destinationLabel
+                : destinationLabel}
+              {!company.active ? " — inactive" : ""}
+            </option>
+          );
+        })}
       </select>
       <noscript>
         <button className={styles.headerCompanyFallbackButton} type="submit">
