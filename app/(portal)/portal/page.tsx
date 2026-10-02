@@ -172,41 +172,11 @@ export default async function CompanyPortalPage({
 
   return (
     <div className={styles.dashboard}>
-      <section className={styles.hero}>
+      <section className={`${styles.hero} ${styles.heroSingle}`}>
         <div className={styles.heroCopy}>
           <span className={styles.kicker}>{selected.reference || "Your company"}</span>
           <h1>{selected.name || "Your company account"}</h1>
           <p className={styles.heroLead}>Your company services, people and purchasing controls in one place.</p>
-        </div>
-
-        <div className={styles.heroContext}>
-          <div className={styles.contextTop}>
-            <div className={styles.contextLabel}>
-              <span>Current company</span>
-              <strong>{selected.name || `Company ${selected.company_id}`}</strong>
-            </div>
-            <span className={`${styles.status}${selected.active ? "" : ` ${styles.statusInactive}`}`}>
-              {selected.active ? "Active" : "Inactive"}
-            </span>
-          </div>
-
-          {context.companies.length > 1 ? (
-            <form className={styles.switcher} action={selectPortalCompanyAction}>
-              <select name="companyId" defaultValue={context.selected_company_id ?? undefined} aria-label="Switch company">
-                {context.companies.map((company) => (
-                  <option key={company.company_id} value={company.company_id}>
-                    {company.name || `Company ${company.company_id}`}{company.reference ? ` (${company.reference})` : ""}{!company.active ? " — inactive" : ""}
-                  </option>
-                ))}
-              </select>
-              <button type="submit">Switch</button>
-            </form>
-          ) : (
-            <div className={styles.contextLabel}>
-              <span>Account reference</span>
-              <strong>{selected.reference || "—"}</strong>
-            </div>
-          )}
         </div>
       </section>
 
