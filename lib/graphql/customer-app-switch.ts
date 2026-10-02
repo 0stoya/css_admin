@@ -27,6 +27,12 @@ const VALIDATE_CUSTOMER = /* GraphQL */ `
   }
 `;
 
+const REVOKE_CUSTOMER = /* GraphQL */ `
+  mutation RevokeCustomerSupportToken {
+    revokeCustomerToken { result }
+  }
+`;
+
 async function request<TData>(
   query: string,
   variables: Record<string, unknown>,
@@ -95,13 +101,26 @@ export async function exchangeCustomerAppSwitch(
   return data.cssExchangeCustomerAppSwitch;
 }
 
-export async function validateCompanyCustomerToken(token: string) {
+export async function validateCompanyCustomerToken(token: string, expectedEmail?: string) {
   const data = await request<{
     customer: { email: string };
     css_company_context: { authenticated: boolean; is_company_customer: boolean };
   }>(VALIDATE_CUSTOMER, {}, token);
 
+  const email = data.customer.email.trim().toLocaleLowerCase();
+  const expected = expectedEmail?.trim().toLocaleLowerCase();
+
   return data.css_company_context.authenticated
     && data.css_company_context.is_company_customer
-    && Boolean(data.customer.email);
+    && Boolean(email)
+    && (!expected || email === expected);
+}
+
+export async function revokeCustomerToken(token: string) {
+  const data = await request<{ revokeCustomerToken: { result: boolean } }>(
+    REVOKE_CUSTOMER,
+    {},
+    token,
+  );
+  return Boolean(data.revokeCustomerToken?.result);
 }
