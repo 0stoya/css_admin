@@ -149,6 +149,33 @@
   font-weight: 700;
 }
 
+.switchForm {
+  margin-left: auto;
+}
+
+.switchButton {
+  min-height: 32px;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #b7cddd;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--css-primary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.switchButton:hover {
+  border-color: var(--css-primary);
+  background: var(--css-primary-soft);
+}
+
+.switchButton:focus-visible {
+  outline: 3px solid var(--css-secondary);
+  outline-offset: 2px;
+}
+
 .unavailable {
   display: grid;
   gap: 0.45rem;
