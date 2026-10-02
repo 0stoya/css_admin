@@ -80,6 +80,53 @@
   gap: 0.55rem;
 }
 
+.headerCompanySwitcher {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.headerCompanyLabel {
+  color: #718397;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.headerCompanySelect {
+  width: clamp(170px, 20vw, 290px);
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid #b8cbd9;
+  border-radius: 8px;
+  padding: 0.48rem 2rem 0.48rem 0.7rem;
+  background: #fff;
+  color: var(--css-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.headerCompanySelect:hover {
+  border-color: var(--css-primary);
+}
+
+.headerCompanyFallbackButton {
+  min-height: 40px;
+  border: 1px solid #b8cbd9;
+  border-radius: 8px;
+  padding: 0.48rem 0.68rem;
+  background: #fff;
+  color: var(--css-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .signoutForm { margin: 0; }
 
 .appSwitchLink {
@@ -124,6 +171,8 @@
 }
 
 .brand:focus-visible,
+.headerCompanySelect:focus-visible,
+.headerCompanyFallbackButton:focus-visible,
 .appSwitchLink:focus-visible,
 .signoutButton:focus-visible,
 .sidebarLink:focus-visible {
@@ -233,6 +282,8 @@
 }
 
 @media (max-width: 900px) {
+  .headerCompanyLabel { display: none; }
+  .headerCompanySelect { width: clamp(150px, 24vw, 220px); }
   .workspace { grid-template-columns: 1fr; }
 
   .sidebar {
@@ -279,6 +330,20 @@
 }
 
 @media (max-width: 620px) {
+  .brandLabel { display: none; }
+  .headerCompanySelect {
+    width: clamp(112px, 29vw, 150px);
+    min-height: 42px;
+    padding-left: 0.55rem;
+    font-size: 0.76rem;
+  }
+  .appSwitchLink {
+    width: 42px;
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .appSwitchLink span { display: none; }
+
   .headerInner {
     width: calc(100% - 1.25rem);
     min-height: 64px;
@@ -323,6 +388,7 @@
 }
 
 @media (max-width: 360px) {
+  .headerCompanySwitcher { display: none; }
   .brandLogo { width: 132px; }
 }
 
