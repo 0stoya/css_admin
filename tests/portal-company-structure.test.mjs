@@ -55,3 +55,21 @@ test("permanent branch contains no temporary snapshot runtime dependency", () =>
   assert.doesNotMatch(profile, /temporary-portal-company-structure/);
   assert.doesNotMatch(profile, /CSS_ADMIN_PORTAL_STRUCTURE_SNAPSHOT/);
 });
+
+
+test("structure company switching is limited to existing customer memberships", () => {
+  const actions = source("app/(portal)/portal/actions.ts");
+  const page = source("app/(portal)/portal/company-structure/page.tsx");
+
+  assert.match(page, /selectPortalCompanyAction/);
+  assert.match(page, /context\?\.companies\.map\(\(company\) => company\.company_id\)/);
+  assert.match(page, /switchableCompanyIds\.includes\(node\.company\.company_id\)/);
+  assert.match(page, /name="returnTo" value="\/portal\/company-structure"/);
+  assert.match(page, /currentPositionLabel/);
+  assert.match(page, /"Group company"/);
+
+  assert.match(actions, /await selectCompanyPortalCompany\(companyId\)/);
+  assert.match(actions, /returnToStructure && isCompanyAdminAfterSwitch/);
+  assert.match(actions, /redirect\("\/portal\/company-structure"\)/);
+  assert.match(actions, /revalidatePath\("\/portal\/company-structure"\)/);
+});
