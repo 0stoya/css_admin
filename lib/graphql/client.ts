@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 import { getMagentoConfig } from "@/lib/config";
+import {
+  logMagentoGraphqlTiming,
+  magentoGraphqlSignal,
+} from "@/lib/graphql/runtime";
 import { getAdminToken, hasAdminAuthRetryMarker } from "@/lib/session";
 
 export type GraphQLErrorItem = {
@@ -39,18 +43,39 @@ async function execute<TData, TVariables extends Record<string, unknown>>(
   }
 
   const { graphqlUrl, storeCode } = getMagentoConfig();
-  const response = await fetch(graphqlUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Store: storeCode,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
-    cache: "no-store",
-  });
+  const startedAt = Date.now();
+  let response: Response;
+
+  try {
+    response = await fetch(graphqlUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Store: storeCode,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, variables }),
+      cache: "no-store",
+      signal: magentoGraphqlSignal(),
+    });
+  } catch {
+    logMagentoGraphqlTiming({
+      scope: "admin",
+      query,
+      startedAt,
+      outcome: "network-error",
+    });
+    throw new GraphQLRequestError("Magento GraphQL is unavailable.", [], 503);
+  }
 
   if (!response.ok) {
+    logMagentoGraphqlTiming({
+      scope: "admin",
+      query,
+      startedAt,
+      outcome: "http-error",
+      status: response.status,
+    });
     throw new GraphQLRequestError(`Magento GraphQL returned HTTP ${response.status}.`, [], response.status);
   }
 
@@ -59,6 +84,13 @@ async function execute<TData, TVariables extends Record<string, unknown>>(
     (error) => error.extensions?.category === "graphql-authorization",
   );
   if (authorizationRejected && !(await hasAdminAuthRetryMarker())) {
+    logMagentoGraphqlTiming({
+      scope: "admin",
+      query,
+      startedAt,
+      outcome: "authorization-rejected",
+      status: response.status,
+    });
     throw new GraphQLRequestError(
       body.errors?.[0]?.message || "Admin authorization failed.",
       body.errors ?? [],
@@ -66,6 +98,14 @@ async function execute<TData, TVariables extends Record<string, unknown>>(
       "admin",
     );
   }
+
+  logMagentoGraphqlTiming({
+    scope: "admin",
+    query,
+    startedAt,
+    outcome: body.errors?.length ? "graphql-error" : "ok",
+    status: response.status,
+  });
 
   return body;
 }
