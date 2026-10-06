@@ -10,6 +10,8 @@ test("admin and company GraphQL calls use bounded upstream requests with optiona
   const companyClient = source("lib/graphql/customer-client.ts");
 
   assert.match(runtime, /MAGENTO_GRAPHQL_TIMEOUT_MS/);
+  assert.match(runtime, /MIN_TIMEOUT_MS = 1000/);
+  assert.match(runtime, /MAX_TIMEOUT_MS = 60000/);
   assert.match(runtime, /AbortSignal\.timeout/);
   assert.match(runtime, /MAGENTO_GRAPHQL_TIMING/);
   assert.match(adminClient, /signal:\s*magentoGraphqlSignal\(\)/);
