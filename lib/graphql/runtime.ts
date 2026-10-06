@@ -1,14 +1,21 @@
 const DEFAULT_TIMEOUT_MS = 15000;
+const MIN_TIMEOUT_MS = 1000;
 const MAX_TIMEOUT_MS = 60000;
 
-function configuredPositiveInteger(name: string, fallback: number, max: number) {
-  const parsed = Number(process.env[name] ?? "");
-  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > max) return fallback;
+function configuredTimeoutMs() {
+  const parsed = Number(process.env.MAGENTO_GRAPHQL_TIMEOUT_MS ?? "");
+  if (
+    !Number.isInteger(parsed)
+    || parsed < MIN_TIMEOUT_MS
+    || parsed > MAX_TIMEOUT_MS
+  ) {
+    return DEFAULT_TIMEOUT_MS;
+  }
   return parsed;
 }
 
 export function magentoGraphqlTimeoutMs() {
-  return configuredPositiveInteger("MAGENTO_GRAPHQL_TIMEOUT_MS", DEFAULT_TIMEOUT_MS, MAX_TIMEOUT_MS);
+  return configuredTimeoutMs();
 }
 
 export function magentoGraphqlSignal() {
