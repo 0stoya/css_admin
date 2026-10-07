@@ -4,7 +4,6 @@ import { getStorefrontUrl } from "@/lib/config";
 import {
   createCustomerAppSwitch,
   getCustomerSupportContext,
-  revokeCustomerToken,
   selectCustomerCompany,
   validateCompanyCustomerToken,
 } from "@/lib/graphql/customer-app-switch";
@@ -57,7 +56,6 @@ export async function GET(request: NextRequest) {
     return failure(companyId, "The Shop as customer request was invalid.");
   }
 
-  let customerToken: string | null = null;
   try {
     const management = await getCompanyManagement(companyId);
     const user = management.users.find((candidate) => candidate.user_id === userId);
@@ -65,7 +63,10 @@ export async function GET(request: NextRequest) {
       return failure(companyId, "The selected customer is not a member of this company.");
     }
 
-    customerToken = await generateCustomerTokenAsAdmin(user.email);
+    // Magento customer-token revocation is customer-wide (and JWT revocation is
+    // timestamp based), so this short-lived server-side bootstrap token must not
+    // be "cleaned up" with revokeCustomerToken. It never enters the browser or URL.
+    const customerToken = await generateCustomerTokenAsAdmin(user.email);
     const supportContext = await getCustomerSupportContext(customerToken);
     const expectedEmail = user.email.trim().toLocaleLowerCase();
     if (
@@ -102,9 +103,5 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     return failure(companyId, safeErrorMessage(error));
-  } finally {
-    if (customerToken) {
-      await revokeCustomerToken(customerToken).catch(() => undefined);
-    }
   }
 }
