@@ -64,7 +64,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Magento customer-token revocation is customer-wide (and JWT revocation is
-    // timestamp based), so this short-lived server-side bootstrap token must not\n    // be cleaned up with customer-wide token revocation. It never enters the browser or URL.
+    // timestamp based), so this short-lived server-side bootstrap token must not
+    // be cleaned up with customer-wide token revocation. It never enters the browser or URL.
     const customerToken = await generateCustomerTokenAsAdmin(user.email);
     const supportContext = await getCustomerSupportContext(customerToken);
     const expectedEmail = user.email.trim().toLocaleLowerCase();
