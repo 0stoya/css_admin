@@ -27,8 +27,8 @@ test("admin impersonation uses Magento native token issuance then existing app-s
   assert.match(route, /candidate\.user_id === userId/);
   assert.match(route, /generateCustomerTokenAsAdmin\(user\.email\)/);
   assert.match(route, /createCustomerAppSwitch\(customerToken, "STORE", challenge\)/);
-  assert.match(route, /revokeCustomerToken\(customerToken\)/);
-  assert.doesNotMatch(route, /searchParams\.set\(["\'](?:customer_)?token/);
+  assert.doesNotMatch(route, /revokeCustomerToken/);
+  assert.doesNotMatch(route, /searchParams\.set\(["'](?:customer_)?token/);
 });
 
 test("admin impersonation preserves the selected company and blocks cross-company baskets", () => {
