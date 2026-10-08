@@ -32,10 +32,13 @@ type RoleImportOptions = ScopedImportOptions & {
 
 type ResolvedCompany = CompanySummary & { reference: string };
 
-type CompanyContext = {
+type ControlsContext = {
   company: ResolvedCompany;
-  management: CompanyManagement;
   controls: CompanyControlsBundle;
+};
+
+type CompanyContext = ControlsContext & {
+  management: CompanyManagement;
 };
 
 type PlannedRow = FlatCompanyImportRow & {
@@ -43,7 +46,7 @@ type PlannedRow = FlatCompanyImportRow & {
 };
 
 type ControlsCompanyPlan = {
-  context: CompanyContext;
+  context: ControlsContext;
   bundle: CompanyControlsBundle;
   rows: PlannedRow[];
 };
@@ -193,6 +196,18 @@ async function contextsForCompanies(companies: ResolvedCompany[]) {
   return new Map(entries);
 }
 
+async function controlsForCompanies(companies: ResolvedCompany[]) {
+  const unique = new Map(companies.map((company) => [company.company_id, company]));
+  const entries = await mapWithConcurrency([...unique.values()], 5, async (company) => [
+    company.company_id,
+    {
+      company,
+      controls: await getCompanyControlsBundle(company.company_id),
+    } satisfies ControlsContext,
+  ] as const);
+  return new Map(entries);
+}
+
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, work: (item: T) => Promise<R>) {
   const results = new Array<R>(items.length);
   let next = 0;
@@ -236,9 +251,9 @@ function controlsInput(bundle: CompanyControlsBundle, dryRun: boolean, createMis
 }
 
 async function dryRunControlsPlans(plans: ControlsCompanyPlan[], createMissingRoles = false) {
-  for (const plan of plans) {
+  await mapWithConcurrency(plans, 3, async (plan) => {
     const actionable = plan.rows.filter((row) => row.status === "Created" || row.status === "Updated");
-    if (!actionable.length) continue;
+    if (!actionable.length) return;
     try {
       const result = await importCompanyControls(controlsInput(plan.bundle, true, createMissingRoles));
       if (!result.valid) throw new Error("Fluid did not accept the dry run.");
@@ -249,13 +264,13 @@ async function dryRunControlsPlans(plans: ControlsCompanyPlan[], createMissingRo
         row.message = `Dry run rejected: ${message}`;
       });
     }
-  }
+  });
 }
 
 async function applyControlsPlans(plans: ControlsCompanyPlan[], createMissingRoles = false) {
-  for (const plan of plans) {
+  await mapWithConcurrency(plans, 3, async (plan) => {
     const actionable = plan.rows.filter((row) => row.status === "Created" || row.status === "Updated");
-    if (!actionable.length) continue;
+    if (!actionable.length) return;
     try {
       const dryRun = await importCompanyControls(controlsInput(plan.bundle, true, createMissingRoles));
       if (!dryRun.valid) throw new Error("Fluid did not accept the dry run.");
@@ -271,7 +286,7 @@ async function applyControlsPlans(plans: ControlsCompanyPlan[], createMissingRol
         row.message = `Apply failed: ${message}`;
       });
     }
-  }
+  });
 }
 
 function assertNoErrors(rows: PlannedRow[]) {
@@ -511,7 +526,7 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
   const parsed = parseRoleProducts(source);
   const resolver = await companyResolver(parsed.groups.map((group) => group.companyRef), options.lockedCompanyId);
   const resolved = parsed.groups.map((group) => resolver.get(normalizedRef(group.companyRef))).filter((company): company is ResolvedCompany => Boolean(company));
-  const contexts = await contextsForCompanies(resolved);
+  const contexts = await controlsForCompanies(resolved);
   const plansByCompany = new Map<number, ControlsCompanyPlan>();
   const allRows: PlannedRow[] = [...parsed.errors];
 
@@ -526,18 +541,33 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
       allRows.push(changedRow(group.row, company, item, "Error", "A blank SKU must be the only row for a role; it means an explicit empty product allowlist.")); continue;
     }
     const context = contexts.get(company.company_id)!;
-    const role = roleByName(context.management.roles).get(normalized(item));
-    if (!role) { allRows.push(changedRow(group.row, company, item, "Error", "Role does not exist for this company.")); continue; }
-    if (!role.manageable) { allRows.push(changedRow(group.row, company, item, "Error", "Fluid marks this role as protected/non-manageable.")); continue; }
+    const sourceControl = roleControlByName(context.controls).get(normalized(item));
+    if (!sourceControl) {
+      allRows.push(changedRow(
+        group.row,
+        company,
+        item,
+        "Error",
+        "Role does not exist or Fluid marks it as protected/non-manageable.",
+      ));
+      continue;
+    }
+
     let plan = plansByCompany.get(company.company_id);
-    if (!plan) { plan = { context, bundle: cloneBundle(context.controls), rows: [] }; plansByCompany.set(company.company_id, plan); }
-    const control = roleControlByName(plan.bundle).get(normalized(item));
-    if (!control) { const row = changedRow(group.row, company, item, "Error", "Fluid controls export did not include this role."); plan.rows.push(row); allRows.push(row); continue; }
+    if (!plan) {
+      const bundle = cloneBundle(context.controls);
+      bundle.role_controls = [];
+      plan = { context, bundle, rows: [] };
+      plansByCompany.set(company.company_id, plan);
+    }
+
+    const control = structuredClone(sourceControl);
     const desiredAll = group.hasAll;
     const desiredSkus = desiredAll || group.hasBlank ? [] : [...group.skus];
     const unchanged = control.preselect_all_products === desiredAll && sameStringSet(control.allowed_product_skus, desiredSkus);
     control.preselect_all_products = desiredAll;
     control.allowed_product_skus = desiredSkus;
+    plan.bundle.role_controls.push(control);
     const row = changedRow(group.row, company, item, unchanged ? "Skipped" : "Updated", unchanged ? "No product restriction changes detected." : desiredAll ? "Role will be unrestricted across products." : `Role product allowlist will contain ${desiredSkus.length} SKU${desiredSkus.length === 1 ? "" : "s"}.`);
     plan.rows.push(row); allRows.push(row);
   }
@@ -590,7 +620,7 @@ async function planCompanyProducts(source: string, options: ScopedImportOptions)
   const parsed = parseCompanyProducts(source);
   const resolver = await companyResolver(parsed.groups.map((group) => group.companyRef), options.lockedCompanyId);
   const resolved = parsed.groups.map((group) => resolver.get(normalizedRef(group.companyRef))).filter((company): company is ResolvedCompany => Boolean(company));
-  const contexts = await contextsForCompanies(resolved);
+  const contexts = await controlsForCompanies(resolved);
   const plans: ControlsCompanyPlan[] = [];
   const allRows: PlannedRow[] = [...parsed.errors];
 
@@ -605,6 +635,7 @@ async function planCompanyProducts(source: string, options: ScopedImportOptions)
     }
     const context = contexts.get(company.company_id)!;
     const bundle = cloneBundle(context.controls);
+    bundle.role_controls = [];
     const desiredRestricted = !group.hasAll;
     const desiredSkus = group.hasAll || group.hasBlank ? [] : [...group.skus];
     const current = bundle.company_catalog;
