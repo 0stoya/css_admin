@@ -16,6 +16,7 @@ import {
   type CompanyControlsBundle,
 } from "@/lib/graphql/company-controls";
 import {
+  getCompanyCatalogPolicy,
   getRoleCatalogPolicy,
   resolveProductIdsBySkus,
   saveRoleCatalogProducts,
@@ -551,20 +552,31 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
     .map((group) => resolver.get(normalizedRef(group.companyRef)))
     .filter((company): company is ResolvedCompany => Boolean(company));
   const uniqueCompanies = new Map(resolved.map((company) => [company.company_id, company]));
-  const managementEntries = await mapWithConcurrency(
+  const companyEntries = await mapWithConcurrency(
     [...uniqueCompanies.values()],
     4,
-    async (company) => [
-      company.company_id,
-      await getCompanyManagement(company.company_id),
-    ] as const,
+    async (company) => {
+      const [management, catalogPolicy] = await Promise.all([
+        getCompanyManagement(company.company_id),
+        getCompanyCatalogPolicy(company.company_id),
+      ]);
+      return [company.company_id, { management, catalogPolicy }] as const;
+    },
   );
-  const managementByCompany = new Map(managementEntries);
+  const companyData = new Map(companyEntries);
 
-  const requestedSkus = parsed.groups.flatMap((group) => [...group.skus]);
-  const resolvedProducts = await resolveProductIdsBySkus(requestedSkus);
-  const productIdsBySku = new Map(
-    [...resolvedProducts].map(([sku, productId]) => [normalized(sku), productId]),
+  // Restricted company catalogues are authoritative for Role-products. In
+  // particular, this preserves child/simple SKUs that Magento's generic
+  // products search may hide because of catalogue visibility.
+  const unrestrictedSkus = parsed.groups.flatMap((group) => {
+    const company = resolver.get(normalizedRef(group.companyRef));
+    if (!company) return [];
+    const data = companyData.get(company.company_id);
+    return data?.catalogPolicy.product_restriction ? [] : [...group.skus];
+  });
+  const fallbackResolvedProducts = await resolveProductIdsBySkus(unrestrictedSkus);
+  const fallbackProductIdsBySku = new Map(
+    [...fallbackResolvedProducts].map(([sku, productId]) => [normalized(sku), productId]),
   );
 
   const allRows: PlannedRow[] = [...parsed.errors];
@@ -609,8 +621,8 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
       continue;
     }
 
-    const management = managementByCompany.get(company.company_id)!;
-    const role = roleByName(management.roles).get(normalized(item));
+    const data = companyData.get(company.company_id)!;
+    const role = roleByName(data.management.roles).get(normalized(item));
     if (!role) {
       allRows.push(changedRow(group.row, company, item, "Error", "Role does not exist for this company."));
       continue;
@@ -627,7 +639,17 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
     }
 
     const desiredSkus = group.hasAll || group.hasBlank ? [] : [...group.skus];
-    const missingSkus = desiredSkus.filter((sku) => !productIdsBySku.has(normalized(sku)));
+    const companyProductIdsBySku = data.catalogPolicy.product_restriction
+      ? new Map(
+          data.catalogPolicy.allowed_products.map((product) => [
+            normalized(product.sku),
+            product.product_id,
+          ]),
+        )
+      : fallbackProductIdsBySku;
+    const missingSkus = desiredSkus.filter(
+      (sku) => !companyProductIdsBySku.has(normalized(sku)),
+    );
     if (missingSkus.length) {
       const shown = missingSkus.slice(0, 12);
       const remainder = missingSkus.length - shown.length;
@@ -636,7 +658,9 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
         company,
         item,
         "Error",
-        `Product SKU${missingSkus.length === 1 ? "" : "s"} not found: ${shown.join(", ")}${remainder > 0 ? ` (+${remainder} more)` : ""}.`,
+        data.catalogPolicy.product_restriction
+          ? `Product SKU${missingSkus.length === 1 ? "" : "s"} not allowed by company catalogue: ${shown.join(", ")}${remainder > 0 ? ` (+${remainder} more)` : ""}.`
+          : `Product SKU${missingSkus.length === 1 ? "" : "s"} not found: ${shown.join(", ")}${remainder > 0 ? ` (+${remainder} more)` : ""}.`,
       ));
       continue;
     }
@@ -646,7 +670,9 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
       company,
       role,
       desiredAll: group.hasAll,
-      desiredProductIds: desiredSkus.map((sku) => productIdsBySku.get(normalized(sku))!),
+      desiredProductIds: desiredSkus.map(
+        (sku) => companyProductIdsBySku.get(normalized(sku))!,
+      ),
     });
   }
 
