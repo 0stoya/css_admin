@@ -64,12 +64,22 @@ function harness(companies) {
       },
     },
     "@/lib/graphql/catalog-policy": {
-      resolveProductIdsBySkus: async (skus) => new Map(
-        [...new Set(skus)].map((sku) => [
-          sku,
-          sku === "A800" ? 800 : sku === "A800/07" ? 807 : 999,
-        ]),
-      ),
+      getCompanyCatalogPolicy: async (companyId) => ({
+        company_id: companyId,
+        allow_public_catalog: false,
+        category_restriction: false,
+        allowed_category_ids: [],
+        allowed_categories: [],
+        product_restriction: true,
+        allowed_product_ids: [800, 807],
+        allowed_products: [
+          { product_id: 800, sku: "A800", name: "A800 Parent" },
+          { product_id: 807, sku: "A800/07", name: "A800 Size 07" },
+        ],
+      }),
+      resolveProductIdsBySkus: async () => {
+        throw new Error("restricted company role-products must not use generic product search");
+      },
       getRoleCatalogPolicy: async (companyId, roleId) => ({
         company_id: companyId,
         role_id: roleId,
@@ -134,6 +144,24 @@ test("role-product preview groups the same role name independently across 35 chi
   assert.ok(preview.every((row) => row.item === "Access All"));
   assert.ok(preview.every((row) => row.status === "Updated"));
   assert.ok(preview.every((row) => /2 SKUs/.test(row.message)));
+});
+
+
+test("restricted company role-products resolve child SKUs from the company catalogue boundary", async () => {
+  const companies = [company(5)];
+  const { flat, saves } = harness(companies);
+
+  const source = [
+    "sku,user_role_name,company_ref",
+    "A800/07,Access All,AMS005",
+  ].join("\n");
+
+  const preview = await flat.previewRoleProductsCsv(source);
+
+  assert.equal(preview.length, 1);
+  assert.equal(preview[0].status, "Updated");
+  assert.match(preview[0].message, /1 SKU/);
+  assert.equal(saves.length, 0);
 });
 
 test("role-product apply uses the dedicated role-product mutation once per child company", async () => {
