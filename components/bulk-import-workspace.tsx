@@ -424,7 +424,7 @@ export function BulkImportWorkspace() {
           action={bulkRoleProductsImportAction}
           exportHref={`${base}/exports/role-products`}
           exampleHref={`${base}/examples/role-products`}
-          help="Rows are grouped by company_ref + user_role_name. Only roles named in the CSV are changed."
+          help="Rows are grouped by company_ref + user_role_name. Only roles named in the CSV are changed. Large SKU lists are supported up to 200,000 data rows per file."
         />
       </div>
 
@@ -436,7 +436,7 @@ export function BulkImportWorkspace() {
           action={bulkCompanyProductsImportAction}
           exportHref={`${base}/exports/company-products`}
           exampleHref={`${base}/examples/company-products`}
-          help="Rows are grouped by company_ref. Category settings and unrelated company controls remain untouched."
+          help="Rows are grouped by company_ref. Category settings and unrelated company controls remain untouched. Large SKU lists are supported up to 200,000 data rows per file."
         />
       </div>
 
