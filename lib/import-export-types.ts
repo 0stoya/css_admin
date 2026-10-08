@@ -70,6 +70,7 @@ export type FlatCompanyImportRow = {
 export type FlatCompanyImportState = {
   phase: "idle" | "preview" | "applied" | "error";
   sourceCsv: string;
+  sourceToken?: string;
   rows: FlatCompanyImportRow[];
   create_missing_roles: boolean;
   create_missing_templates?: boolean;
