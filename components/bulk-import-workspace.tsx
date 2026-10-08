@@ -17,6 +17,7 @@ import styles from "@/components/company-import-export-workspace.module.css";
 const initialState: FlatCompanyImportState = {
   phase: "idle",
   sourceCsv: "",
+  sourceToken: "",
   rows: [],
   create_missing_roles: false,
   create_missing_templates: false,
@@ -274,7 +275,7 @@ function BulkImportPanel({
       {state.phase === "preview" ? (
         <form action={formAction} className={styles.applyArea}>
           <input name="intent" type="hidden" value="apply" />
-          <input name="sourceCsv" type="hidden" value={state.sourceCsv} />
+          <input name="sourceToken" type="hidden" value={state.sourceToken ?? ""} />
           <input name="createMissingRoles" type="hidden" value={state.create_missing_roles ? "true" : "false"} />
           <input name="createMissingTemplates" type="hidden" value={state.create_missing_templates ? "true" : "false"} />
           <input name="applyPurchaseTemplates" type="hidden" value={state.apply_purchase_templates ? "true" : "false"} />
@@ -299,7 +300,7 @@ function BulkImportPanel({
           {allowRetryFailed && failedCompanyRefs.length ? (
             <form action={formAction} className={styles.applyArea}>
               <input name="intent" type="hidden" value="retry" />
-              <input name="sourceCsv" type="hidden" value={state.sourceCsv} />
+              <input name="sourceToken" type="hidden" value={state.sourceToken ?? ""} />
               <input name="createMissingRoles" type="hidden" value={state.create_missing_roles ? "true" : "false"} />
               <input name="createMissingTemplates" type="hidden" value={state.create_missing_templates ? "true" : "false"} />
               <input name="applyPurchaseTemplates" type="hidden" value={state.apply_purchase_templates ? "true" : "false"} />
