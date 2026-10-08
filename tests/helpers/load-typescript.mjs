@@ -18,7 +18,7 @@ export default function loadTypeScript(root, relativePath, imports = {}) {
   }));
   const commonJsModule = { exports: {} };
   vm.runInNewContext(result.outputText, {
-    module: commonJsModule, exports: commonJsModule.exports, FormData, URLSearchParams,
+    module: commonJsModule, exports: commonJsModule.exports, FormData, URLSearchParams, structuredClone,
     require: (name) => {
       if (Object.hasOwn(imports, name)) return imports[name];
       throw new Error(`Unmocked dependency: ${name}`);

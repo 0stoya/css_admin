@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import {
+  readStagedBulkImportCsv,
+  stageBulkImportCsv,
+} from "@/lib/bulk-import-staging";
+import {
   applyCompanyProductsCsv,
   applyCompanyUsersFlatCsv,
   applyRoleProductsCsv,
@@ -28,7 +32,7 @@ import {
   previewCompanyDescriptionsCsv,
 } from "@/lib/company-description-import";
 
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 type RunnerOptions = {
   createMissingRoles: boolean;
@@ -53,14 +57,30 @@ function importIntent(formData: FormData): ImportIntent {
 
 async function sourceCsv(formData: FormData, intent: ImportIntent) {
   if (intent !== "preview") {
-    const source = String(formData.get("sourceCsv") ?? "");
-    if (!source.trim()) throw new Error("CSV source is required.");
-    return source;
+    const token = String(formData.get("sourceToken") ?? "").trim();
+    if (token) {
+      return {
+        source: await readStagedBulkImportCsv(token),
+        sourceToken: token,
+      };
+    }
+
+    // Compatibility for a stale page rendered by the previous deployment.
+    const legacySource = String(formData.get("sourceCsv") ?? "");
+    if (!legacySource.trim()) {
+      throw new Error("Bulk import preview expired. Preview the CSV again.");
+    }
+    return { source: legacySource, sourceToken: "" };
   }
+
   const value = formData.get("file");
-  if (!(value instanceof File) || value.size === 0) throw new Error("Choose a CSV file to preview.");
-  if (value.size > MAX_FILE_BYTES) throw new Error("CSV files are limited to 2 MB.");
-  return value.text();
+  if (!(value instanceof File) || value.size === 0) {
+    throw new Error("Choose a CSV file to preview.");
+  }
+  if (value.size > MAX_FILE_BYTES) {
+    throw new Error("CSV files are limited to 10 MB.");
+  }
+  return { source: await value.text(), sourceToken: "" };
 }
 
 function retryCompanyRefs(formData: FormData, intent: ImportIntent) {
@@ -88,15 +108,20 @@ function mergeRetryRows(
 }
 
 async function runBulkImport(previous: FlatCompanyImportState, formData: FormData, runner: Runner) {
-  let source = previous.sourceCsv;
+  let source = "";
+  let sourceToken = previous.sourceToken ?? "";
   const createMissingRoles = formData.get("createMissingRoles") === "true";
   const createMissingTemplates = formData.get("createMissingTemplates") === "true";
   const applyPurchaseTemplates = formData.get("applyPurchaseTemplates") === "true";
 
   try {
     const intent = importIntent(formData);
-    source = await sourceCsv(formData, intent);
-    if (new TextEncoder().encode(source).byteLength > MAX_FILE_BYTES) throw new Error("CSV files are limited to 2 MB.");
+    const loaded = await sourceCsv(formData, intent);
+    source = loaded.source;
+    sourceToken = loaded.sourceToken;
+    if (new TextEncoder().encode(source).byteLength > MAX_FILE_BYTES) {
+      throw new Error("CSV files are limited to 10 MB.");
+    }
 
     const onlyCompanyRefs = retryCompanyRefs(formData, intent);
     const resultRows = await runner(source, intent !== "preview", {
@@ -109,6 +134,10 @@ async function runBulkImport(previous: FlatCompanyImportState, formData: FormDat
       ? mergeRetryRows(previous.rows, resultRows, onlyCompanyRefs)
       : resultRows;
 
+    if (intent === "preview") {
+      sourceToken = await stageBulkImportCsv(source);
+    }
+
     if (intent !== "preview") {
       revalidatePath("/companies");
       revalidatePath("/bulk-import");
@@ -116,7 +145,8 @@ async function runBulkImport(previous: FlatCompanyImportState, formData: FormDat
 
     return {
       phase: intent === "preview" ? "preview" : "applied",
-      sourceCsv: source,
+      sourceCsv: "",
+      sourceToken,
       rows,
       create_missing_roles: createMissingRoles,
       create_missing_templates: createMissingTemplates,
@@ -126,7 +156,8 @@ async function runBulkImport(previous: FlatCompanyImportState, formData: FormDat
   } catch (error) {
     return {
       phase: "error",
-      sourceCsv: source,
+      sourceCsv: "",
+      sourceToken,
       rows: [],
       create_missing_roles: createMissingRoles,
       create_missing_templates: createMissingTemplates,
