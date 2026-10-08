@@ -28,7 +28,7 @@ import {
   previewCompanyDescriptionsCsv,
 } from "@/lib/company-description-import";
 
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 type RunnerOptions = {
   createMissingRoles: boolean;
@@ -59,7 +59,7 @@ async function sourceCsv(formData: FormData, intent: ImportIntent) {
   }
   const value = formData.get("file");
   if (!(value instanceof File) || value.size === 0) throw new Error("Choose a CSV file to preview.");
-  if (value.size > MAX_FILE_BYTES) throw new Error("CSV files are limited to 2 MB.");
+  if (value.size > MAX_FILE_BYTES) throw new Error("CSV files are limited to 10 MB.");
   return value.text();
 }
 
@@ -96,7 +96,7 @@ async function runBulkImport(previous: FlatCompanyImportState, formData: FormDat
   try {
     const intent = importIntent(formData);
     source = await sourceCsv(formData, intent);
-    if (new TextEncoder().encode(source).byteLength > MAX_FILE_BYTES) throw new Error("CSV files are limited to 2 MB.");
+    if (new TextEncoder().encode(source).byteLength > MAX_FILE_BYTES) throw new Error("CSV files are limited to 10 MB.");
 
     const onlyCompanyRefs = retryCompanyRefs(formData, intent);
     const resultRows = await runner(source, intent !== "preview", {
