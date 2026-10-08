@@ -102,6 +102,87 @@ export function normalizeRoleCatalogPolicy(policy: RoleCatalogPolicy): RoleCatal
   };
 }
 
+
+type ProductIdsBySkuData = {
+  products: {
+    items: Array<{
+      id: number;
+      sku: string;
+    }>;
+  };
+};
+
+const PRODUCT_IDS_BY_SKU_QUERY = /* GraphQL */ `
+  query AdminResolveProductIdsBySku(
+    $filter: ProductAttributeFilterInput!
+    $pageSize: Int!
+  ) {
+    products(
+      filter: $filter
+      currentPage: 1
+      pageSize: $pageSize
+    ) {
+      items {
+        id
+        sku
+      }
+    }
+  }
+`;
+
+function normalizedSku(value: string) {
+  return value.trim().toLocaleLowerCase("en");
+}
+
+export async function resolveProductIdsBySkus(skus: string[]) {
+  const unique = [...new Map(
+    skus
+      .map((sku) => sku.trim())
+      .filter(Boolean)
+      .map((sku) => [normalizedSku(sku), sku]),
+  ).values()];
+
+  const batchSize = 200;
+  const batches = Array.from(
+    { length: Math.ceil(unique.length / batchSize) },
+    (_, index) => unique.slice(index * batchSize, (index + 1) * batchSize),
+  );
+  const resolved = new Map<string, number>();
+  let next = 0;
+
+  async function worker() {
+    while (next < batches.length) {
+      const index = next;
+      next += 1;
+      const batch = batches[index];
+      const data = await graphqlRequest<
+        ProductIdsBySkuData,
+        { filter: { sku: { in: string[] } }; pageSize: number }
+      >(PRODUCT_IDS_BY_SKU_QUERY, {
+        filter: { sku: { in: batch } },
+        pageSize: Math.max(1, batch.length),
+      });
+
+      for (const product of data.products.items || []) {
+        const sku = product.sku?.trim();
+        const id = Number(product.id);
+        if (!sku || !Number.isInteger(id) || id <= 0) continue;
+        resolved.set(normalizedSku(sku), id);
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(4, Math.max(1, batches.length)) }, worker),
+  );
+
+  return new Map(
+    unique
+      .map((sku) => [sku, resolved.get(normalizedSku(sku))] as const)
+      .filter((entry): entry is readonly [string, number] => typeof entry[1] === "number"),
+  );
+}
+
 const COMPANY_CATALOG_POLICY_QUERY = /* GraphQL */ `
   query AdminCompanyCatalogPolicy($companyId: Int!) {
     css_admin_company_catalog_policy(company_id: $companyId) {
