@@ -574,7 +574,9 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
     const data = companyData.get(company.company_id);
     return data?.catalogPolicy.product_restriction ? [] : [...group.skus];
   });
-  const fallbackResolvedProducts = await resolveProductIdsBySkus(unrestrictedSkus);
+  const fallbackResolvedProducts = unrestrictedSkus.length
+    ? await resolveProductIdsBySkus(unrestrictedSkus)
+    : new Map<string, number>();
   const fallbackProductIdsBySku = new Map(
     [...fallbackResolvedProducts].map(([sku, productId]) => [normalized(sku), productId]),
   );
