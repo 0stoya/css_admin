@@ -18,6 +18,7 @@ import {
 import type { FlatCompanyImportRow, ImportRowStatus } from "@/lib/import-export-types";
 
 const MAX_ROWS = 5000;
+const MAX_PRODUCT_ROWS = 200000;
 const TRUE_VALUES = new Set(["1", "true", "yes", "y"]);
 const FALSE_VALUES = new Set(["0", "false", "no", "n", ""]);
 
@@ -114,14 +115,20 @@ function changedRow(
   };
 }
 
-function ensureRowLimit(rows: string[][]) {
-  if (rows.length - 1 > MAX_ROWS) throw new Error(`CSV import is limited to ${MAX_ROWS.toLocaleString()} data rows per preview.`);
+function ensureRowLimit(rows: string[][], maxRows = MAX_ROWS) {
+  if (rows.length - 1 > maxRows) {
+    throw new Error(`CSV import is limited to ${maxRows.toLocaleString()} data rows per preview.`);
+  }
 }
 
-function parseExactCsv(source: string, expectedHeaders: readonly string[]) {
+function parseExactCsv(
+  source: string,
+  expectedHeaders: readonly string[],
+  maxRows = MAX_ROWS,
+) {
   const rows = parseCsv(source).filter((row) => row.some((value) => value.trim() !== ""));
   if (!rows.length) throw new Error("The CSV file is empty.");
-  ensureRowLimit(rows);
+  ensureRowLimit(rows, maxRows);
   const headers = rows[0].map(normalized);
   const expected = expectedHeaders.map(normalized);
   if (
@@ -461,13 +468,17 @@ type ProductGroup = {
   row: number;
   companyRef: string;
   roleName?: string;
-  skus: string[];
+  skus: Set<string>;
   hasAll: boolean;
   hasBlank: boolean;
 };
 
 function parseRoleProducts(source: string) {
-  const rows = parseExactCsv(source, ["sku", "user_role_name", "company_ref"]);
+  const rows = parseExactCsv(
+    source,
+    ["sku", "user_role_name", "company_ref"],
+    MAX_PRODUCT_ROWS,
+  );
   const groups = new Map<string, ProductGroup>();
   const errors: PlannedRow[] = [];
   rows.forEach((values, index) => {
@@ -480,10 +491,17 @@ function parseRoleProducts(source: string) {
       return;
     }
     const key = `${normalizedRef(companyRef)}\u0000${normalized(roleName)}`;
-    const group = groups.get(key) ?? { row, companyRef, roleName, skus: [], hasAll: false, hasBlank: false };
+    const group = groups.get(key) ?? {
+      row,
+      companyRef,
+      roleName,
+      skus: new Set<string>(),
+      hasAll: false,
+      hasBlank: false,
+    };
     if (sku === "*") group.hasAll = true;
     else if (!sku) group.hasBlank = true;
-    else if (!group.skus.includes(sku)) group.skus.push(sku);
+    else group.skus.add(sku);
     groups.set(key, group);
   });
   return { groups: [...groups.values()], errors };
@@ -501,10 +519,10 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
     const company = resolver.get(normalizedRef(group.companyRef));
     const item = group.roleName ?? "";
     if (!company) { allRows.push(errorRow(group.row, group.companyRef, item, "company_ref was not found or is ambiguous.")); continue; }
-    if (group.hasAll && (group.skus.length || group.hasBlank)) {
+    if (group.hasAll && (group.skus.size || group.hasBlank)) {
       allRows.push(changedRow(group.row, company, item, "Error", "SKU * must be the only row for a role; it means unrestricted/all products.")); continue;
     }
-    if (group.hasBlank && group.skus.length) {
+    if (group.hasBlank && group.skus.size) {
       allRows.push(changedRow(group.row, company, item, "Error", "A blank SKU must be the only row for a role; it means an explicit empty product allowlist.")); continue;
     }
     const context = contexts.get(company.company_id)!;
@@ -516,7 +534,7 @@ async function planRoleProducts(source: string, options: ScopedImportOptions) {
     const control = roleControlByName(plan.bundle).get(normalized(item));
     if (!control) { const row = changedRow(group.row, company, item, "Error", "Fluid controls export did not include this role."); plan.rows.push(row); allRows.push(row); continue; }
     const desiredAll = group.hasAll;
-    const desiredSkus = desiredAll || group.hasBlank ? [] : group.skus;
+    const desiredSkus = desiredAll || group.hasBlank ? [] : [...group.skus];
     const unchanged = control.preselect_all_products === desiredAll && sameStringSet(control.allowed_product_skus, desiredSkus);
     control.preselect_all_products = desiredAll;
     control.allowed_product_skus = desiredSkus;
@@ -540,7 +558,11 @@ export async function applyRoleProductsCsv(source: string, options: ScopedImport
 }
 
 function parseCompanyProducts(source: string) {
-  const rows = parseExactCsv(source, ["sku", "company_ref"]);
+  const rows = parseExactCsv(
+    source,
+    ["sku", "company_ref"],
+    MAX_PRODUCT_ROWS,
+  );
   const groups = new Map<string, ProductGroup>();
   const errors: PlannedRow[] = [];
   rows.forEach((values, index) => {
@@ -549,10 +571,16 @@ function parseCompanyProducts(source: string) {
     const companyRef = (values[1] ?? "").trim();
     if (!companyRef) { errors.push(errorRow(row, companyRef, sku, "company_ref is required.")); return; }
     const key = normalizedRef(companyRef);
-    const group = groups.get(key) ?? { row, companyRef, skus: [], hasAll: false, hasBlank: false };
+    const group = groups.get(key) ?? {
+      row,
+      companyRef,
+      skus: new Set<string>(),
+      hasAll: false,
+      hasBlank: false,
+    };
     if (sku === "*") group.hasAll = true;
     else if (!sku) group.hasBlank = true;
-    else if (!group.skus.includes(sku)) group.skus.push(sku);
+    else group.skus.add(sku);
     groups.set(key, group);
   });
   return { groups: [...groups.values()], errors };
@@ -569,16 +597,16 @@ async function planCompanyProducts(source: string, options: ScopedImportOptions)
   for (const group of parsed.groups) {
     const company = resolver.get(normalizedRef(group.companyRef));
     if (!company) { allRows.push(errorRow(group.row, group.companyRef, "Company products", "company_ref was not found or is ambiguous.")); continue; }
-    if (group.hasAll && (group.skus.length || group.hasBlank)) {
+    if (group.hasAll && (group.skus.size || group.hasBlank)) {
       allRows.push(changedRow(group.row, company, "Company products", "Error", "SKU * must be the only row for a company; it means no company product restriction.")); continue;
     }
-    if (group.hasBlank && group.skus.length) {
+    if (group.hasBlank && group.skus.size) {
       allRows.push(changedRow(group.row, company, "Company products", "Error", "A blank SKU must be the only row for a company; it means product restriction enabled with an empty allowlist.")); continue;
     }
     const context = contexts.get(company.company_id)!;
     const bundle = cloneBundle(context.controls);
     const desiredRestricted = !group.hasAll;
-    const desiredSkus = group.hasAll || group.hasBlank ? [] : group.skus;
+    const desiredSkus = group.hasAll || group.hasBlank ? [] : [...group.skus];
     const current = bundle.company_catalog;
     const unchanged = current.product_restriction === desiredRestricted && sameStringSet(current.allowed_product_skus, desiredSkus);
     current.product_restriction = desiredRestricted;
