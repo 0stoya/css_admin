@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { allowedStructureCompanies, currentStaffJobIdentity } from "@/lib/admin-job-auth";
 import {
-  acknowledgeOwnerExportJobs, cancelQueuedOwnerExportJob, enqueueStructureExport, enqueueBulkExport,
+  acknowledgeOwnerExportJobs, cancelQueuedOwnerExportJob, enqueueStructureExport, enqueueBulkExport, hasExportJobStore,
 } from "@/lib/admin-export-jobs";
 import { getAllCompanies } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
@@ -46,6 +46,7 @@ export async function queueStructureSnapshotAction(formData: FormData) {
 }
 
 export async function queueBulkExportAction(formData: FormData) {
+  if (!hasExportJobStore()) redirect("/jobs?error=Background+exports+are+not+configured");
   const kind = String(formData.get("exportKind") ?? "");
   if (!isBulkExportKind(kind)) redirect("/jobs?error=Invalid+bulk+export+type");
   let errorMessage: string | null = null;
