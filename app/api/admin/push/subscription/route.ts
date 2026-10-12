@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { currentStaffJobIdentity } from "@/lib/admin-job-auth";
 import {
   newStaffPushDevice, PUSH_DEVICE_COOKIE, registerStaffPush,
-  revokeStaffPushDevice, staffPushAvailable, staffPushCookieOptions,
+  revokeStaffPushDevice, staffPushAvailable, staffPushCookieOptions, staffPushPublicOrigin,
   validStaffPushDevice,
 } from "@/lib/staff-push";
 
@@ -13,7 +13,10 @@ const headers = { "Cache-Control": "private, no-store, max-age=0" };
 function sameOriginMutation(request: Request) {
   const origin = request.headers.get("origin");
   const site = request.headers.get("sec-fetch-site");
-  if (!origin || origin !== new URL(request.url).origin) return false;
+  const expected = staffPushPublicOrigin();
+  // Reverse proxies may forward Next.js an internal HTTP URL. Never use that
+  // or untrusted X-Forwarded-* client headers as the browser's CSRF origin.
+  if (!expected || !origin || origin !== expected) return false;
   if (site && site !== "same-origin" && site !== "none") return false;
   return true;
 }
