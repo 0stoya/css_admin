@@ -133,18 +133,25 @@ const CONTROLS_QUERY = `query AdminExportJobCompanyControls($companyId: Int!) {
   }
 }`;
 
-const BULK_CONTROLS_QUERY = `query AdminExportJobBulkControls($companyId: Int!) {
+const BULK_COMPANY_PRODUCTS_QUERY = `query AdminExportJobBulkCompanyProducts($companyId: Int!) {
   css_admin_company_controls_export(company_id: $companyId) {
-    format schema_version company_id
-    company_catalog {
-      allow_public_catalog category_restriction allowed_category_ids
+    company_id company_catalog {
       product_restriction allowed_products { sku }
     }
-    role_controls {
-      role_name sort_order allowed_resources selected_category_ids
-      preselect_all_products allowed_product_skus
+  }
+}`;
+
+const BULK_ROLE_PRODUCTS_QUERY = `query AdminExportJobBulkRoleProducts($companyId: Int!) {
+  css_admin_company_controls_export(company_id: $companyId) {
+    company_id role_controls {
+      role_name preselect_all_products allowed_product_skus
     }
-    purchase_controls {
+  }
+}`;
+
+const BULK_PURCHASE_CONTROLS_QUERY = `query AdminExportJobBulkPurchaseControls($companyId: Int!) {
+  css_admin_company_controls_export(company_id: $companyId) {
+    company_id purchase_controls {
       templates {
         name
         rules { sku quantity_limit duration_days start_date }
@@ -167,7 +174,9 @@ const allowedOperations = new Set([
   "AdminExportJobCompanyList",
   "AdminExportJobCompanyManagement",
   "AdminExportJobCompanyControls",
-  "AdminExportJobBulkControls",
+  "AdminExportJobBulkCompanyProducts",
+  "AdminExportJobBulkRoleProducts",
+  "AdminExportJobBulkPurchaseControls",
   "AdminExportJobCompanyPresentation",
 ]);
 function assertReadOnlyWorkerOperation(query: string) {
@@ -285,22 +294,73 @@ async function getBulkManagement(companyId: number): Promise<CompanyManagement> 
   return data.css_admin_company_management;
 }
 
-async function getBulkControls(companyId: number): Promise<CompanyControlsBundle> {
-  const data = await gql<{
-    css_admin_company_controls_export: Omit<CompanyControlsBundle, "company_catalog"> & {
-      company_catalog: Omit<CompanyControlsBundle["company_catalog"], "allowed_product_skus"> & {
-        allowed_products: Array<{ sku: string }>;
-      };
-    };
-  }>(BULK_CONTROLS_QUERY, { companyId });
-  const bundle = data.css_admin_company_controls_export;
-  return {
-    ...bundle,
+type ControlsBulkKind = "bulk_role_products" | "bulk_company_products" | "bulk_purchase_controls";
+
+async function getBulkControls(
+  companyId: number, kind: ControlsBulkKind,
+): Promise<CompanyControlsBundle> {
+  const base: CompanyControlsBundle = {
+    format: "", schema_version: 0, company_id: companyId,
     company_catalog: {
-      ...bundle.company_catalog,
-      allowed_product_skus: bundle.company_catalog.allowed_products.map(item => item.sku),
+      allow_public_catalog: false,
+      category_restriction: false, allowed_category_ids: [],
+      product_restriction: false, allowed_product_skus: [],
     },
+    role_controls: [],
   };
+  if (kind === "bulk_company_products") {
+    const data = await gql<{
+      css_admin_company_controls_export: {
+        company_id: number;
+        company_catalog: {
+          product_restriction: boolean;
+          allowed_products: Array<{ sku: string }>;
+        };
+      };
+    }>(BULK_COMPANY_PRODUCTS_QUERY, { companyId });
+    const result = data.css_admin_company_controls_export;
+    if (!result || result.company_id !== companyId || !result.company_catalog) {
+      throw new Error("Worker received catalogue data for the wrong company.");
+    }
+    return {
+      ...base,
+      company_catalog: {
+        ...base.company_catalog,
+        product_restriction: result.company_catalog.product_restriction,
+        allowed_product_skus: result.company_catalog.allowed_products.map(item => item.sku),
+      },
+    };
+  }
+  if (kind === "bulk_role_products") {
+    const data = await gql<{
+      css_admin_company_controls_export: {
+        company_id: number;
+        role_controls: Array<Pick<CompanyControlsBundle["role_controls"][number],
+          "role_name" | "preselect_all_products" | "allowed_product_skus">>;
+      };
+    }>(BULK_ROLE_PRODUCTS_QUERY, { companyId });
+    const result = data.css_admin_company_controls_export;
+    if (!result || result.company_id !== companyId || !result.role_controls) {
+      throw new Error("Worker received role catalogue data for the wrong company.");
+    }
+    return {
+      ...base,
+      role_controls: result.role_controls.map(role => ({
+        ...role, sort_order: 0, allowed_resources: [], selected_category_ids: [],
+      })),
+    };
+  }
+  const data = await gql<{
+    css_admin_company_controls_export: {
+      company_id: number;
+      purchase_controls: CompanyControlsBundle["purchase_controls"];
+    };
+  }>(BULK_PURCHASE_CONTROLS_QUERY, { companyId });
+  const result = data.css_admin_company_controls_export;
+  if (!result || result.company_id !== companyId) {
+    throw new Error("Worker received purchase-control data for the wrong company.");
+  }
+  return { ...base, purchase_controls: result.purchase_controls };
 }
 
 async function getBulkDescription(companyId: number): Promise<string> {
@@ -525,7 +585,9 @@ async function runPreflight() {
       // purchase_controls is optional in the existing Fluid export contract;
       // null means no templates, not a permission failure.
       await Promise.all([
-        getBulkControls(company.company_id),
+        getBulkControls(company.company_id, "bulk_company_products"),
+        getBulkControls(company.company_id, "bulk_role_products"),
+        getBulkControls(company.company_id, "bulk_purchase_controls"),
         getBulkDescription(company.company_id),
       ]);
     }));
