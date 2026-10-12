@@ -172,6 +172,9 @@ test("subscription registration resolves Staff identity server-side and never tr
   assert.match(status, /currentStaffJobIdentity\(\)/);
   assert.match(s, /pg_advisory_xact_lock/);
   assert.match(s, /staff_push_subscription/);
+  assert.match(s, /CSS_ADMIN_PUSH_PUBLIC_ORIGIN/);
+  assert.match(endpoint, /staffPushPublicOrigin\(\)/);
+  assert.doesNotMatch(endpoint, /new URL\(request.url\)\.origin/);
   assert.match(s, /at most five devices/i);
   assert.match(s, /sealed_subscription/);
   assert.match(session, /await revokeCurrentPushDevice\(store\)/);
