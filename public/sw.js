@@ -11,3 +11,20 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
+
+self.addEventListener("push", event => {
+  if (!event.data) return;
+  let payload;
+  try { payload = event.data.json(); } catch { return; }
+  if (payload?.event !== "export_ready") return;
+  event.waitUntil(self.registration.showNotification("CSS Admin", {
+    body: "Your export is ready. Open Jobs to download.",
+    icon: "/pwa/icon/192",
+    tag: "css-admin-export-ready",
+  }));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil(self.clients.openWindow("/jobs"));
+});
