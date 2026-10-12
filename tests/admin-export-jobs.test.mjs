@@ -78,6 +78,16 @@ test("queue creation is owned, rate-limited and uses a separate feature gate", (
   assert.match(db, /owner_admin_user_id =/);
   assert.match(db, /count\(\*\)::integer/);
   assert.match(db, /status IN \('queued', 'running'\)/);
+  // Explicit server-side array conversion avoids Postgres.js array OID encoding.
+  // Live read-only integration: scripts/verify-export-job-array.mjs.
+  assert.ok(db.includes('companyIdsCsv = companyIds.join(",")'));
+  assert.ok(db.includes("string_to_array(${companyIdsCsv}, ',')::integer[]"));
+  assert.match(db, /id > 2147483647/);
+  assert.doesNotMatch(db, /sql\.array\(companyIds/);
+  const diagnostic = source("scripts/verify-export-job-array.mjs");
+  assert.match(diagnostic, /string_to_array/);
+  assert.match(diagnostic, /EXPORT ARRAY CHECK PASS/);
+  assert.doesNotMatch(diagnostic, /INSERT INTO|UPDATE css_admin|DELETE FROM css_admin/);
   assert.match(actions, /currentStaffJobIdentity\(\)/);
   assert.match(actions, /allowedStructureCompanies\(visible, id\)/);
   assert.match(actions, /enqueueStructureExport\(actor\.user_id, id, root, companies\)/);
