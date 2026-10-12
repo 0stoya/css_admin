@@ -21,6 +21,26 @@ function sameOriginMutation(request: Request) {
   return true;
 }
 
+async function parseLimitedJson(request: Request) {
+  const reader = request.body?.getReader();
+  if (!reader) throw new Error("Empty subscription request.");
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > 8192) throw new Error("Subscription request exceeds 8 KiB.");
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (length === 0) throw new Error("Empty subscription request.");
+  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+}
+
 export async function POST(request: Request) {
   if (!sameOriginMutation(request)) {
     return Response.json({ error: "Origin rejected." }, { status: 403, headers });
@@ -34,11 +54,8 @@ export async function POST(request: Request) {
   }
   try {
     const actor = await currentStaffJobIdentity();
-    const body = await request.text();
-    if (Buffer.byteLength(body, "utf8") > 8192) {
-      return Response.json({ error: "Subscription request is too large." }, { status: 413, headers });
-    }
-    const input: unknown = JSON.parse(body);
+    // Bound request memory during streaming, not only after reading the body.
+    const input = await parseLimitedJson(request);
     const cookieStore = await cookies();
     const oldDeviceId = cookieStore.get(PUSH_DEVICE_COOKIE)?.value;
     const deviceId = validStaffPushDevice(oldDeviceId) ? oldDeviceId : newStaffPushDevice();
