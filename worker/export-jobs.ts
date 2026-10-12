@@ -343,7 +343,18 @@ async function expireFiles() {
 }
 
 async function main() {
+  // Fail startup visibly rather than appearing healthy while repeatedly
+  // polling a missing database migration or invalid service identity.
   await createExportDir();
+  await sql`SELECT id FROM css_admin.export_job LIMIT 0`;
+  const identity = await gql<{
+    css_admin_current_user: { user_id: number; active: boolean };
+  }>(`query ExportWorkerIdentity { css_admin_current_user { user_id active } }`, {});
+  if (!identity.css_admin_current_user?.active ||
+      !Number.isSafeInteger(identity.css_admin_current_user.user_id) ||
+      identity.css_admin_current_user.user_id <= 0) {
+    throw new Error("The export worker service account is not an active Magento Admin.");
+  }
   console.log("[export-worker] started; queue=postgres, files=private, concurrency=1");
   let iteration = 0;
   while (!stopped) {
