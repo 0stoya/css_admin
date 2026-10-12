@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const filename = isCsv
       ? BULK_EXPORTS[job.export_kind as keyof typeof BULK_EXPORTS].filename
       : "company-structure-" + safeRef + "-" + job.id.slice(0, 8) + ".xlsx";
-    const fileStream = Readable.toWeb(createReadStream(path)) as ReadableStream<Uint8Array>;
+    const fileStream = Readable.toWeb(createReadStream(path)) as unknown as ReadableStream<Uint8Array>;
     return new Response(fileStream, {
       headers: {
         ...noStore,
