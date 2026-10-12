@@ -1,6 +1,8 @@
 import { BulkImportWorkspace } from "@/components/bulk-import-workspace";
 import { hasExportJobStore } from "@/lib/admin-export-jobs";
 
+export const dynamic = "force-dynamic";
+
 export default function BulkImportPage() {
   return (
     <div className="stack section-gap">
