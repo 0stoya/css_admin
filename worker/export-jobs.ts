@@ -500,13 +500,12 @@ async function runPreflight() {
     // The previous XLSX preflight only exercises management and role/catalogue.
     // Bulk CSVs additionally read purchase templates and portal descriptions.
     await Promise.all(sample.map(async company => {
-      const [controls] = await Promise.all([
+      // purchase_controls is optional in the existing Fluid export contract;
+      // null means no templates, not a permission failure.
+      await Promise.all([
         getBulkControls(company.company_id),
         getBulkDescription(company.company_id),
       ]);
-      if (!controls.purchase_controls) {
-        throw new Error("Preflight company-controls response lacks purchase templates.");
-      }
     }));
   }
   console.log("[export-worker] PREFLIGHT OK; group=" +
