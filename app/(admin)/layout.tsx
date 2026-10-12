@@ -23,7 +23,7 @@ const navigation: NavigationItem[] = [
   { href: "/jobs", label: "Export jobs" },
   { href: "/bulk-import", label: "Bulk import" },
   { href: "/ogl", label: "OGL" },
-  { href: "/crm", label: "CRM" },
+  { href: "/crm", label: "CRM", activePaths: ["/migrations", "/help"] },
   { href: "/settings", label: "Settings" },
 ];
 
