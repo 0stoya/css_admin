@@ -24,12 +24,6 @@ try {
     SELECT
       to_regclass('css_admin.staff_push_subscription') IS NOT NULL AS subscriptions,
       to_regclass('css_admin.staff_push_delivery') IS NOT NULL AS deliveries,
-      EXISTS (
-        SELECT 1 FROM pg_trigger
-        WHERE tgrelid = 'css_admin.export_job'::regclass
-          AND tgname = 'staff_export_ready_push'
-          AND NOT tgisinternal
-      ) AS trigger_ready,
       (has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'SELECT')
        AND has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'INSERT')
        AND has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'UPDATE')
@@ -39,11 +33,11 @@ try {
        AND has_table_privilege(current_user, 'css_admin.staff_push_delivery', 'UPDATE')
        AND has_table_privilege(current_user, 'css_admin.staff_push_delivery', 'DELETE')) AS delivery_dml
   `;
-  if (!state.subscriptions || !state.deliveries || !state.trigger_ready ||
+  if (!state.subscriptions || !state.deliveries ||
       !state.subscription_dml || !state.delivery_dml) {
     throw new Error("Staff push schema or runtime permissions are incomplete.");
   }
-  console.log("STAFF PUSH SCHEMA PASS: tables, trigger, runtime DML; read-only.");
+  console.log("STAFF PUSH SCHEMA PASS: tables, runtime DML, asynchronous outbox; read-only.");
 } catch (error) {
   console.error("STAFF PUSH SCHEMA FAILED:", error.code || "unknown");
   console.error(error.message);
