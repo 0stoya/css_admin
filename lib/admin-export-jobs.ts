@@ -66,6 +66,13 @@ export async function enqueueStructureExport(
   }
   const companyIds = companies.map(company => company.company_id);
   if (new Set(companyIds).size !== companyIds.length) throw new Error("Duplicate companies in export.");
+  if (companyIds.some(id => !Number.isSafeInteger(id) || id < 1 || id > 2147483647)) {
+    throw new Error("Invalid Magento company ID in export scope.");
+  }
+  // Postgres.js encodes sql.array() with a driver-selected array type.
+  // Pass only validated integer IDs as a scalar parameter; PostgreSQL performs
+  // the text -> integer[] conversion explicitly via string_to_array().
+  const companyIdsCsv = companyIds.join(",");
   const sql = getLocalPostgres();
   const id = randomUUID();
   await sql.begin(async tx => {
@@ -78,8 +85,6 @@ export async function enqueueStructureExport(
     if (Number(count[0].total) >= 3) {
       throw new Error("You already have three pending export jobs. Let one finish before requesting another.");
     }
-    // Postgres.js otherwise serializes number[] as text[].
-    // Element type OID 23 is PostgreSQL int4, matching company_ids integer[].
     await tx`
       INSERT INTO css_admin.export_job (
         id, owner_admin_user_id, requested_company_id,
@@ -88,7 +93,7 @@ export async function enqueueStructureExport(
       ) VALUES (
         ${id}, ${ownerId}, ${requestedCompanyId},
         ${root.company_id}, ${root.reference || "Company " + root.company_id},
-        ${root.name}, ${sql.array(companyIds, 23)}, ${companies.length}
+        ${root.name}, string_to_array(${companyIdsCsv}, ',')::integer[], ${companies.length}
       )
     `;
   });
