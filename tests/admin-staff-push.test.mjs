@@ -235,6 +235,7 @@ test("push permission stays user-triggered; service worker has no fetch or offli
   assert.match(component, /Notification.requestPermission\(\)/);
   assert.match(component, /pushManager.subscribe\(/);
   assert.match(component, /method: "DELETE"/);
+  assert.match(component, /disabled=\{busy \|\| \(blocked && !status\.subscribed\)\}/);
   assert.match(page, /<StaffExportPushControls \/>/);
   assert.match(worker, /addEventListener\("push"/);
   assert.match(worker, /addEventListener\("notificationclick"/);
