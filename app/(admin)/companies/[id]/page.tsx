@@ -119,6 +119,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           ? `Child of ${parentNode.company.reference || parentNode.company.name}`
           : "Highest visible branch";
 
+  const canExportStructure = Boolean(
+    structureContext && structureContext.root.descendant_count > 0
+    && structureContext.root.company.parent_company_id === null,
+  );
   const pricingSource = pricing?.has_custom_prices ? "OGL custom pricing" : "Magento pricing";
   const reference = company.reference || `Company ${company.company_id}`;
 
@@ -134,6 +138,11 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           <h1>Company overview</h1>
           <p className="muted">Account status, company structure and integration health for {company.name}.</p>
         </div>
+        {canExportStructure ? (
+          <a className="button button-secondary button-link button-compact" href={`/api/companies/${companyId}/exports/structure-snapshot`}>
+            Download structure snapshot (.xlsx)
+          </a>
+        ) : null}
       </header>
 
       <div className="company-overview-stats" aria-label="Company summary">
