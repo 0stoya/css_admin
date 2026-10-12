@@ -118,3 +118,18 @@ export function findCompanyStructureContext(
 export function flattenCompanyStructure(node: CompanyStructureNode): CompanyStructureNode[] {
   return [node, ...node.children.flatMap((child) => flattenCompanyStructure(child))];
 }
+
+/**
+ * Only show the Staff Admin header switcher for companies with at least one
+ * other visible member of the same hierarchy. Never use unrelated roots.
+ * The roots must come from the current admin's authorised company listing.
+ */
+export function getCompanyStructureSwitchOptions(
+  roots: CompanyStructureNode[],
+  companyId: number,
+): CompanySummary[] {
+  const context = findCompanyStructureContext(roots, companyId);
+  if (!context || countStructureCompanies(context.root) <= 1) return [];
+
+  return flattenCompanyStructure(context.root).map((entry) => entry.company);
+}

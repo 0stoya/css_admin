@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AdminHeaderCompanySwitcher } from "@/components/admin-header-company-switcher";
 import { useAppHeaderContext } from "@/components/app-header-context";
 
 export type NavigationItem = {
@@ -69,9 +70,17 @@ export function AppHeader({
           })}
         </nav>
 
-        <form className="signout-form" action="/api/auth/logout" method="post">
-          <button className="button button-secondary button-compact" type="submit">Sign out</button>
-        </form>
+        <div className="app-header-actions">
+          {company && company.switchableCompanies.length > 1 ? (
+            <AdminHeaderCompanySwitcher
+              currentCompanyId={company.companyId}
+              companies={company.switchableCompanies}
+            />
+          ) : null}
+          <form className="signout-form" action="/api/auth/logout" method="post">
+            <button className="button button-secondary button-compact" type="submit">Sign out</button>
+          </form>
+        </div>
       </div>
     </header>
   );

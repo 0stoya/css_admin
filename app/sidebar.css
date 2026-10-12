@@ -34,7 +34,15 @@
   white-space: nowrap;
 }
 .primary-nav { display: none; }
-.signout-form { grid-column: 3; justify-self: end; }
+.app-header-actions {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 0.85rem;
+  min-width: 0;
+}
+.app-header-actions .signout-form { margin: 0; }
 
 .app-workspace {
   display: grid;
@@ -184,7 +192,7 @@
   }
   .brand-link { grid-column: 1; max-width: 100%; }
   .brand-company-name { max-width: 42vw; }
-  .signout-form { grid-column: 2; }
+  .app-header-actions { grid-column: 2; }
   .primary-nav {
     display: flex;
     grid-column: 1 / -1;
@@ -283,12 +291,20 @@
 }
 
 @media (max-width: 640px) {
+  .app-header-inner { grid-template-columns: minmax(0, 1fr); }
+  .brand-link { grid-column: 1; }
+  .app-header-actions {
+    grid-column: 1;
+    justify-self: stretch;
+    justify-content: space-between;
+    width: 100%;
+  }
   .brand-context-company {
     display: grid;
     gap: 0.08rem;
   }
   .brand-company-name {
-    max-width: 38vw;
+    max-width: min(64vw, 420px);
     font-size: 0.82rem;
   }
   .brand-context-separator { display: none; }

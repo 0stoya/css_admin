@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { graphqlRequest } from "@/lib/graphql/client";
 
 export type CompanySummary = {
@@ -67,7 +68,9 @@ export async function getCompanies(currentPage = 1, pageSize = 100, status?: boo
   return data.css_admin_companies;
 }
 
-export async function getAllCompanies(pageSize = 100, status?: boolean) {
+// Request-scoped React cache: the company overview and its header share one list fetch.
+// No persistent or cross-admin cache is used for authorisation-scoped company data.
+export const getAllCompanies = cache(async function getAllCompanies(pageSize = 100, status?: boolean) {
   const firstPage = await getCompanies(1, pageSize, status);
   if (firstPage.page_info.total_pages <= 1) return firstPage.items;
 
@@ -78,12 +81,12 @@ export async function getAllCompanies(pageSize = 100, status?: boolean) {
   );
 
   return [firstPage, ...remainingPages].flatMap((page) => page.items);
-}
+});
 
-export async function getCompany(companyId: number) {
+export const getCompany = cache(async function getCompany(companyId: number) {
   const data = await graphqlRequest<CompanyDetailData, { companyId: number }>(
     COMPANY_DETAIL_QUERY,
     { companyId },
   );
   return data.css_admin_company;
-}
+});
