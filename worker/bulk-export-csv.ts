@@ -110,9 +110,6 @@ export async function runBulkCsvExport(job: BulkJob, deps: BulkExportDependencie
           throw new Error("Worker received controls data for the wrong company.");
         }
         data.controls = controls;
-        if (job.export_kind === "bulk_purchase_controls" && !controls.purchase_controls) {
-          throw new Error("Worker controls response omitted purchase templates.");
-        }
       } else if (job.export_kind === "bulk_company_descriptions") {
         data.description = await deps.getDescription(company.company_id);
       } else if (job.export_kind === "bulk_company_structure") {
