@@ -58,7 +58,7 @@ and import preview/apply flows are not changed.
 ## Deployment gate — do not deploy without migration and preflight
 
 1. **Do not merge until tests are green.** In a separate test worktree:
-   `node --test tests/admin-export-jobs.test.mjs tests/admin-bulk-export-jobs.test.mjs tests/bulk-company-descriptions.test.mjs tests/bulk-role-products-scale.test.mjs`,
+   `node --test tests/admin-export-jobs.test.mjs tests/admin-bulk-export-jobs.test.mjs tests/admin-bulk-export-worker.test.mjs tests/bulk-company-descriptions.test.mjs tests/bulk-role-products-scale.test.mjs`,
    then `yarn lint`, `yarn typecheck`, `yarn build`.
 2. Before restarting worker or web, back up `css_admin` PostgreSQL via the
    same secure process used for migration 002. **Manually apply**
@@ -113,3 +113,15 @@ while original grouped XLSX collects two companies concurrently. Bulk CSV
 artifacts are flushed frequently and leases are renewed after each completed
 company; a single slow or oversized Magento company response remains limited
 by the worker's existing GraphQL timeout and the host's memory.
+
+## Current pre-merge test baseline
+
+The repository's historical `node --test tests/*.test.mjs` suite has
+existing failures in UI-polish roadmap expectations, the old missing-SKU
+diagnostic test and Portal navigation assertions. The failing tests, their
+underlying code and roadmap have identical blob SHAs on `main` and this
+feature branch; do not adjust unrelated historical product behavior to make
+this CSV export PR pass. Run the focused background-export regression suites
+(and then report the full-suite baseline separately).
+
+This is a draft PR; do not apply migration 003 or restart PM2 during testing.
