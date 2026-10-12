@@ -109,9 +109,15 @@ enabled until all checks are green.** No Fluid deployment is required.
 
    ```text
    CSS_ADMIN_PUSH_ENABLED=0
+   CSS_ADMIN_PUSH_PUBLIC_ORIGIN=https://your-actual-admin-host.example
    CSS_ADMIN_PUSH_ENCRYPTION_KEY=<same 32-byte secret, never NEXT_PUBLIC>
    CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY=<same public key, never NEXT_PUBLIC needed>
    ```
+
+   The public origin must match the browser HTTPS `Origin` exactly (scheme,
+   hostname and port, without a trailing slash). It is explicit because Next.js
+   may see an internal HTTP URL behind Nginx. CSRF checks reject registration
+   if this setting is absent or malformed.
 
    **Never put `CSS_ADMIN_PUSH_VAPID_PRIVATE_KEY` in the web process or any
    `NEXT_PUBLIC_*` variable**. Do not print or paste any secrets, push URLs
