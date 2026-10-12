@@ -14,7 +14,7 @@ vapid.generateKeys();
 const vars = {
   CSS_ADMIN_PUSH_ENCRYPTION_KEY: randomBytes(32).toString("base64url"),
   CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY: vapid.getPublicKey().toString("base64url"),
-  CSS_ADMIN_PUSH_VAPID_PRIVATE_KEY: vapid.getPrivateKey().toString("base64url"),
+  CSS_ADMIN_PUSH_VAPID_PRIVATE_KEY: Buffer.concat([Buffer.alloc(32), vapid.getPrivateKey()]).subarray(-32).toString("base64url"),
   CSS_ADMIN_PUSH_SUBJECT: "mailto:push@example.test",
 };
 
