@@ -1,0 +1,52 @@
+/* PWA foundation: only opt-in installation affordances are visible.
+   Business content and notification data are never rendered by the worker. */
+.pwa-install-control { position: relative; display: inline-flex; align-items: center; }
+.pwa-install-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.53rem 0.68rem;
+  border: 1px solid var(--css-border-strong);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--css-primary);
+  font-weight: 650;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pwa-install-trigger:hover { background: var(--css-primary-soft); }
+.pwa-install-help {
+  position: absolute;
+  z-index: 100;
+  right: 0;
+  top: calc(100% + 0.65rem);
+  width: min(300px, calc(100vw - 1.5rem));
+  padding: 0.95rem;
+  border: 1px solid var(--css-border);
+  border-radius: 12px;
+  background: var(--css-surface);
+  color: var(--css-text);
+  box-shadow: 0 12px 34px rgb(0 35 72 / 16%);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.pwa-install-help strong { display: block; margin-bottom: 0.4rem; }
+.pwa-install-help p { margin: 0; }
+.pwa-install-help button {
+  display: block;
+  margin: 0.65rem 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--css-primary);
+  font-weight: 650;
+  cursor: pointer;
+}
+@media (max-width: 650px) {
+  .pwa-install-trigger { min-width: 39px; min-height: 39px; padding: 0.48rem; }
+  .pwa-install-trigger span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install-trigger { transition: none; }
+}
