@@ -136,6 +136,21 @@ test("ESLint excludes the generated worker directory without disabling source li
   assert.match(eslint, /\.\.\.nextTs/);
 });
 
+test("worker preflight uses existing Fluid reads without queue claims or mutations", () => {
+  const worker = source("worker/export-jobs.ts");
+  const doc = source("docs/ADMIN_BACKGROUND_EXPORT_JOBS.md");
+  assert.match(worker, /--preflight/);
+  assert.match(worker, /--check-ref=/);
+  assert.match(worker, /runPreflight\(\)/);
+  assert.match(worker, /PREFLIGHT_MODE/);
+  assert.match(worker, /CSS_ADMIN_JOB_EXPECTED_ADMIN_ID/);
+  assert.match(worker, /assertReadOnlyWorkerOperation\(query\)/);
+  assert.match(worker, /AdminExportJobCompanyControls/);
+  assert.match(doc, /no Fluid deployment required/i);
+  assert.match(doc, /all_companies/);
+  assert.match(doc, /not actually\s+read-only/);
+});
+
 test("worker startup and PostgreSQL migration remain explicitly opt-in", () => {
   const ecosystem = source("ecosystem.exports.config.cjs");
   const config = source("tsconfig.worker.json");
