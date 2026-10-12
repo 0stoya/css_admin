@@ -25,6 +25,10 @@ routes have **not been moved or redirected**. Existing deep links into
   endpoints. This is a *per-device*, per-Staff-account preference.
 - **Install CSS Admin** — reuses `PwaInstallControl` and the existing
   Staff PWA manifest/service worker. PWA installation remains optional.
+  The authenticated Staff/Portal layouts each retain an in-memory
+  `PwaInstallPromptProvider`, so Chrome's `beforeinstallprompt` event
+  can be captured **before** Staff navigates into Settings. The prompt
+  never goes into local/session storage and cannot leak between app shells.
 
 The global Jobs bell stays in the Staff header. Export Jobs retains job
 progress, download actions and its existing notification acknowledgements;
