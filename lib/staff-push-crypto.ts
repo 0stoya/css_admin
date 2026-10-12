@@ -112,7 +112,12 @@ function vapidConfiguration() {
 }
 
 export function verifiedVapidPublicKey() {
-  return vapidConfiguration().publicKey;
+  // The web process needs only the *public* VAPID key, never the signing key.
+  const publicKey = process.env.CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY ?? "";
+  if (bytes64(publicKey, 65, "VAPID public key")[0] !== 4) {
+    throw new Error("Invalid VAPID public key.");
+  }
+  return publicKey;
 }
 
 function base64Json(obj: unknown) {
