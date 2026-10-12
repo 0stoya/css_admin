@@ -400,6 +400,21 @@ async function fail(job: WorkerJob, error: unknown) {
 
 async function run(job: WorkerJob) {
   if (!UUID.test(job.id) || !UUID.test(job.run_token)) throw new Error("Invalid worker lease.");
+  if (isBulkExportKind(job.export_kind)) {
+    return runBulkCsvExport({ ...job, export_kind: job.export_kind }, {
+      exportDir,
+      stopped: () => stopped,
+      getServiceCompanies,
+      getManagement: getBulkManagement,
+      getControls: getBulkControls,
+      getDescription: getBulkDescription,
+      heartbeat: completed => heartbeat(job, completed),
+      finish: (name, bytes) => finish(job, name, bytes),
+    });
+  }
+  if (job.export_kind !== "company_structure_products") {
+    throw new Error("Unrecognised export kind; refusing to create an artifact.");
+  }
   const approved = Array.from(job.company_ids, Number);
   if (approved.length !== job.total_companies || approved.length < 2 || approved.length > 80 ||
       new Set(approved).size !== approved.length || !approved.includes(job.root_company_id)) {
@@ -457,7 +472,7 @@ async function expireFiles() {
   `;
   for (const row of expired) {
     const name = row.artifact_name;
-    if (name && /^[0-9a-f-]{36}-[0-9a-f-]{36}\.xlsx$/i.test(name)) {
+    if (name && /^[0-9a-f-]{36}-[0-9a-f-]{36}\.(?:xlsx|csv)$/i.test(name)) {
       await unlink(join(exportDir, name)).catch(() => {});
     }
   }
@@ -481,10 +496,24 @@ async function runPreflight() {
   const members = flattenCompanyStructure(context.root).map(entry => entry.company);
   const sample = members.slice(0, 2);
   await Promise.all(sample.map(collectCompany));
+  if (bulkPreflight) {
+    // The previous XLSX preflight only exercises management and role/catalogue.
+    // Bulk CSVs additionally read purchase templates and portal descriptions.
+    await Promise.all(sample.map(async company => {
+      const [controls] = await Promise.all([
+        getBulkControls(company.company_id),
+        getBulkDescription(company.company_id),
+      ]);
+      if (!controls.purchase_controls) {
+        throw new Error("Preflight company-controls response lacks purchase templates.");
+      }
+    }));
+  }
   console.log("[export-worker] PREFLIGHT OK; group=" +
     preflightReference + " visible_members=" + members.length +
     " company_reads_checked=" + sample.length +
-    " (management and controls). No queue jobs claimed.");
+    (bulkPreflight ? " (management, controls, purchase templates, descriptions)." : " (management and controls).") +
+    " No queue jobs claimed.");
 }
 
 async function main() {
@@ -492,6 +521,17 @@ async function main() {
   // polling a missing database migration or invalid service identity.
   await createExportDir();
   await sql`SELECT id FROM css_admin.export_job LIMIT 0`;
+  const [migration] = await sql<{ ready: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conrelid = 'css_admin.export_job'::regclass
+        AND conname = 'export_job_export_kind_check'
+        AND pg_get_constraintdef(oid) LIKE '%bulk_purchase_controls%'
+    ) AS ready
+  `;
+  if (!migration?.ready) throw new Error(
+    "Export jobs migration 003 is required before starting the new worker.",
+  );
   const identity = await gql<{
     css_admin_current_user: { user_id: number; active: boolean };
   }>(`query ExportWorkerIdentity { css_admin_current_user { user_id active } }`, {});
