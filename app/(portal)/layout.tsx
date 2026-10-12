@@ -70,13 +70,13 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   return (
     <PwaInstallPromptProvider>
       <div className={styles.shell}>
-      <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
-      <PwaServiceWorker />
-      <PortalHeader context={context} />
-      <div className={styles.workspace}>
-        <PortalSidebar navigation={navigation} />
-        <main id="portal-main" className={styles.content} tabIndex={-1}>{children}</main>
-      </div>
+        <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
+        <PwaServiceWorker />
+        <PortalHeader context={context} />
+        <div className={styles.workspace}>
+          <PortalSidebar navigation={navigation} />
+          <main id="portal-main" className={styles.content} tabIndex={-1}>{children}</main>
+        </div>
       </div>
     </PwaInstallPromptProvider>
   );
