@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PwaServiceWorker } from "@/components/pwa-service-worker";
+import { PwaInstallPromptProvider } from "@/components/pwa-install-control";
 import type { ReactNode } from "react";
 import { AdminContextHelp } from "@/components/admin-context-help";
 import { AppHeader, type NavigationItem } from "@/components/app-header";
@@ -83,7 +84,8 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   }
 
   return (
-    <AppHeaderContextProvider>
+    <PwaInstallPromptProvider>
+      <AppHeaderContextProvider>
       <div className="shell admin-shell">
         <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
         <PwaServiceWorker />
@@ -99,6 +101,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
           <AdminContextHelp />
         </div>
       </div>
-    </AppHeaderContextProvider>
+      </AppHeaderContextProvider>
+    </PwaInstallPromptProvider>
   );
 }
