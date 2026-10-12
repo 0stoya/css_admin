@@ -230,13 +230,15 @@ test("subscription registration resolves Staff identity server-side and never tr
 
 test("push permission stays user-triggered; service worker has no fetch or offline cache", () => {
   const component = src("components/staff-export-push-controls.tsx");
-  const page = src("app/(admin)/jobs/page.tsx");
+  const jobsPage = src("app/(admin)/jobs/page.tsx");
+  const settingsPage = src("app/(admin)/settings/page.tsx");
   const worker = src("public/sw.js");
   assert.match(component, /Notification.requestPermission\(\)/);
   assert.match(component, /pushManager.subscribe\(/);
   assert.match(component, /method: "DELETE"/);
   assert.match(component, /disabled=\{busy \|\| \(blocked && !status\.subscribed\)\}/);
-  assert.match(page, /<StaffExportPushControls \/>/);
+  assert.match(settingsPage, /<StaffExportPushControls \/>/);
+  assert.doesNotMatch(jobsPage, /<StaffExportPushControls \/>/);
   assert.match(worker, /addEventListener\("push"/);
   assert.match(worker, /addEventListener\("notificationclick"/);
   assert.match(worker, /export_ready/);
