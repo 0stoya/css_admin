@@ -21,10 +21,10 @@ export const metadata: Metadata = {
 const navigation: NavigationItem[] = [
   { href: "/companies", label: "Companies" },
   { href: "/jobs", label: "Export jobs" },
-  { href: "/migrations", label: "Migrations" },
   { href: "/bulk-import", label: "Bulk import" },
   { href: "/ogl", label: "OGL" },
-  { href: "/help", label: "Help" },
+  { href: "/crm", label: "CRM" },
+  { href: "/settings", label: "Settings" },
 ];
 
 const companyNavigation: CompanySidebarNavigationItem[] = [
@@ -64,6 +64,15 @@ const sectionNavigation: SidebarSectionNavigation[] = [
       { href: "/ogl", label: "Companies" },
       { href: "/ogl?view=mappings", label: "Rep mappings" },
       { href: "/ogl/rep-profiles", label: "Rep profiles" },
+    ],
+  },
+  {
+    parentHref: "/crm",
+    heading: "CRM tools",
+    items: [
+      { href: "/crm", label: "Overview" },
+      { href: "/migrations", label: "Migrations", matchDescendants: true },
+      { href: "/help", label: "Help & guides", matchDescendants: true },
     ],
   },
 ];
