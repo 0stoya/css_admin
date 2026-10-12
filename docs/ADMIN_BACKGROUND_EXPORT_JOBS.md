@@ -35,10 +35,25 @@ are future work. Phase 1 queues exports **now**.
 ## Prerequisites
 
 - Working local PostgreSQL connection for css_admin.
-- A dedicated Magento Admin account with only the **read permissions** needed
-  for company lists, company management and company controls export. Give the
-  service account only the permitted business scope. Do not use a real staff
-  member's login or customer token.
+- A dedicated Magento Admin account (not an integration token or real staff
+  member's login), with the *minimum available* Fluid ACL grants and limited
+  access to the business scope needed by the worker.
+- **IMPORTANT — current Fluid ACL limitation:** the GraphQL **read** operations
+  also require **write-capable** resources:
+  - Company listing: `Fluidcommerce_HyvaCompany::index`
+  - Current Staff identity and company management: `Fluidcommerce_HyvaCompany::manage`
+  - Company controls export additionally needs
+    `Fluidcommerce_HyvaCompanyCatalogRestriction::company_restriction` and
+    `Fluid_UserRoleRestrictions::manage`
+  - Access to companies outside the service user's sales-rep assignment needs
+    `Css_Commerce::all_companies` (potentially very broad).
+  The worker issues **queries only**, but its credential is **not actually
+  read-only** under these ACLs. For a genuine least-privilege service account,
+  first introduce dedicated read-only export ACLs in Fluid and switch these
+  resolver reads to those resources. Until that is done, treat the worker
+  credential as privileged: isolate it in the 0600 worker-only secret file,
+  use a dedicated account, rotate it, and do not turn on the worker without
+  explicitly accepting this limitation.
 - A dedicated absolute directory such as /var/lib/css-admin/export-jobs (0700).
 - Admin Next process and export worker must use the **same** database and
   CSS_ADMIN_EXPORT_DIR path; only the worker needs Magento service credentials.
@@ -56,6 +71,12 @@ are future work. Phase 1 queues exports **now**.
 
 Do not put the worker username/password in Next's .env.production or expose
 them via NEXT_PUBLIC_ variables. Rotate service credentials independently.
+
+## Release gate
+
+PostgreSQL schema installation does **not** enable exports. Before creating a
+Magento worker account or starting PM2, decide whether a read-only ACL split
+in Fluid is needed. This is a **security decision**, not a failed migration.
 
 ## Safe deployment order (root PM2)
 
