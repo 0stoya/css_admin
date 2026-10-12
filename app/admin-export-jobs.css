@@ -1,0 +1,60 @@
+/* Staff Admin background jobs — deliberately separate from Company Portal. */
+.admin-shell .admin-export-notification { position: relative; display: flex; align-items: center; }
+.admin-shell .admin-export-bell {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  gap: .42rem; min-height: 40px; padding: .5rem .75rem;
+  border: 1px solid var(--css-border-strong); border-radius: 9px;
+  background: #f8fbfd; color: var(--css-text); font-size: .86rem;
+  font-weight: 600; text-decoration: none;
+}
+.admin-shell .admin-export-bell:hover { background: var(--css-primary-soft); border-color: var(--css-primary); }
+.admin-shell .admin-export-bell-count {
+  display: grid; place-items: center; min-width: 19px; height: 19px;
+  padding: 0 .22rem; border-radius: 10px; background: #0057a8;
+  color: white; font-size: .67rem; line-height: 1;
+}
+.admin-shell .admin-export-ready-toast {
+  position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 100;
+  display: flex; align-items: center; gap: .6rem;
+  width: min(420px, calc(100vw - 2rem)); padding: .9rem 1rem;
+  border: 1px solid #b7d5ec; border-left: 4px solid #0057a8;
+  border-radius: 10px; background: #fff; color: var(--css-text);
+  box-shadow: 0 14px 40px rgb(0 35 72 / 18%); font-size: .87rem;
+}
+.admin-shell .admin-export-ready-toast svg { color: #027a48; flex: none; }
+.admin-shell .admin-export-ready-toast a { white-space: nowrap; font-weight: 600; }
+.admin-shell .admin-export-ready-toast button {
+  width: 30px; min-width: 30px; min-height: 30px; padding: 0;
+  border: 0; background: transparent; color: var(--css-muted); font-size: 1.15rem;
+}
+.admin-shell .admin-export-ready-toast button:hover { background: #eef5fb; color: var(--css-text); }
+.admin-shell .admin-export-jobs-page { max-width: 1120px; }
+.admin-shell .admin-export-job {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1.25rem; padding: 1.15rem 1.35rem;
+}
+.admin-shell .admin-export-job-main { display: grid; gap: .78rem; min-width: 0; flex: 1 1 auto; }
+.admin-shell .admin-export-job-title { display: flex; justify-content: space-between; gap: 1rem; min-width: 0; }
+.admin-shell .admin-export-job-title > div { min-width: 0; }
+.admin-shell .admin-export-job-title h2 { margin: 0 0 .23rem; font-size: 1.03rem; }
+.admin-shell .admin-export-job-title .eyebrow { margin-bottom: .32rem; }
+.admin-shell .admin-export-job-title .badge { flex: 0 0 auto; height: fit-content; }
+.admin-shell .admin-export-job-progress { gap: .35rem; }
+.admin-shell .admin-export-job-progress-info { display: flex; justify-content: space-between; gap: 1rem; color: var(--css-muted); font-size: .78rem; }
+.admin-shell .admin-export-job-progress progress {
+  width: 100%; height: 9px; overflow: hidden;
+  border: 0; border-radius: 10px; accent-color: var(--css-primary);
+}
+.admin-shell .admin-export-job-actions { display: flex; flex: 0 0 auto; align-items: center; gap: .5rem; }
+.admin-shell .admin-export-job-actions form { margin: 0; }
+@media (max-width: 760px) {
+  .admin-shell .admin-export-job { display: grid; }
+  .admin-shell .admin-export-job-actions { justify-content: flex-start; }
+  .admin-shell .admin-export-ready-toast { left: 1rem; bottom: 1rem; right: auto; }
+}
+@media (max-width: 520px) {
+  .admin-shell .admin-export-bell-label { display: none; }
+  .admin-shell .admin-export-bell { padding: .52rem .58rem; }
+  .admin-shell .admin-export-job-title { gap: .6rem; }
+  .admin-shell .admin-export-job { padding: 1rem; }
+}

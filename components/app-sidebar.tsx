@@ -13,6 +13,7 @@ import {
   CreditCard,
   Database,
   LayoutDashboard,
+  ListTodo,
   Network,
   Package,
   Palette,
@@ -45,6 +46,7 @@ export type SidebarSectionNavigation = {
 
 const adminTopLevelIcons: Record<string, LucideIcon> = {
   "/companies": Building2,
+  "/jobs": ListTodo,
   "/migrations": ClipboardList,
   "/bulk-import": Upload,
   "/ogl": Database,

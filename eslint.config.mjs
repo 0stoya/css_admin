@@ -11,5 +11,6 @@ export default defineConfig([
       "@next/next/no-assign-module-variable": "off",
     },
   },
-  globalIgnores([".next/**", "out/**", "next-env.d.ts"]),
+  // Compiled worker JS is build output, not lintable source. Keep source lint rules intact.
+  globalIgnores([".next/**", ".worker-dist/**", "out/**", "next-env.d.ts"]),
 ]);

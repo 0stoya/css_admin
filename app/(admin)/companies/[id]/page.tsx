@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CompanyStructureCard } from "@/components/company-structure-card";
+import { queueStructureSnapshotAction } from "@/app/(admin)/jobs/actions";
+import { hasExportJobStore } from "@/lib/admin-export-jobs";
 import {
   buildCompanyStructure,
   countStructureCompanies,
@@ -139,9 +141,17 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
           <p className="muted">Account status, company structure and integration health for {company.name}.</p>
         </div>
         {canExportStructure ? (
-          <a className="button button-secondary button-link button-compact" href={`/api/companies/${companyId}/exports/structure-snapshot`}>
-            Download structure snapshot (.xlsx)
-          </a>
+          <div className="button-row">
+            {hasExportJobStore() ? (
+              <form action={queueStructureSnapshotAction}>
+                <input type="hidden" name="companyId" value={companyId} />
+                <button className="button button-compact" type="submit">Queue background export</button>
+              </form>
+            ) : null}
+            <a className="button button-secondary button-link button-compact" href={`/api/companies/${companyId}/exports/structure-snapshot`}>
+              Download now (.xlsx)
+            </a>
+          </div>
         ) : null}
       </header>
 
