@@ -25,8 +25,8 @@ export type BulkExportDependencies = {
   getManagement: (companyId: number) => Promise<CompanyManagement>;
   getControls: (companyId: number) => Promise<CompanyControlsBundle>;
   getDescription: (companyId: number) => Promise<string>;
-  heartbeat: (job: BulkJob, completed: number) => Promise<void>;
-  finish: (job: BulkJob, name: string, bytes: number) => Promise<boolean>;
+  heartbeat: (completed: number) => Promise<void>;
+  finish: (name: string, bytes: number) => Promise<boolean>;
 };
 
 // This is a private artifact size limit, NOT a whole-file memory allocation.
@@ -133,7 +133,7 @@ export async function runBulkCsvExport(job: BulkJob, deps: BulkExportDependencie
       // Update lease and progress after each bounded company read/write. No
       // accumulation of all-company GraphQL data or CSV rows in memory.
       await flush();
-      await deps.heartbeat(job, index + 1);
+      await deps.heartbeat(index + 1);
     }
 
     if (BULK_EXPORTS[job.export_kind].trailingNewline) await append("\r\n");
@@ -142,7 +142,7 @@ export async function runBulkCsvExport(job: BulkJob, deps: BulkExportDependencie
     await handle.close();
     closed = true;
 
-    if (!await deps.finish(job, name, bytes)) throw new Error("The worker lost its export-job lease.");
+    if (!await deps.finish(name, bytes)) throw new Error("The worker lost its export-job lease.");
     console.log("[export-worker] ready job=" + job.id + " kind=" + job.export_kind +
       " companies=" + members.length + " bytes=" + bytes);
   } catch (error) {
