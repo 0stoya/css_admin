@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { PwaServiceWorker } from "@/components/pwa-service-worker";
 import type { ReactNode } from "react";
 import { AdminContextHelp } from "@/components/admin-context-help";
 import { AppHeader, type NavigationItem } from "@/components/app-header";
@@ -9,6 +11,12 @@ import {
   type SidebarSectionNavigation,
 } from "@/components/app-sidebar";
 import { getAdminToken } from "@/lib/session";
+
+export const metadata: Metadata = {
+  manifest: "/pwa/admin.webmanifest",
+  appleWebApp: { capable: true, title: "CSS Admin", statusBarStyle: "default" },
+  icons: { apple: [{ url: "/pwa/icon/180", sizes: "180x180", type: "image/png" }] },
+};
 
 const navigation: NavigationItem[] = [
   { href: "/companies", label: "Companies" },
@@ -69,6 +77,7 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     <AppHeaderContextProvider>
       <div className="shell admin-shell">
         <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
+        <PwaServiceWorker />
         <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
         <div className="app-workspace">
           <AppSidebar
