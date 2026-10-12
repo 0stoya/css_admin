@@ -49,7 +49,11 @@ function publicJob(row: DbJob): ExportJob {
   };
 }
 
-export function hasExportJobStore() { return hasLocalPostgres(); }
+// Separate enablement gate: finance PostgreSQL may exist before the job migration
+// and worker have been provisioned. No queue links appear until explicitly enabled.
+export function hasExportJobStore() {
+  return hasLocalPostgres() && process.env.CSS_ADMIN_EXPORT_JOBS_ENABLED === "1";
+}
 
 export async function enqueueStructureExport(
   ownerId: number, requestedCompanyId: number, root: CompanySummary, companies: CompanySummary[],
