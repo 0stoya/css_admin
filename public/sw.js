@@ -1,8 +1,8 @@
 /* CSS Commerce PWA foundation — shared by Staff Admin and Company Portal.
  * SECURITY: this worker deliberately has NO fetch handler, offline cache,
- * background sync, or Push API subscription logic. Every authenticated page,
+ * background sync, or request interception. Every authenticated page,
  * GraphQL request, company record, CSV/XLSX and token remains network-only.
- * Identity-bound Web Push is a separate, gated release.
+ * Staff export Web Push is optional, user-bound and carries no private data.
  */
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
