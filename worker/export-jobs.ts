@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import postgres from "postgres";
 import { buildCompanyStructure, findCompanyStructureContext, flattenCompanyStructure } from "../lib/company-structure";
@@ -478,6 +478,28 @@ async function expireFiles() {
   }
 }
 
+async function cleanupAbandonedArtifacts() {
+  // A SIGKILL during generation may leave an unpublished private file.
+  // Never delete a ready artifact, or one owned by an active worker lease.
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const entries = await readdir(exportDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const parts = /^([0-9a-f-]{36})-([0-9a-f-]{36})\.(?:xlsx|csv)$/i.exec(entry.name);
+    if (!parts || !UUID.test(parts[1]) || !UUID.test(parts[2])) continue;
+    const file = join(exportDir, entry.name);
+    const info = await lstat(file).catch(() => null);
+    if (!info?.isFile() || info.isSymbolicLink() || info.mtimeMs > cutoff) continue;
+    const owner = await sql`
+      SELECT id FROM css_admin.export_job
+      WHERE artifact_name = ${entry.name}
+        OR (id = ${parts[1]}::uuid AND run_token = ${parts[2]}::uuid AND status = 'running')
+      LIMIT 1
+    `;
+    if (!owner.length) await unlink(file).catch(() => {});
+  }
+}
+
 async function runPreflight() {
   const companies = await getServiceCompanies();
   if (!preflightReference) {
@@ -555,7 +577,10 @@ async function main() {
   while (!stopped) {
     try {
       await recoverExpiredLeases();
-      if (iteration++ % 120 === 0) await expireFiles();
+      if (iteration++ % 120 === 0) {
+        await expireFiles();
+        await cleanupAbandonedArtifacts();
+      }
       const job = await claim();
       if (job) {
         try { await run(job); }
