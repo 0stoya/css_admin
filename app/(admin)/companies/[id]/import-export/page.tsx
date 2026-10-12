@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CompanyFlatImportPanels } from "@/components/flat-company-imports";
-import { getCompany } from "@/lib/graphql/companies";
+import { buildCompanyStructure, findCompanyStructureContext } from "@/lib/company-structure";
+import { getAllCompanies, getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 
 export default async function CompanyImportExportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -41,6 +42,11 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
   }
 
   const companyRef = company.reference.trim();
+  const visible = await getAllCompanies().catch(() => null);
+  const structure = visible ? findCompanyStructureContext(buildCompanyStructure(visible), companyId) : null;
+  const canExportStructure = Boolean(
+    structure && structure.root.descendant_count > 0 && structure.root.company.parent_company_id === null,
+  );
   return (
     <div className="stack section-gap">
       <header className="page-header">
@@ -49,7 +55,15 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
           <h1>Import / export</h1>
           <p className="muted">Download current data, prepare a CSV and preview every change before anything is applied to this company.</p>
         </div>
+        {canExportStructure ? (
+          <a className="button button-secondary button-link" href={`/api/companies/${companyId}/exports/structure-snapshot`}>
+            Download structure snapshot (.xlsx)
+          </a>
+        ) : null}
       </header>
+      {canExportStructure ? (
+        <p className="muted small-text">One read-only workbook for the visible company group: companies, users, roles and stored product SKU restrictions. No categories or changes to Magento.</p>
+      ) : null}
       <CompanyFlatImportPanels companyId={companyId} companyRef={companyRef} />
     </div>
   );
