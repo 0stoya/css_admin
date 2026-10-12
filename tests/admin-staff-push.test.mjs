@@ -141,13 +141,16 @@ test("RFC8291 AES128GCM payload decrypts with the browser subscription secret", 
     { event: "export_ready" });
 });
 
-test("Postgres trigger binds ready job to its owner and dispatcher enforces ownership again", () => {
+test("post-commit outbox discovery binds only already-subscribed Staff owners", () => {
   const sql = src("deploy/postgres/004_staff_export_push.sql");
   const dispatcher = src("worker/staff-push-dispatcher.ts");
-  assert.match(sql, /NEW.owner_admin_user_id/);
-  assert.match(sql, /NEW.status = 'ready'/);
-  assert.match(sql, /ON CONFLICT DO NOTHING/);
-  assert.match(sql, /staff_export_ready_push/);
+  assert.match(sql, /staff_push_delivery/);
+  assert.match(sql, /staff_push_subscription/);
+  assert.doesNotMatch(sql, /CREATE TRIGGER|ALTER TABLE css_admin\.export_job/);
+  assert.match(dispatcher, /discoverReadyExports/);
+  assert.match(dispatcher, /job.owner_admin_user_id/);
+  assert.match(dispatcher, /job.finished_at >= subscription.updated_at/);
+  assert.match(dispatcher, /ON CONFLICT DO NOTHING/);
   assert.match(dispatcher, /subscription.owner_admin_user_id = job.owner_admin_user_id/);
   assert.match(dispatcher, /subscription.owner_admin_user_id = export_job.owner_admin_user_id/);
   assert.match(dispatcher, /FOR UPDATE OF delivery SKIP LOCKED/);
