@@ -58,3 +58,9 @@
   .admin-shell .admin-export-job-title { gap: .6rem; }
   .admin-shell .admin-export-job { padding: 1rem; }
 }
+
+/* Opt-in per-device push is secondary to the permanent in-app Jobs bell. */
+.staff-push-controls { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.staff-push-controls .button { display: inline-flex; align-items: center; gap: .4rem; }
+.staff-push-message { font-size: .75rem; color: var(--css-muted); max-width: 250px; }
+@media (max-width: 680px) { .staff-push-controls { width: 100%; } }

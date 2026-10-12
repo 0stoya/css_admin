@@ -50,7 +50,10 @@ test("service worker is explicitly network only — no private response caching 
   assert.match(sw, /addEventListener\("install"/);
   assert.match(sw, /addEventListener\("activate"/);
   assert.doesNotMatch(sw, /addEventListener\(["']fetch|caches\.|cache\.put|indexedDB|localStorage/);
-  assert.doesNotMatch(sw, /addEventListener\(["']push|pushManager\.subscribe|showNotification/);
+  // PR #137 adds *generic, opt-in* Web Push without a fetch interceptor.
+  assert.match(sw, /addEventListener\("push"/);
+  assert.match(sw, /showNotification/);
+  assert.doesNotMatch(sw, /pushManager\.subscribe/);
   const swConfig = source("next.config.ts");
   assert.match(swConfig, /source: "\/sw\.js"/);
   assert.match(swConfig, /Service-Worker-Allowed/);

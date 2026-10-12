@@ -3,6 +3,7 @@ import { currentStaffJobIdentity } from "@/lib/admin-job-auth";
 import { hasExportJobStore, listOwnerExportJobs } from "@/lib/admin-export-jobs";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { AdminJobsAutoRefresh } from "@/components/admin-jobs-auto-refresh";
+import { StaffExportPushControls } from "@/components/staff-export-push-controls";
 import { BULK_EXPORTS, isBulkExportKind } from "@/lib/bulk-export-csv";
 import { cancelQueuedExportAction, markExportJobsReadAction } from "./actions";
 
@@ -65,6 +66,7 @@ export default async function ExportJobsPage({
           <p className="muted">You can leave this page while exports run. Finished files remain available for seven days.</p>
         </div>
         <div className="button-row">
+          <StaffExportPushControls />
           {unread ? (
             <form action={markExportJobsReadAction}>
               <button className="button button-secondary button-compact" type="submit">Mark notifications read</button>
