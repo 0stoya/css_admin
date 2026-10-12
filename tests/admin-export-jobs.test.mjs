@@ -128,6 +128,14 @@ test("the header, overview and Import/Export expose the same durable queue", () 
   }
 });
 
+test("ESLint excludes the generated worker directory without disabling source lint rules", () => {
+  const eslint = source("eslint.config.mjs");
+  assert.match(eslint, /globalIgnores\(\[/);
+  assert.match(eslint, /"\.worker-dist\/\*\*"/);
+  assert.match(eslint, /\.\.\.nextVitals/);
+  assert.match(eslint, /\.\.\.nextTs/);
+});
+
 test("worker startup and PostgreSQL migration remain explicitly opt-in", () => {
   const ecosystem = source("ecosystem.exports.config.cjs");
   const config = source("tsconfig.worker.json");
