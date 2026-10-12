@@ -25,8 +25,8 @@ Magento export worker service account (#35) as the notification recipient.
   Push, Apple Web Push). No arbitrary URLs, local IP addresses, redirects
   or unencrypted endpoints are sent requests by the dispatcher.
 - Browser permission is requested only when the user clicks
-  **Enable device alerts** on Jobs. A separately connected device can be
-  revoked from its own Jobs page. Logging out, changing Staff identity,
+  **Enable device alerts** under Staff Settings. A separately connected device can be
+  revoked from its own Settings page. Logging out, changing Staff identity,
   switching to Company Portal or expiring a session attempts to revoke **that
   browser's** subscription without disconnecting another phone or computer.
 - Subscriptions expire after 90 days if not renewed. Never record endpoints,
@@ -145,7 +145,7 @@ enabled until all checks are green.** No Fluid deployment is required.
    Verify `/api/health`, in-app Jobs bell, subscription status endpoint and
    Admin/Portal normal sign-in. No private key should be in Next env.
 7. From an installed Staff PWA or supported secure Chrome/Edge browser, open
-   Jobs and click **Enable device alerts**. Verify it reports the current
+   Settings and click **Enable device alerts**. Verify it reports the current
    device enabled, then queue a small XLSX or CSV export. The notification
    should arrive after Ready even after leaving the app. Tapping opens Jobs;
    downloads still require authentication. Check opt-out, logout and
