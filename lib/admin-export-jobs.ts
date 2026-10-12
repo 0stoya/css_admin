@@ -153,7 +153,7 @@ export async function getOwnerExportJob(ownerId: number, id: string): Promise<Ex
   if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) return null;
   const sql = getLocalPostgres();
   const rows = await sql<DbJob[]>`
-    SELECT id, owner_admin_user_id, requested_company_id,
+    SELECT id, owner_admin_user_id, export_kind, requested_company_id,
       root_company_id, root_reference, root_name, company_ids,
       status, (status = 'ready' AND expires_at > now()) AS downloadable,
       completed_companies, total_companies, attempts,
