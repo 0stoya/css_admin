@@ -78,6 +78,10 @@ test("queue creation is owned, rate-limited and uses a separate feature gate", (
   assert.match(db, /owner_admin_user_id =/);
   assert.match(db, /count\(\*\)::integer/);
   assert.match(db, /status IN \('queued', 'running'\)/);
+  // Regression: sql.array(number[]) defaults to text[], but the database
+  // requires company_ids integer[] (Postgres int4 element OID 23).
+  assert.match(db, /sql\.array\(companyIds,\s*23\)/);
+  assert.doesNotMatch(db, /sql\.array\(companyIds\)/);
   assert.match(actions, /currentStaffJobIdentity\(\)/);
   assert.match(actions, /allowedStructureCompanies\(visible, id\)/);
   assert.match(actions, /enqueueStructureExport\(actor\.user_id, id, root, companies\)/);
