@@ -30,10 +30,14 @@ try {
           AND tgname = 'staff_export_ready_push'
           AND NOT tgisinternal
       ) AS trigger_ready,
-      has_table_privilege(current_user, 'css_admin.staff_push_subscription',
-        'SELECT,INSERT,UPDATE,DELETE') AS subscription_dml,
-      has_table_privilege(current_user, 'css_admin.staff_push_delivery',
-        'SELECT,INSERT,UPDATE,DELETE') AS delivery_dml
+      (has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'SELECT')
+       AND has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'INSERT')
+       AND has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'UPDATE')
+       AND has_table_privilege(current_user, 'css_admin.staff_push_subscription', 'DELETE')) AS subscription_dml,
+      (has_table_privilege(current_user, 'css_admin.staff_push_delivery', 'SELECT')
+       AND has_table_privilege(current_user, 'css_admin.staff_push_delivery', 'INSERT')
+       AND has_table_privilege(current_user, 'css_admin.staff_push_delivery', 'UPDATE')
+       AND has_table_privilege(current_user, 'css_admin.staff_push_delivery', 'DELETE')) AS delivery_dml
   `;
   if (!state.subscriptions || !state.deliveries || !state.trigger_ready ||
       !state.subscription_dml || !state.delivery_dml) {
