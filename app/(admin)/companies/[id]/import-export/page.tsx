@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { CompanyFlatImportPanels } from "@/components/flat-company-imports";
+import { queueStructureSnapshotAction } from "@/app/(admin)/jobs/actions";
+import { hasExportJobStore } from "@/lib/admin-export-jobs";
 import { buildCompanyStructure, findCompanyStructureContext } from "@/lib/company-structure";
 import { getAllCompanies, getCompany } from "@/lib/graphql/companies";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
@@ -56,9 +58,17 @@ export default async function CompanyImportExportPage({ params }: { params: Prom
           <p className="muted">Download current data, prepare a CSV and preview every change before anything is applied to this company.</p>
         </div>
         {canExportStructure ? (
-          <a className="button button-secondary button-link" href={`/api/companies/${companyId}/exports/structure-snapshot`}>
-            Download structure snapshot (.xlsx)
-          </a>
+          <div className="button-row">
+            {hasExportJobStore() ? (
+              <form action={queueStructureSnapshotAction}>
+                <input type="hidden" name="companyId" value={companyId} />
+                <button className="button" type="submit">Queue background export</button>
+              </form>
+            ) : null}
+            <a className="button button-secondary button-link" href={`/api/companies/${companyId}/exports/structure-snapshot`}>
+              Download now (.xlsx)
+            </a>
+          </div>
         ) : null}
       </header>
       {canExportStructure ? (
