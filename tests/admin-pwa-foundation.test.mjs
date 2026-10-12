@@ -79,7 +79,7 @@ test("registration occurs only inside separately authenticated Staff and Portal 
 
 test("installation is optional and requires the browser UI or a user click", () => {
   const component = source("components/pwa-install-control.tsx");
-  const staff = source("components/app-header.tsx");
+  const staff = source("app/(admin)/settings/page.tsx");
   const portal = source("components/portal/portal-header.tsx");
   assert.match(component, /beforeinstallprompt/);
   assert.match(component, /appinstalled/);
@@ -89,6 +89,9 @@ test("installation is optional and requires the browser UI or a user click", () 
   assert.match(component, /aria-label=\{label\}/);
   assert.match(staff, /<PwaInstallControl surface="staff"/);
   assert.match(portal, /<PwaInstallControl surface="portal"/);
+  assert.match(source("app/(admin)/layout.tsx"), /<PwaInstallPromptProvider>/);
+  assert.match(source("app/(portal)/layout.tsx"), /<PwaInstallPromptProvider>/);
+  assert.match(component, /const onPrompt = \(event: Event\) =>/);
   assert.doesNotMatch(component, /Notification\.requestPermission|pushManager\.subscribe/);
 });
 
