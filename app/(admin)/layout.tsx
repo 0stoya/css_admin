@@ -86,21 +86,21 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   return (
     <PwaInstallPromptProvider>
       <AppHeaderContextProvider>
-      <div className="shell admin-shell">
-        <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
-        <PwaServiceWorker />
-        <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
-        <div className="app-workspace">
-          <AppSidebar
-            productLabel="Admin"
-            navigation={navigation}
-            companyNavigation={companyNavigation}
-            sectionNavigation={sectionNavigation}
-          />
-          <main className="content" id="admin-main-content" tabIndex={-1}>{children}</main>
-          <AdminContextHelp />
+        <div className="shell admin-shell">
+          <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
+          <PwaServiceWorker />
+          <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
+          <div className="app-workspace">
+            <AppSidebar
+              productLabel="Admin"
+              navigation={navigation}
+              companyNavigation={companyNavigation}
+              sectionNavigation={sectionNavigation}
+            />
+            <main className="content" id="admin-main-content" tabIndex={-1}>{children}</main>
+            <AdminContextHelp />
+          </div>
         </div>
-      </div>
       </AppHeaderContextProvider>
     </PwaInstallPromptProvider>
   );
