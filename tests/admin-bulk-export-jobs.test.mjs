@@ -166,6 +166,9 @@ test("worker writes bounded CSVs and preserves leases, retry rules and privacy",
   assert.match(migration, /BETWEEN 1 AND 10000/);
   assert.match(migration, /BEGIN;[\s\S]*COMMIT;/);
   assert.doesNotMatch(migration, /DROP TABLE|TRUNCATE/);
+  const verifier = source("scripts/verify-bulk-export-schema.mjs");
+  assert.match(verifier, /BULK EXPORT SCHEMA PASS/);
+  assert.doesNotMatch(verifier, /INSERT INTO|UPDATE css_admin|DELETE FROM css_admin|ALTER TABLE/);
 });
 
 test("normal Bulk import / export tabs queue all seven kinds", () => {
