@@ -19,8 +19,11 @@ Column layouts, wildcard `*` semantics, escaping, company ordering, duplicate
 reference handling, role permission-tree consistency and legacy end-of-file
 newline behavior match the existing direct CSV endpoints. The old
 `/api/bulk-import/exports/*` GET routes are **retained for compatibility**,
-but the normal Bulk import / export UI uses background jobs. Example CSVs and
-import preview/apply flows are not changed.
+but the normal Bulk import / export UI uses background jobs **when
+CSS_ADMIN_EXPORT_JOBS_ENABLED=1 and PostgreSQL is configured**. With the
+feature disabled, the old direct-download buttons remain available.
+The server action independently rejects queuing while disabled. Example CSVs
+and import preview/apply flows are not changed.
 
 ## Security and operational boundaries
 
