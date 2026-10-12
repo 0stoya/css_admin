@@ -94,9 +94,12 @@ function hrefPath(href: string) {
 
 function isActive(pathname: string, item: NavigationItem) {
   const path = hrefPath(item.href);
-  return item.exact
+  const direct = item.exact
     ? pathname === path
     : pathname === path || pathname.startsWith(`${path}/`);
+  return direct || Boolean(item.activePaths?.some(childPath =>
+    pathname === childPath || pathname.startsWith(`${childPath}/`),
+  ));
 }
 
 function isChildActive(pathname: string, href: string, exact = false) {
