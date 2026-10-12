@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "incremental": false,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "rootDir": ".",
+    "outDir": ".worker-dist",
+    "isolatedModules": false,
+    "plugins": []
+  },
+  "include": [
+    "worker/export-jobs.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".worker-dist"
+  ]
+}
