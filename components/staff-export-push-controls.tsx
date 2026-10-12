@@ -138,10 +138,11 @@ export function StaffExportPushControls() {
   return (
     <div className="staff-push-controls">
       <button className="button button-secondary button-compact" type="button"
-        disabled={busy || blocked}
+        disabled={busy || (blocked && !status.subscribed)}
         onClick={() => void (status.subscribed ? disable() : enable())}
         aria-pressed={status.subscribed}
-        title={blocked ? "Enable notifications in your browser's settings" : undefined}>
+        title={blocked && !status.subscribed
+          ? "Enable notifications in your browser's settings" : undefined}>
         {status.subscribed
           ? <BellOff size={16} aria-hidden="true" />
           : <BellRing size={16} aria-hidden="true" />}
