@@ -41,6 +41,25 @@ if (!exportDir.startsWith("/") || exportDir === "/" || exportDir.includes(".."))
 const sql = postgres(dbUrl, { max: 3, prepare: false, connect_timeout: 10, idle_timeout: 20 });
 const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const POLL_MS = 5000;
+const PREFLIGHT_MODE = process.argv.includes("--preflight");
+const preflightRefArg = process.argv.find(arg => arg.startsWith("--check-ref="));
+const preflightReference = preflightRefArg?.slice("--check-ref=".length).trim() || null;
+const expectedAdminIdRaw = process.env.CSS_ADMIN_JOB_EXPECTED_ADMIN_ID?.trim();
+const expectedAdminId = expectedAdminIdRaw ? Number(expectedAdminIdRaw) : null;
+
+if ((preflightRefArg && !PREFLIGHT_MODE) ||
+    (preflightReference && !/^[a-zA-Z0-9_\/-]{1,50}$/.test(preflightReference)) ||
+    process.argv.slice(2).some(arg => arg !== "--preflight" && !arg.startsWith("--check-ref="))) {
+  throw new Error("Expected --preflight [--check-ref=COMPANY_REF] or no arguments.");
+}
+if (expectedAdminId !== null &&
+    (!Number.isSafeInteger(expectedAdminId) || expectedAdminId < 1)) {
+  throw new Error("CSS_ADMIN_JOB_EXPECTED_ADMIN_ID must be a positive Magento Admin user ID.");
+}
+if (!PREFLIGHT_MODE && expectedAdminId === null) {
+  throw new Error("Pin CSS_ADMIN_JOB_EXPECTED_ADMIN_ID before starting the live worker.");
+}
+
 let stopped = false;
 process.once("SIGTERM", () => { stopped = true; });
 process.once("SIGINT", () => { stopped = true; });
@@ -94,6 +113,22 @@ const CONTROLS_QUERY = `query AdminExportJobCompanyControls($companyId: Int!) {
   }
 }`;
 
+// Defense against future accidental mutation calls in this service. The
+// existing Fluid ACLs still make its credential privileged if it is stolen.
+const allowedOperations = new Set([
+  "ExportWorkerIdentity",
+  "AdminExportJobCompanyList",
+  "AdminExportJobCompanyManagement",
+  "AdminExportJobCompanyControls",
+]);
+function assertReadOnlyWorkerOperation(query: string) {
+  const operation = /^\s*query\s+([A-Za-z][A-Za-z0-9_]*)\b/.exec(query)?.[1];
+  if (!operation || !allowedOperations.has(operation) ||
+      /\b(?:mutation|subscription)\b/i.test(query)) {
+    throw new Error("Export worker is limited to its approved read-only GraphQL operations.");
+  }
+}
+
 function timeout() { return AbortSignal.timeout(20000); }
 
 async function obtainAdminToken() {
@@ -120,6 +155,7 @@ async function adminToken(force = false) {
 }
 
 async function gql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+  assertReadOnlyWorkerOperation(query);
   for (let attempt = 0; attempt < 2; attempt++) {
     const currentToken = await adminToken(attempt > 0);
     let response: Response;
@@ -342,6 +378,30 @@ async function expireFiles() {
   }
 }
 
+async function runPreflight() {
+  const companies = await getServiceCompanies();
+  if (!preflightReference) {
+    console.log("[export-worker] PREFLIGHT OK; service identity and company-list ACL verified."
+      + " Pass --check-ref=GROUP_REFERENCE to test management and product restrictions.");
+    return;
+  }
+  const target = companies.find(company =>
+    company.reference?.trim().toLowerCase() === preflightReference.toLowerCase());
+  if (!target) throw new Error("Preflight company reference is not visible to the worker.");
+  const context = findCompanyStructureContext(buildCompanyStructure(companies), target.company_id);
+  if (!context || context.root.company.parent_company_id !== null ||
+      context.root.descendant_count === 0) {
+    throw new Error("Preflight cannot verify a complete, visible company structure.");
+  }
+  const members = flattenCompanyStructure(context.root).map(entry => entry.company);
+  const sample = members.slice(0, 2);
+  await Promise.all(sample.map(collectCompany));
+  console.log("[export-worker] PREFLIGHT OK; group=" +
+    preflightReference + " visible_members=" + members.length +
+    " company_reads_checked=" + sample.length +
+    " (management and controls). No queue jobs claimed.");
+}
+
 async function main() {
   // Fail startup visibly rather than appearing healthy while repeatedly
   // polling a missing database migration or invalid service identity.
@@ -354,6 +414,17 @@ async function main() {
       !Number.isSafeInteger(identity.css_admin_current_user.user_id) ||
       identity.css_admin_current_user.user_id <= 0) {
     throw new Error("The export worker service account is not an active Magento Admin.");
+  }
+  if (expectedAdminId !== null &&
+      identity.css_admin_current_user.user_id !== expectedAdminId) {
+    throw new Error("Worker Magento identity differs from CSS_ADMIN_JOB_EXPECTED_ADMIN_ID.");
+  }
+  if (PREFLIGHT_MODE) {
+    console.log("[export-worker] PREFLIGHT identity user_id=" +
+      identity.css_admin_current_user.user_id);
+    await runPreflight();
+    await sql.end({ timeout: 5 });
+    return;
   }
   console.log("[export-worker] started; queue=postgres, files=private, concurrency=1");
   let iteration = 0;
