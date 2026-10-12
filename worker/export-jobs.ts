@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
-import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import postgres from "postgres";
 import { buildCompanyStructure, findCompanyStructureContext, flattenCompanyStructure } from "../lib/company-structure";
@@ -324,10 +324,15 @@ async function run(job: WorkerJob) {
 
 async function expireFiles() {
   const expired = await sql<{ id: string; artifact_name: string | null }[]>`
-    UPDATE css_admin.export_job
+    WITH targets AS (
+      SELECT id, artifact_name FROM css_admin.export_job
+      WHERE status = 'ready' AND expires_at < now()
+      FOR UPDATE SKIP LOCKED
+    )
+    UPDATE css_admin.export_job AS job
     SET status = 'expired', artifact_name = NULL, artifact_bytes = NULL
-    WHERE status = 'ready' AND expires_at < now()
-    RETURNING id, artifact_name
+    FROM targets WHERE job.id = targets.id
+    RETURNING job.id, targets.artifact_name
   `;
   for (const row of expired) {
     const name = row.artifact_name;
