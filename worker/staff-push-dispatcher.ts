@@ -43,17 +43,31 @@ async function checkSchema() {
   const rows = await sql`
     SELECT
       to_regclass('css_admin.staff_push_subscription') IS NOT NULL AS subscriptions,
-      to_regclass('css_admin.staff_push_delivery') IS NOT NULL AS deliveries,
-      EXISTS (
-        SELECT 1 FROM pg_trigger
-        WHERE tgrelid = 'css_admin.export_job'::regclass
-          AND tgname = 'staff_export_ready_push'
-          AND NOT tgisinternal
-      ) AS trigger_ready
+      to_regclass('css_admin.staff_push_delivery') IS NOT NULL AS deliveries
   `;
-  if (!rows[0]?.subscriptions || !rows[0]?.deliveries || !rows[0]?.trigger_ready) {
+  if (!rows[0]?.subscriptions || !rows[0]?.deliveries) {
     throw new Error("Staff push migration 004 is incomplete.");
   }
+}
+
+async function discoverReadyExports() {
+  // Run independently of the export-worker's Ready transaction. If the push
+  // outbox is unavailable, export generation and Ready status still succeed.
+  // updated_at is the device's latest registration time, so subscriptions
+  // created or rebound AFTER completion cannot receive old job alerts.
+  await sql`
+    INSERT INTO css_admin.staff_push_delivery (job_id, subscription_id)
+    SELECT job.id, subscription.id
+    FROM css_admin.export_job job
+    JOIN css_admin.staff_push_subscription subscription
+      ON subscription.owner_admin_user_id = job.owner_admin_user_id
+    WHERE job.status = 'ready'
+      AND job.expires_at > now()
+      AND job.finished_at IS NOT NULL
+      AND job.finished_at >= subscription.updated_at
+      AND subscription.expires_at > now()
+    ON CONFLICT DO NOTHING
+  `;
 }
 
 async function recoverExpiredLeases() {
@@ -208,7 +222,8 @@ async function main() {
   while (!stopped) {
     try {
       await recoverExpiredLeases();
-      if (iteration++ % 120 === 0) await prune();
+      if (iteration++ % 12 === 0) await discoverReadyExports();
+      if (iteration % 120 === 1) await prune();
       const job = await claim();
       if (job) {
         await deliver(job);
