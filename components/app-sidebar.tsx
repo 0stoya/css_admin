@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Contact,
   CreditCard,
+  Handshake,
   Database,
   LayoutDashboard,
   ListTodo,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 import type { NavigationItem } from "@/components/app-header";
 import { useAppHeaderContext } from "@/components/app-header-context";
+import { sectionChildIsActive } from "@/lib/admin-sidebar-routing";
 
 export type CompanySidebarNavigationItem = {
   segment: string;
@@ -41,16 +43,17 @@ export type SidebarSectionNavigation = {
   items: Array<{
     href: string;
     label: string;
+    matchDescendants?: boolean;
   }>;
 };
 
 const adminTopLevelIcons: Record<string, LucideIcon> = {
   "/companies": Building2,
   "/jobs": ListTodo,
-  "/migrations": ClipboardList,
   "/bulk-import": Upload,
   "/ogl": Database,
-  "/help": BookOpen,
+  "/crm": Handshake,
+  "/settings": Settings,
 };
 
 const adminCompanyIcons: Record<string, LucideIcon> = {
@@ -80,6 +83,9 @@ const adminSectionIcons: Record<string, LucideIcon> = {
   "/ogl": Building2,
   "/ogl?view=mappings": Network,
   "/ogl/rep-profiles": Contact,
+  "/crm": LayoutDashboard,
+  "/migrations": ClipboardList,
+  "/help": BookOpen,
 };
 
 function hrefPath(href: string) {
@@ -88,9 +94,12 @@ function hrefPath(href: string) {
 
 function isActive(pathname: string, item: NavigationItem) {
   const path = hrefPath(item.href);
-  return item.exact
+  const direct = item.exact
     ? pathname === path
     : pathname === path || pathname.startsWith(`${path}/`);
+  return direct || Boolean(item.activePaths?.some(childPath =>
+    pathname === childPath || pathname.startsWith(`${childPath}/`),
+  ));
 }
 
 function isChildActive(pathname: string, href: string, exact = false) {
@@ -98,24 +107,6 @@ function isChildActive(pathname: string, href: string, exact = false) {
   return exact
     ? pathname === path
     : pathname === path || pathname.startsWith(`${path}/`);
-}
-
-function isSectionChildActive(pathname: string, currentQuery: string, href: string) {
-  const [withoutHash] = href.split("#", 1);
-  const [path, query = ""] = withoutHash.split("?", 2);
-  if (pathname !== path) return false;
-
-  const current = new URLSearchParams(currentQuery);
-  const expected = new URLSearchParams(query);
-  if (![...expected.keys()].length) {
-    return !current.get("view");
-  }
-
-  for (const [key, value] of expected.entries()) {
-    if (current.get(key) !== value) return false;
-  }
-
-  return true;
 }
 
 function SidebarIcon({ icon: Icon }: { icon: LucideIcon | undefined }) {
@@ -150,13 +141,15 @@ export function AppSidebar({
       <div className="app-sidebar-inner">
         <nav className="sidebar-nav" aria-label="Primary navigation">
           {navigation.map((item) => {
-            const active = isActive(pathname, item);
             const staticSection = sectionNavigation.find((section) => section.parentHref === item.href);
+            const staticChildCurrent = Boolean(
+              staticSection?.items.some((child) =>
+                sectionChildIsActive(pathname, currentQuery, child.href, child.matchDescendants),
+              ),
+            );
+            const active = isActive(pathname, item) || staticChildCurrent;
             const showCompanySection = item.href === "/companies" && companySectionVisible;
             const showStaticSection = Boolean(staticSection && active);
-            const staticChildCurrent = Boolean(
-              staticSection?.items.some((child) => isSectionChildActive(pathname, currentQuery, child.href)),
-            );
             const topLevelCurrent = pathname === hrefPath(item.href) && !staticChildCurrent;
 
             return (
@@ -198,7 +191,7 @@ export function AppSidebar({
                   <div className="sidebar-subnav">
                     <span className="sidebar-subnav-heading">{staticSection.heading}</span>
                     {staticSection.items.map((child) => {
-                      const childActive = isSectionChildActive(pathname, currentQuery, child.href);
+                      const childActive = sectionChildIsActive(pathname, currentQuery, child.href, child.matchDescendants);
                       return (
                         <Link
                           className={`sidebar-sublink${childActive ? " sidebar-sublink-active" : ""}`}

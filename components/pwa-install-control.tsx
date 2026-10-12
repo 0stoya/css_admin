@@ -1,12 +1,52 @@
 "use client";
 
 import { Download } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import {
+  createContext, useContext, useEffect, useId, useState,
+  type ReactNode,
+} from "react";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
+
+// Capture browser installability from the authenticated app shell. The event
+// may fire long before Staff opens /settings; never persist it to storage.
+const InstallPromptContext = createContext<{
+  installPrompt: InstallPromptEvent | null;
+  clearInstallPrompt: () => void;
+}>({
+  installPrompt: null,
+  clearInstallPrompt: () => {},
+});
+
+export function PwaInstallPromptProvider({ children }: { children: ReactNode }) {
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const onPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+    };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  return (
+    <InstallPromptContext.Provider value={{
+      installPrompt,
+      clearInstallPrompt: () => setInstallPrompt(null),
+    }}>
+      {children}
+    </InstallPromptContext.Provider>
+  );
+}
 
 function isAppleMobileDevice() {
   const ua = navigator.userAgent;
@@ -20,7 +60,7 @@ function installedStandalone() {
 }
 
 export function PwaInstallControl({ surface }: { surface: "staff" | "portal" }) {
-  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const { installPrompt, clearInstallPrompt } = useContext(InstallPromptContext);
   const [ios, setIos] = useState(false);
   const [installed, setInstalled] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -28,23 +68,17 @@ export function PwaInstallControl({ surface }: { surface: "staff" | "portal" }) 
 
   useEffect(() => {
     let active = true;
-    const onPrompt = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as InstallPromptEvent);
-    };
     const onInstalled = () => {
       setInstalled(true);
-      setInstallPrompt(null);
       setHelpOpen(false);
     };
     const display = window.matchMedia("(display-mode: standalone)");
     const onDisplayChange = () => setInstalled(installedStandalone());
 
-    window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
     display.addEventListener?.("change", onDisplayChange);
 
-    // Browser detection is client-only and deferred from the effect's setup.
+    // Browser detection is client-only and deferred from effect setup.
     queueMicrotask(() => {
       if (!active) return;
       setIos(isAppleMobileDevice());
@@ -53,7 +87,6 @@ export function PwaInstallControl({ surface }: { surface: "staff" | "portal" }) 
 
     return () => {
       active = false;
-      window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
       display.removeEventListener?.("change", onDisplayChange);
     };
@@ -72,9 +105,9 @@ export function PwaInstallControl({ surface }: { surface: "staff" | "portal" }) 
       const result = await installPrompt.userChoice;
       if (result.outcome === "accepted") setInstalled(true);
     } catch {
-      // The browser may reject an install request or remove the prompt.
+      // Browser may reject an install request or remove its native prompt.
     } finally {
-      setInstallPrompt(null);
+      clearInstallPrompt();
     }
   }
 

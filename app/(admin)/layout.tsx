@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PwaServiceWorker } from "@/components/pwa-service-worker";
+import { PwaInstallPromptProvider } from "@/components/pwa-install-control";
 import type { ReactNode } from "react";
 import { AdminContextHelp } from "@/components/admin-context-help";
 import { AppHeader, type NavigationItem } from "@/components/app-header";
@@ -21,10 +22,10 @@ export const metadata: Metadata = {
 const navigation: NavigationItem[] = [
   { href: "/companies", label: "Companies" },
   { href: "/jobs", label: "Export jobs" },
-  { href: "/migrations", label: "Migrations" },
   { href: "/bulk-import", label: "Bulk import" },
   { href: "/ogl", label: "OGL" },
-  { href: "/help", label: "Help" },
+  { href: "/crm", label: "CRM", activePaths: ["/migrations", "/help"] },
+  { href: "/settings", label: "Settings" },
 ];
 
 const companyNavigation: CompanySidebarNavigationItem[] = [
@@ -66,6 +67,15 @@ const sectionNavigation: SidebarSectionNavigation[] = [
       { href: "/ogl/rep-profiles", label: "Rep profiles" },
     ],
   },
+  {
+    parentHref: "/crm",
+    heading: "CRM tools",
+    items: [
+      { href: "/crm", label: "Overview" },
+      { href: "/migrations", label: "Migrations", matchDescendants: true },
+      { href: "/help", label: "Help & guides", matchDescendants: true },
+    ],
+  },
 ];
 
 export default async function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -74,22 +84,24 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   }
 
   return (
-    <AppHeaderContextProvider>
-      <div className="shell admin-shell">
-        <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
-        <PwaServiceWorker />
-        <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
-        <div className="app-workspace">
-          <AppSidebar
-            productLabel="Admin"
-            navigation={navigation}
-            companyNavigation={companyNavigation}
-            sectionNavigation={sectionNavigation}
-          />
-          <main className="content" id="admin-main-content" tabIndex={-1}>{children}</main>
-          <AdminContextHelp />
+    <PwaInstallPromptProvider>
+      <AppHeaderContextProvider>
+        <div className="shell admin-shell">
+          <a className="admin-skip-link" href="#admin-main-content">Skip to main content</a>
+          <PwaServiceWorker />
+          <AppHeader homeHref="/companies" productLabel="Admin" navigation={navigation} />
+          <div className="app-workspace">
+            <AppSidebar
+              productLabel="Admin"
+              navigation={navigation}
+              companyNavigation={companyNavigation}
+              sectionNavigation={sectionNavigation}
+            />
+            <main className="content" id="admin-main-content" tabIndex={-1}>{children}</main>
+            <AdminContextHelp />
+          </div>
         </div>
-      </div>
-    </AppHeaderContextProvider>
+      </AppHeaderContextProvider>
+    </PwaInstallPromptProvider>
   );
 }

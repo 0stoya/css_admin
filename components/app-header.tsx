@@ -5,13 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminHeaderCompanySwitcher } from "@/components/admin-header-company-switcher";
 import { AdminExportJobBell } from "@/components/admin-export-job-bell";
-import { PwaInstallControl } from "@/components/pwa-install-control";
 import { useAppHeaderContext } from "@/components/app-header-context";
 
 export type NavigationItem = {
   href: string;
   label: string;
   exact?: boolean;
+  activePaths?: string[];
 };
 
 export function AppHeader({
@@ -55,9 +55,12 @@ export function AppHeader({
 
         <nav className="primary-nav" aria-label="Primary navigation">
           {navigation.map((item) => {
-            const active = item.exact
+            const active = (item.exact
               ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              : pathname === item.href || pathname.startsWith(`${item.href}/`))
+              || Boolean(item.activePaths?.some(path =>
+                pathname === path || pathname.startsWith(`${path}/`),
+              ));
 
             return (
               <Link
@@ -73,7 +76,6 @@ export function AppHeader({
         </nav>
 
         <div className="app-header-actions">
-          {productLabel === "Admin" ? <PwaInstallControl surface="staff" /> : null}
           {productLabel === "Admin" ? <AdminExportJobBell /> : null}
           {company && company.switchableCompanies.length > 1 ? (
             <AdminHeaderCompanySwitcher

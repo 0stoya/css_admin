@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PwaServiceWorker } from "@/components/pwa-service-worker";
+import { PwaInstallPromptProvider } from "@/components/pwa-install-control";
 import type { ReactNode } from "react";
 import { PortalHeader } from "@/components/portal/portal-header";
 import {
@@ -67,14 +68,16 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   ];
 
   return (
-    <div className={styles.shell}>
-      <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
-      <PwaServiceWorker />
-      <PortalHeader context={context} />
-      <div className={styles.workspace}>
-        <PortalSidebar navigation={navigation} />
-        <main id="portal-main" className={styles.content} tabIndex={-1}>{children}</main>
+    <PwaInstallPromptProvider>
+      <div className={styles.shell}>
+        <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
+        <PwaServiceWorker />
+        <PortalHeader context={context} />
+        <div className={styles.workspace}>
+          <PortalSidebar navigation={navigation} />
+          <main id="portal-main" className={styles.content} tabIndex={-1}>{children}</main>
+        </div>
       </div>
-    </div>
+    </PwaInstallPromptProvider>
   );
 }

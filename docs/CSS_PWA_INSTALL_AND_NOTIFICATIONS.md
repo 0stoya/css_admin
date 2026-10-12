@@ -141,7 +141,7 @@ Production (only after green tests and review):
   PNGs with expected dimensions, and other icon sizes return 404.
 - Verify `/sw.js` is not cached by intermediaries and that browser DevTools
   reports **no offline caches or intercepted requests**.
-- On Chrome/Edge, test installation from Admin and Portal. On iPhone, test
+- On Chrome/Edge, test Staff installation from Settings and Portal installation from the Portal header. On iPhone, test
   Share → Add to Home Screen, correct icon/title, launching to the right
   authenticated view, session expiry and logout. Reinstalling should not
   expose previous user data.
