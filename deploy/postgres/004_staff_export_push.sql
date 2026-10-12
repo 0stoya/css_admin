@@ -59,4 +59,12 @@ FOR EACH ROW
 WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'ready')
 EXECUTE FUNCTION css_admin.enqueue_staff_export_ready_push();
 
+-- Migration may be run by the postgres maintenance role; explicitly
+-- grant only the required DML to the existing CSS Admin application DB role.
+GRANT SELECT, INSERT, UPDATE, DELETE
+  ON css_admin.staff_push_subscription, css_admin.staff_push_delivery
+  TO css_admin;
+GRANT EXECUTE ON FUNCTION css_admin.enqueue_staff_export_ready_push()
+  TO css_admin;
+
 COMMIT;
