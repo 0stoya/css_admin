@@ -12,6 +12,8 @@ export type ExportJob = {
   root_name: string;
   company_ids: number[];
   status: ExportJobStatus;
+  // Computed by PostgreSQL against its own clock, not by React during render.
+  downloadable: boolean;
   completed_companies: number;
   total_companies: number;
   attempts: number;
@@ -96,7 +98,8 @@ export async function listOwnerExportJobs(ownerId: number): Promise<ExportJob[]>
   const rows = await sql<DbJob[]>`
     SELECT id, owner_admin_user_id, requested_company_id,
       root_company_id, root_reference, root_name, company_ids,
-      status, completed_companies, total_companies, attempts,
+      status, (status = 'ready' AND expires_at > now()) AS downloadable,
+      completed_companies, total_companies, attempts,
       error_message, artifact_name, artifact_bytes,
       created_at, started_at, finished_at, expires_at, acknowledged_at
     FROM css_admin.export_job
@@ -113,7 +116,8 @@ export async function getOwnerExportJob(ownerId: number, id: string): Promise<Ex
   const rows = await sql<DbJob[]>`
     SELECT id, owner_admin_user_id, requested_company_id,
       root_company_id, root_reference, root_name, company_ids,
-      status, completed_companies, total_companies, attempts,
+      status, (status = 'ready' AND expires_at > now()) AS downloadable,
+      completed_companies, total_companies, attempts,
       error_message, artifact_name, artifact_bytes,
       created_at, started_at, finished_at, expires_at, acknowledged_at
     FROM css_admin.export_job

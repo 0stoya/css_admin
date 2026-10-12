@@ -97,6 +97,20 @@ test("completed exports are private, no-store and re-authorised before any files
   assert.match(ready, /private, no-store/);
 });
 
+test("PostgreSQL computes job download readiness without impure render-time clock calls", () => {
+  const db = source("lib/admin-export-jobs.ts");
+  const page = source("app/(admin)/jobs/page.tsx");
+  assert.match(db, /downloadable: boolean/);
+  assert.equal(
+    db.split("status = 'ready' AND expires_at > now()").length - 1,
+    2,
+    "Both list and owner lookup must use the database clock",
+  );
+  assert.match(page, /const ready = job\.downloadable/);
+  assert.match(page, /job\.downloadable && !job\.acknowledged_at/);
+  assert.doesNotMatch(page, /Date\.now\(\)/);
+});
+
 test("the header, overview and Import/Export expose the same durable queue", () => {
   const header = source("components/app-header.tsx");
   const admin = source("app/(admin)/layout.tsx");

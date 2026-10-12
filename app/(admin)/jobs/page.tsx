@@ -52,8 +52,7 @@ export default async function ExportJobsPage({
     );
   }
   const active = jobs.some(job => job.status === "queued" || job.status === "running");
-  const unread = jobs.some(job => job.status === "ready" && !job.acknowledged_at &&
-    job.expires_at && Date.parse(job.expires_at) > Date.now());
+  const unread = jobs.some(job => job.downloadable && !job.acknowledged_at);
 
   return (
     <div className="stack section-gap admin-export-jobs-page">
@@ -86,8 +85,7 @@ export default async function ExportJobsPage({
       ) : (
         <div className="stack">
           {jobs.map(job => {
-            const ready = job.status === "ready" && !!job.expires_at &&
-              Date.parse(job.expires_at) > Date.now();
+            const ready = job.downloadable;
             const percent = job.total_companies > 0
               ? Math.round(100 * job.completed_companies / job.total_companies) : 0;
             return (
@@ -101,7 +99,7 @@ export default async function ExportJobsPage({
                     </div>
                     <span className={"badge " + (ready ? "badge-ok" :
                       job.status === "failed" ? "badge-restricted" : "badge-neutral")}>
-                      {statusLabel(job.status)}
+                      {job.status === "ready" && !ready ? "Expired" : statusLabel(job.status)}
                     </span>
                   </div>
                   {job.status === "running" || job.status === "queued" ? (
