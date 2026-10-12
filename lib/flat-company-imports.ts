@@ -8,7 +8,6 @@ import {
   getCompanyCustomerCandidates,
   getCompanyManagement,
   updateCompanyUser,
-  type CompanyAdminResource,
   type CompanyAdminRole,
   type CompanyAdminUser,
   type CompanyManagement,
