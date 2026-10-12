@@ -76,16 +76,24 @@ export function StaffExportPushControls() {
         return;
       }
 
-      const registration = await navigator.serviceWorker.register("/sw.js", {
+      await navigator.serviceWorker.register("/sw.js", {
         scope: "/", updateViaCache: "none",
       });
       const ready = await navigator.serviceWorker.ready;
+      const key = publicKeyBytes(status.publicKey);
       const existing = await ready.pushManager.getSubscription();
-      const subscription = existing ?? await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: publicKeyBytes(status.publicKey),
-      });
-      if (!existing) created = subscription;
+      const priorKey = existing?.options.applicationServerKey;
+      const keyMatches = Boolean(priorKey) &&
+        new Uint8Array(priorKey!).length === key.length &&
+        new Uint8Array(priorKey!).every((byte, index) => byte === key[index]);
+      // A server-side VAPID rotation needs a fresh browser subscription.
+      if (existing && !keyMatches) await existing.unsubscribe();
+      const subscription = (existing && keyMatches)
+        ? existing
+        : await ready.pushManager.subscribe({
+          userVisibleOnly: true, applicationServerKey: key,
+        });
+      if (!existing || !keyMatches) created = subscription;
       const response = await fetch("/api/admin/push/subscription", {
         method: "POST",
         credentials: "same-origin",
