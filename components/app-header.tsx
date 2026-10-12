@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminHeaderCompanySwitcher } from "@/components/admin-header-company-switcher";
+import { AdminExportJobBell } from "@/components/admin-export-job-bell";
 import { useAppHeaderContext } from "@/components/app-header-context";
 
 export type NavigationItem = {
@@ -71,6 +72,7 @@ export function AppHeader({
         </nav>
 
         <div className="app-header-actions">
+          {productLabel === "Admin" ? <AdminExportJobBell /> : null}
           {company && company.switchableCompanies.length > 1 ? (
             <AdminHeaderCompanySwitcher
               currentCompanyId={company.companyId}
