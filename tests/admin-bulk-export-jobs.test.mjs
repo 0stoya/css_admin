@@ -154,7 +154,9 @@ test("worker writes bounded CSVs and preserves leases, retry rules and privacy",
   assert.match(worker, /--check-bulk/);
   assert.match(worker, /migration 003/);
   assert.match(worker, /AdminExportJobCompanyPresentation/);
-  assert.match(worker, /AdminExportJobBulkControls/);
+  assert.match(worker, /AdminExportJobBulkCompanyProducts/);
+  assert.match(worker, /AdminExportJobBulkRoleProducts/);
+  assert.match(worker, /AdminExportJobBulkPurchaseControls/);
   assert.match(bulk, /await handle.write/);
   assert.match(bulk, /await deps.heartbeat\(index \+ 1\)/);
   assert.match(bulk, /await deps.finish\(name, bytes\)/);
