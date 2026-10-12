@@ -9,8 +9,24 @@ export function validStaffPushDevice(value: unknown): value is string {
   return typeof value === "string" && UUID.test(value);
 }
 
+export function staffPushPublicOrigin() {
+  const raw = process.env.CSS_ADMIN_PUSH_PUBLIC_ORIGIN?.trim();
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    // The declared public origin is trusted configuration, not a client-
+    // controlled X-Forwarded-* header from an upstream proxy.
+    if (parsed.origin !== raw || parsed.pathname !== "/" ||
+        parsed.username || parsed.password || parsed.search || parsed.hash ||
+        (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") ||
+        !["http:", "https:"].includes(parsed.protocol)) return null;
+    return raw;
+  } catch { return null; }
+}
+
 export function staffPushAvailable() {
   return process.env.CSS_ADMIN_PUSH_ENABLED === "1" &&
+    Boolean(staffPushPublicOrigin()) &&
     hasLocalPostgres() &&
     Boolean(process.env.CSS_ADMIN_PUSH_ENCRYPTION_KEY?.trim()) &&
     Boolean(process.env.CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY?.trim());
