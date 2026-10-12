@@ -178,4 +178,8 @@ test("normal Bulk import / export tabs queue all seven kinds", () => {
   assert.match(ui, /action=\{queueBulkExportAction\}/);
   assert.match(ui, /Queue background CSV/);
   assert.equal((ui.match(/exportKind="bulk_/g) ?? []).length, 7);
+  assert.equal((ui.match(/backgroundExportsEnabled=\{backgroundExportsEnabled\}/g) ?? []).length, 7);
+  assert.match(ui, /Download current CSV/);
+  assert.match(source("app\/\(admin\)\/bulk-import\/page.tsx"), /hasExportJobStore\(\)/);
+  assert.match(source("app\/\(admin\)\/jobs\/actions.ts"), /if \(!hasExportJobStore\(\)\)/);
 });
