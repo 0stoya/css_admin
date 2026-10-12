@@ -7,6 +7,8 @@ import load from "./helpers/load-typescript.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const source = (name) => readFileSync(new URL("../" + name, import.meta.url), "utf8");
 const structure = load(root, "lib/company-structure.ts");
+const csv = load(root, "lib/csv.ts");
+const bulkCsv = load(root, "lib/bulk-export-csv.ts", { "./csv": csv });
 const auth = load(root, "lib/admin-job-auth.ts", {
   "@/lib/graphql/client": {
     graphqlRequest: async () => ({
@@ -15,6 +17,7 @@ const auth = load(root, "lib/admin-job-auth.ts", {
   },
   "@/lib/graphql/companies": { getAllCompanies: async () => [] },
   "@/lib/company-structure": structure,
+  "@/lib/bulk-export-csv": bulkCsv,
 });
 
 const company = (id, parent = null, ref = "GROUP" + id) => ({
@@ -50,6 +53,17 @@ test("download must re-evaluate current visibility and require every originally 
   assert.equal(auth.canDownloadScopedJob(companies, 10, [10, 11, 11]), false);
   assert.equal(auth.canDownloadScopedJob(companies.filter(c => c.company_id !== 12), 10, [10, 11, 12]), false);
   assert.equal(auth.canDownloadScopedJob(companies, 90, [90, 91]), false);
+});
+
+test("bulk downloads deny revoked company visibility and unknown export kinds", () => {
+  const visible = [company(10), company(11, 10), company(12, 10)];
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_users", [10, 11, 12]), true);
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_users", [10, 999]), false);
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_users", [10, 10]), false);
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_users", []), false);
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_invalid", [10]), false);
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_company_structure", [11]), false);
+  assert.equal(auth.canDownloadBulkScopedJob(visible, "bulk_company_structure", [10, 11]), true);
 });
 
 test("worker claims jobs with Postgres SKIP LOCKED, lease tokens, retries and progress", () => {
