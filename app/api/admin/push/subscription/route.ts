@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import { currentStaffJobIdentity } from "@/lib/admin-job-auth";
 import {
   newStaffPushDevice, PUSH_DEVICE_COOKIE, registerStaffPush,
@@ -39,13 +40,10 @@ export async function POST(request: Request) {
     const oldDeviceId = cookieStore.get(PUSH_DEVICE_COOKIE)?.value;
     const deviceId = validStaffPushDevice(oldDeviceId) ? oldDeviceId : newStaffPushDevice();
     await registerStaffPush(actor.user_id, deviceId, input);
-    const response = Response.json({ enabled: true, subscribed: true }, { headers });
+    const response = NextResponse.json({ enabled: true, subscribed: true }, { headers });
     if (!validStaffPushDevice(oldDeviceId)) {
       // The per-browser opaque cookie is never exposed to JavaScript.
-      const { NextResponse } = await import("next/server");
-      const res = NextResponse.json({ enabled: true, subscribed: true }, { headers });
-      res.cookies.set(PUSH_DEVICE_COOKIE, deviceId, staffPushCookieOptions());
-      return res;
+      response.cookies.set(PUSH_DEVICE_COOKIE, deviceId, staffPushCookieOptions());
     }
     return response;
   } catch {
@@ -62,7 +60,6 @@ export async function DELETE(request: Request) {
     const cookieStore = await cookies();
     const deviceId = cookieStore.get(PUSH_DEVICE_COOKIE)?.value ?? null;
     await revokeStaffPushDevice(actor.user_id, deviceId);
-    const { NextResponse } = await import("next/server");
     const res = new NextResponse(null, { status: 204, headers });
     res.cookies.set(PUSH_DEVICE_COOKIE, "", { ...staffPushCookieOptions(), maxAge: 0 });
     return res;
