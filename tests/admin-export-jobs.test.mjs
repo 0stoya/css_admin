@@ -145,6 +145,8 @@ test("worker preflight uses existing Fluid reads without queue claims or mutatio
   assert.match(worker, /PREFLIGHT_MODE/);
   assert.match(worker, /CSS_ADMIN_JOB_EXPECTED_ADMIN_ID/);
   assert.match(worker, /assertReadOnlyWorkerOperation\(query\)/);
+  assert.match(worker, /secureMagentoEndpoint/);
+  assert.match(worker, /url\.protocol !== "https:"/);
   assert.match(worker, /AdminExportJobCompanyControls/);
   assert.match(doc, /no Fluid deployment required/i);
   assert.match(doc, /all_companies/);
