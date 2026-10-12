@@ -160,6 +160,53 @@ test("post-commit outbox discovery binds only already-subscribed Staff owners", 
   assert.doesNotMatch(sql, /TRUNCATE|DROP TABLE/);
 });
 
+function originHarness(origin) {
+  const output = ts.transpileModule(src("lib/staff-push.ts"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const mod = { exports: {} };
+  vm.runInNewContext(output, {
+    module: mod, exports: mod.exports, URL,
+    process: { env: {
+      NODE_ENV: "production",
+      CSS_ADMIN_PUSH_ENABLED: "1",
+      CSS_ADMIN_PUSH_PUBLIC_ORIGIN: origin,
+      CSS_ADMIN_PUSH_ENCRYPTION_KEY: vars.CSS_ADMIN_PUSH_ENCRYPTION_KEY,
+      CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY: vars.CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY,
+    } },
+    require(name) {
+      if (name === "node:crypto") return requireCrypto;
+      if (name === "@/lib/local-postgres") return { hasLocalPostgres: () => true };
+      if (name === "@/lib/staff-push-crypto") {
+        return { verifiedVapidPublicKey: () => vars.CSS_ADMIN_PUSH_VAPID_PUBLIC_KEY };
+      }
+      throw new Error("Unexpected public origin dependency: " + name);
+    },
+  });
+  return mod.exports;
+}
+
+test("public push origin is explicit HTTPS and never inferred from a private reverse-proxy URL", () => {
+  const configured = originHarness("https://admin.example.test");
+  assert.equal(configured.staffPushPublicOrigin(), "https://admin.example.test");
+  assert.equal(configured.staffPushAvailable(), true);
+  for (const origin of [
+    "", "http://admin.example.test", "https://admin.example.test/",
+    "https://admin.example.test/private", "https://admin.example.test?x=1",
+    "https://user:pass@admin.example.test", "ftp://admin.example.test",
+  ]) {
+    const scoped = originHarness(origin);
+    assert.equal(scoped.staffPushPublicOrigin(), null);
+    assert.equal(scoped.staffPushAvailable(), false);
+  }
+  const endpoint = src("app/api/admin/push/subscription/route.ts");
+  assert.match(endpoint, /staffPushPublicOrigin\\(\\)/);
+  assert.doesNotMatch(endpoint, /new URL\\(request.url\\)\\.origin/);
+  assert.match(endpoint, /const reader = request.body\\?\\.getReader\\(\\)/);
+  assert.match(endpoint, /length > 8192/);
+  assert.doesNotMatch(endpoint, /request.text\\(\\)/);
+});
+
 test("subscription registration resolves Staff identity server-side and never trusts browser user_id", () => {
   const s = src("lib/staff-push.ts");
   const endpoint = src("app/api/admin/push/subscription/route.ts");
