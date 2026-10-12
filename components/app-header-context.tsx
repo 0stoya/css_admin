@@ -11,10 +11,18 @@ import {
   type SetStateAction,
 } from "react";
 
+export type CompanyHeaderSwitchOption = {
+  companyId: number;
+  name: string;
+  reference: string | null;
+  status: boolean;
+};
+
 export type CompanyHeaderContextValue = {
   companyId: number;
   name: string;
   reference: string | null;
+  switchableCompanies: CompanyHeaderSwitchOption[];
 };
 
 type AppHeaderContextState = {
@@ -41,14 +49,15 @@ export function CompanyHeaderContext({
   companyId,
   name,
   reference,
+  switchableCompanies,
   children,
 }: CompanyHeaderContextValue & { children: ReactNode }) {
   const { setCompany } = useAppHeaderContext();
 
   useEffect(() => {
-    setCompany({ companyId, name, reference });
+    setCompany({ companyId, name, reference, switchableCompanies });
     return () => setCompany(null);
-  }, [companyId, name, reference, setCompany]);
+  }, [companyId, name, reference, switchableCompanies, setCompany]);
 
   return children;
 }
