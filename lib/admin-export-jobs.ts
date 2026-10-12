@@ -78,6 +78,8 @@ export async function enqueueStructureExport(
     if (Number(count[0].total) >= 3) {
       throw new Error("You already have three pending export jobs. Let one finish before requesting another.");
     }
+    // Postgres.js otherwise serializes number[] as text[].
+    // Element type OID 23 is PostgreSQL int4, matching company_ids integer[].
     await tx`
       INSERT INTO css_admin.export_job (
         id, owner_admin_user_id, requested_company_id,
@@ -86,7 +88,7 @@ export async function enqueueStructureExport(
       ) VALUES (
         ${id}, ${ownerId}, ${requestedCompanyId},
         ${root.company_id}, ${root.reference || "Company " + root.company_id},
-        ${root.name}, ${sql.array(companyIds)}, ${companies.length}
+        ${root.name}, ${sql.array(companyIds, 23)}, ${companies.length}
       )
     `;
   });
