@@ -81,6 +81,9 @@ are future work. Phase 1 queues exports **now**.
 
 Do not put the worker username/password in Next's .env.production or expose
 them via NEXT_PUBLIC_ variables. Rotate service credentials independently.
+Both the worker's Magento GraphQL URL and Admin-token URL must use HTTPS:
+the worker rejects plain HTTP so its privileged credentials cannot be sent
+over unencrypted connections.
 
 ## Release gate — no Fluid deployment required
 
