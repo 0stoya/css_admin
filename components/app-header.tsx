@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminHeaderCompanySwitcher } from "@/components/admin-header-company-switcher";
 import { AdminExportJobBell } from "@/components/admin-export-job-bell";
+import { PwaInstallControl } from "@/components/pwa-install-control";
 import { useAppHeaderContext } from "@/components/app-header-context";
 
 export type NavigationItem = {
@@ -72,6 +73,7 @@ export function AppHeader({
         </nav>
 
         <div className="app-header-actions">
+          {productLabel === "Admin" ? <PwaInstallControl surface="staff" /> : null}
           {productLabel === "Admin" ? <AdminExportJobBell /> : null}
           {company && company.switchableCompanies.length > 1 ? (
             <AdminHeaderCompanySwitcher
