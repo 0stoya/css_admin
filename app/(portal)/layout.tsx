@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { PwaServiceWorker } from "@/components/pwa-service-worker";
 import type { ReactNode } from "react";
 import { PortalHeader } from "@/components/portal/portal-header";
 import {
@@ -13,6 +15,12 @@ import {
 } from "@/lib/graphql/company-portal";
 import { getPortalEmployeeConfiguration } from "@/lib/graphql/company-portal-employees";
 import { getCompanyToken } from "@/lib/session";
+
+export const metadata: Metadata = {
+  manifest: "/pwa/portal.webmanifest",
+  appleWebApp: { capable: true, title: "CSS Portal", statusBarStyle: "default" },
+  icons: { apple: [{ url: "/pwa/icon/180", sizes: "180x180", type: "image/png" }] },
+};
 
 export default async function CompanyPortalLayout({ children }: Readonly<{ children: ReactNode }>) {
   if (!(await getCompanyToken())) {
@@ -61,6 +69,7 @@ export default async function CompanyPortalLayout({ children }: Readonly<{ child
   return (
     <div className={styles.shell}>
       <a className={styles.skipLink} href="#portal-main">Skip to main content</a>
+      <PwaServiceWorker />
       <PortalHeader context={context} />
       <div className={styles.workspace}>
         <PortalSidebar navigation={navigation} />

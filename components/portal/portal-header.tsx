@@ -2,6 +2,7 @@ import { Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { PortalHeaderCompanySwitcher } from "@/components/portal/portal-header-company-switcher";
+import { PwaInstallControl } from "@/components/pwa-install-control";
 import styles from "@/components/portal/portal-shell.module.css";
 import { getStorefrontUrl } from "@/lib/config";
 import type { CompanyPortalContext } from "@/lib/graphql/company-portal";
@@ -31,6 +32,7 @@ export function PortalHeader({
         </Link>
 
         <div className={styles.headerActions}>
+          <PwaInstallControl surface="portal" />
           {context ? (
             <PortalHeaderCompanySwitcher
               companies={context.companies}

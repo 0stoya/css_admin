@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import "./company-structure.css";
@@ -19,6 +19,7 @@ import "./admin-policy-interactions.css";
 import "./admin-final-surface-polish.css";
 import "./admin-accessibility-phase7.css";
 import "./admin-export-jobs.css";
+import "./pwa.css";
 
 export const metadata: Metadata = {
   title: {
@@ -30,6 +31,13 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
   },
+};
+
+// Safe app shell only. Never add offline/private-data caching here.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0057a8",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
