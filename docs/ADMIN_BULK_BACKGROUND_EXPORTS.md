@@ -63,6 +63,9 @@ import preview/apply flows are not changed.
    using the already-approved credential-loading method. Do not paste
    connection strings or passwords. The migration widens the allowed job-kind
    enum and the company-count CHECKs; it does not drop existing jobs or files.
+   Then, from `/srv/css/css_admin` (where the DB env exists), run the new
+   read-only `node scripts/verify-bulk-export-schema.mjs`. Expected
+   `BULK EXPORT SCHEMA PASS`. **STOP on any failure.**
 3. Build the **merged main** release in `/srv/css/css_admin` using
    `yarn install --frozen-lockfile && yarn build` (after safe fast-forward and
    git clean checks). The new worker refuses to start until migration 003 is
