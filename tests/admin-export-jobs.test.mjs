@@ -98,7 +98,7 @@ test("completed exports are private, no-store and re-authorised before any files
   const download = source("app/api/admin/jobs/[id]/download/route.ts");
   const ready = source("app/api/admin/jobs/notifications/route.ts");
   assert.match(download, /getOwnerExportJob\(actor\.user_id, id\)/);
-  assert.match(download, /ensureJobDownloadScope\(job\.root_company_id, job\.company_ids\)/);
+  assert.match(download, /ensureJobDownloadScope\(job\.root_company_id, job\.company_ids, job\.export_kind\)/);
   assert.ok(download.indexOf("ensureJobDownloadScope") < download.indexOf("lstat(path)"));
   assert.match(download, /isSymbolicLink/);
   assert.match(download, /private, no-store/);
