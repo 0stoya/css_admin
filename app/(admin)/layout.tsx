@@ -12,6 +12,7 @@ import { getAdminToken } from "@/lib/session";
 
 const navigation: NavigationItem[] = [
   { href: "/companies", label: "Companies" },
+  { href: "/jobs", label: "Export jobs" },
   { href: "/migrations", label: "Migrations" },
   { href: "/bulk-import", label: "Bulk import" },
   { href: "/ogl", label: "OGL" },
