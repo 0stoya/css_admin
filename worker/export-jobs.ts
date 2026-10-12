@@ -28,9 +28,24 @@ function required(key: string) {
 }
 const dbUrl = required("CSS_ADMIN_DATABASE_URL");
 const magentoBase = required("MAGENTO_BASE_URL").replace(/\/+$/, "");
-const graphqlUrl = process.env.MAGENTO_GRAPHQL_URL?.trim() || magentoBase + "/graphql";
-const adminTokenUrl = process.env.MAGENTO_ADMIN_TOKEN_URL?.trim() ||
-  magentoBase + "/rest/V1/integration/admin/token";
+function secureMagentoEndpoint(value: string, label: string) {
+  let url: URL;
+  try { url = new URL(value); }
+  catch { throw new Error(label + " must be a valid HTTPS URL."); }
+  if (url.protocol !== "https:" || url.username || url.password) {
+    throw new Error(label + " must be an HTTPS URL without embedded credentials.");
+  }
+  return url.toString();
+}
+const graphqlUrl = secureMagentoEndpoint(
+  process.env.MAGENTO_GRAPHQL_URL?.trim() || magentoBase + "/graphql",
+  "Worker Magento GraphQL endpoint",
+);
+const adminTokenUrl = secureMagentoEndpoint(
+  process.env.MAGENTO_ADMIN_TOKEN_URL?.trim() ||
+    magentoBase + "/rest/V1/integration/admin/token",
+  "Worker Magento admin-token endpoint",
+);
 const storeCode = required("MAGENTO_STORE_CODE");
 const serviceUsername = required("CSS_ADMIN_JOB_MAGENTO_USERNAME");
 const servicePassword = required("CSS_ADMIN_JOB_MAGENTO_PASSWORD");
