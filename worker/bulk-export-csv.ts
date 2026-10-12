@@ -23,7 +23,7 @@ export type BulkExportDependencies = {
   stopped: () => boolean;
   getServiceCompanies: () => Promise<CompanySummary[]>;
   getManagement: (companyId: number) => Promise<CompanyManagement>;
-  getControls: (companyId: number) => Promise<CompanyControlsBundle>;
+  getControls: (companyId: number, kind: "bulk_role_products" | "bulk_company_products" | "bulk_purchase_controls") => Promise<CompanyControlsBundle>;
   getDescription: (companyId: number) => Promise<string>;
   heartbeat: (completed: number) => Promise<void>;
   finish: (name: string, bytes: number) => Promise<boolean>;
@@ -105,7 +105,7 @@ export async function runBulkCsvExport(job: BulkJob, deps: BulkExportDependencie
       } else if (job.export_kind === "bulk_role_products" ||
                  job.export_kind === "bulk_company_products" ||
                  job.export_kind === "bulk_purchase_controls") {
-        const controls = await deps.getControls(company.company_id);
+        const controls = await deps.getControls(company.company_id, job.export_kind);
         if (controls.company_id !== company.company_id) {
           throw new Error("Worker received controls data for the wrong company.");
         }
