@@ -40,6 +40,7 @@ test("Staff Admin navigation has CRM and Settings without duplicate Migrations a
   assert.match(top, /href: "\/bulk-import", label: "Bulk import"/);
   assert.match(top, /href: "\/ogl", label: "OGL"/);
   assert.match(top, /href: "\/crm", label: "CRM"/);
+  assert.match(top, /activePaths: \["\/migrations", "\/help"\]/);
   assert.match(top, /href: "\/settings", label: "Settings"/);
   assert.doesNotMatch(top, /href: "\/migrations"|href: "\/help"/);
   assert.match(layout, /parentHref: "\/crm"/);
@@ -56,6 +57,8 @@ test("CRM parent stays active for migrated child routes without altering other s
   assert.match(sidebar, /aria-current=\{childActive \? "page" : undefined\}/);
   assert.match(sidebar, /"\/crm": Handshake/);
   assert.match(sidebar, /"\/settings": Settings/);
+  assert.match(sidebar, /item\.activePaths\?\.some/);
+  assert.match(source("components/app-header.tsx"), /item\.activePaths\?\.some/);
 });
 
 test("Staff device alerts and install control live in Settings, while the Jobs bell stays in header", () => {
@@ -72,6 +75,8 @@ test("Staff device alerts and install control live in Settings, while the Jobs b
   assert.doesNotMatch(header, /<PwaInstallControl surface="staff"/);
   assert.match(header, /<AdminExportJobBell \/>/);
   assert.match(portalHeader, /<PwaInstallControl surface="portal" \/>/);
+  assert.match(source("app/(admin)/layout.tsx"), /<PwaInstallPromptProvider>/);
+  assert.match(source("app/(portal)/layout.tsx"), /<PwaInstallPromptProvider>/);
   assert.match(component, /Notification\.requestPermission\(\)/);
   assert.match(component, /method: "DELETE"/);
 });
