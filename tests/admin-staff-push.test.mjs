@@ -200,11 +200,11 @@ test("public push origin is explicit HTTPS and never inferred from a private rev
     assert.equal(scoped.staffPushAvailable(), false);
   }
   const endpoint = src("app/api/admin/push/subscription/route.ts");
-  assert.match(endpoint, /staffPushPublicOrigin\\(\\)/);
-  assert.doesNotMatch(endpoint, /new URL\\(request.url\\)\\.origin/);
-  assert.match(endpoint, /const reader = request.body\\?\\.getReader\\(\\)/);
+  assert.match(endpoint, /staffPushPublicOrigin\(\)/);
+  assert.doesNotMatch(endpoint, /new URL\(request.url\)\.origin/);
+  assert.match(endpoint, /const reader = request.body\?\.getReader\(\)/);
   assert.match(endpoint, /length > 8192/);
-  assert.doesNotMatch(endpoint, /request.text\\(\\)/);
+  assert.doesNotMatch(endpoint, /request.text\(\)/);
 });
 
 test("subscription registration resolves Staff identity server-side and never trusts browser user_id", () => {
