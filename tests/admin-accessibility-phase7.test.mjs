@@ -56,12 +56,14 @@ test("Phase 7 visual layer is loaded after the previous Admin polish", () => {
   assert.ok(phase7 > previous);
 });
 
-test("roadmap records Phase 6 completion and Phase 7 as active", () => {
+test("roadmap records completed Admin polish phases 6 and 7", () => {
   const roadmap = source("docs/ADMIN_UI_POLISH_ROADMAP.md");
+  assert.match(roadmap, /Status: ✅ Complete/);
   assert.match(roadmap, /✅ Phase 6/);
-  assert.match(roadmap, /PR #78 merged and deployed/);
+  assert.match(roadmap, /Completed through \*\*PR #78\*\*/);
   assert.match(roadmap, /PR #80/);
-  assert.match(roadmap, /🟡 Phase 7/);
+  assert.match(roadmap, /✅ Phase 7/);
+  assert.match(roadmap, /Completed through \*\*PR #81\*\*/);
   assert.match(roadmap, /Skip to main content/);
-  assert.match(roadmap, /200% browser zoom/);
+  assert.match(roadmap, /200% zoom/);
 });
