@@ -36,35 +36,13 @@ CREATE INDEX IF NOT EXISTS staff_push_delivery_lease_idx
   ON css_admin.staff_push_delivery (lease_expires_at)
   WHERE status = 'sending';
 
--- Store a durable recipient snapshot in the same transaction that commits
--- export_job.status='ready'. Push delivery itself is asynchronous and never
--- happens from the export worker or the web request.
-CREATE OR REPLACE FUNCTION css_admin.enqueue_staff_export_ready_push()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-  INSERT INTO css_admin.staff_push_delivery (job_id, subscription_id)
-  SELECT NEW.id, subscription.id
-  FROM css_admin.staff_push_subscription subscription
-  WHERE subscription.owner_admin_user_id = NEW.owner_admin_user_id
-    AND subscription.expires_at > now()
-  ON CONFLICT DO NOTHING;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS staff_export_ready_push ON css_admin.export_job;
-CREATE TRIGGER staff_export_ready_push
-AFTER UPDATE OF status ON css_admin.export_job
-FOR EACH ROW
-WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'ready')
-EXECUTE FUNCTION css_admin.enqueue_staff_export_ready_push();
-
+-- The separate Staff push dispatcher observes ready jobs and creates
+-- idempotent delivery rows *after* exports commit. There is deliberately
+-- NO trigger on export_job: notification failures cannot roll back a file
+-- becoming Ready.
 -- Migration may be run by the postgres maintenance role; explicitly
 -- grant only the required DML to the existing CSS Admin application DB role.
 GRANT SELECT, INSERT, UPDATE, DELETE
   ON css_admin.staff_push_subscription, css_admin.staff_push_delivery
   TO css_admin;
-GRANT EXECUTE ON FUNCTION css_admin.enqueue_staff_export_ready_push()
-  TO css_admin;
-
 COMMIT;
