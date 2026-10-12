@@ -3,6 +3,7 @@ import { currentStaffJobIdentity } from "@/lib/admin-job-auth";
 import { hasExportJobStore, listOwnerExportJobs } from "@/lib/admin-export-jobs";
 import { graphQLErrorMessage } from "@/lib/graphql/client";
 import { AdminJobsAutoRefresh } from "@/components/admin-jobs-auto-refresh";
+import { BULK_EXPORTS, isBulkExportKind } from "@/lib/bulk-export-csv";
 import { cancelQueuedExportAction, markExportJobsReadAction } from "./actions";
 
 function timestamp(value: string | null) {
@@ -73,19 +74,20 @@ export default async function ExportJobsPage({
         </div>
       </header>
 
-      {notice ? <div className="notice" role="status">Export queued. We’ll let you know when the workbook is ready.</div> : null}
+      {notice ? <div className="notice" role="status">Export queued. You can leave Admin; we’ll notify you when the file is ready.</div> : null}
       {errorParam ? <div className="error" role="alert">{errorParam}</div> : null}
 
       {jobs.length === 0 ? (
         <div className="card stack">
           <h2>No export jobs yet</h2>
-          <p className="muted">Open a company structure and select Queue background export to create your first job.</p>
+          <p className="muted">Open a company structure or Bulk import / export to queue your first job.</p>
           <Link href="/companies">Browse companies</Link>
         </div>
       ) : (
         <div className="stack">
           {jobs.map(job => {
             const ready = job.downloadable;
+            const isCsv = isBulkExportKind(job.export_kind);
             const percent = job.total_companies > 0
               ? Math.round(100 * job.completed_companies / job.total_companies) : 0;
             return (
@@ -93,8 +95,8 @@ export default async function ExportJobsPage({
                 <div className="admin-export-job-main">
                   <div className="admin-export-job-title">
                     <div>
-                      <p className="eyebrow">Company structure · Products only</p>
-                      <h2>{job.root_reference} — {job.root_name}</h2>
+                      <p className="eyebrow">{isCsv ? "Bulk import / export · CSV" : "Company structure · Products only · Excel"}</p>
+                      <h2>{isCsv ? BULK_EXPORTS[job.export_kind as keyof typeof BULK_EXPORTS].label : job.root_reference + " — " + job.root_name}</h2>
                       <p className="muted small-text">Requested {timestamp(job.created_at)} · {job.total_companies} companies</p>
                     </div>
                     <span className={"badge " + (ready ? "badge-ok" :
@@ -119,7 +121,7 @@ export default async function ExportJobsPage({
                 <div className="admin-export-job-actions">
                   {ready ? (
                     <a className="button button-link button-compact" href={"/api/admin/jobs/" + job.id + "/download"}>
-                      Download Excel
+                      {isCsv ? "Download CSV" : "Download Excel"}
                     </a>
                   ) : null}
                   {job.status === "queued" ? (

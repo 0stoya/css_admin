@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import postgres from "postgres";
 import { buildCompanyStructure, findCompanyStructureContext, flattenCompanyStructure } from "../lib/company-structure";
@@ -9,6 +9,8 @@ import { createSnapshotXlsx } from "../lib/simple-xlsx";
 import type { CompanySummary } from "../lib/graphql/companies";
 import type { CompanyManagement } from "../lib/graphql/company-management";
 import type { CompanyControlsBundle } from "../lib/graphql/company-controls";
+import { isBulkExportKind, type BulkExportKind } from "../lib/bulk-export-csv";
+import { runBulkCsvExport } from "./bulk-export-csv";
 
 // Dedicated process; never uses or stores an interactive Magento Admin cookie.
 // A restricted Magento *admin user* is required: integration tokens do not
@@ -58,14 +60,16 @@ const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const POLL_MS = 5000;
 const PREFLIGHT_MODE = process.argv.includes("--preflight");
 const preflightRefArg = process.argv.find(arg => arg.startsWith("--check-ref="));
+const bulkPreflight = process.argv.includes("--check-bulk");
 const preflightReference = preflightRefArg?.slice("--check-ref=".length).trim() || null;
 const expectedAdminIdRaw = process.env.CSS_ADMIN_JOB_EXPECTED_ADMIN_ID?.trim();
 const expectedAdminId = expectedAdminIdRaw ? Number(expectedAdminIdRaw) : null;
 
 if ((preflightRefArg && !PREFLIGHT_MODE) ||
+    (bulkPreflight && (!PREFLIGHT_MODE || !preflightRefArg)) ||
     (preflightReference && !/^[a-zA-Z0-9_\/-]{1,50}$/.test(preflightReference)) ||
-    process.argv.slice(2).some(arg => arg !== "--preflight" && !arg.startsWith("--check-ref="))) {
-  throw new Error("Expected --preflight [--check-ref=COMPANY_REF] or no arguments.");
+    process.argv.slice(2).some(arg => arg !== "--preflight" && arg !== "--check-bulk" && !arg.startsWith("--check-ref="))) {
+  throw new Error("Expected --preflight [--check-ref=COMPANY_REF] [--check-bulk] or no arguments.");
 }
 if (expectedAdminId !== null &&
     (!Number.isSafeInteger(expectedAdminId) || expectedAdminId < 1)) {
@@ -87,6 +91,7 @@ type WorkerJob = {
   attempts: number;
   root_company_id: number;
   root_reference: string;
+  export_kind: "company_structure_products" | BulkExportKind;
   company_ids: number[];
   total_companies: number;
 };
@@ -128,6 +133,40 @@ const CONTROLS_QUERY = `query AdminExportJobCompanyControls($companyId: Int!) {
   }
 }`;
 
+const BULK_COMPANY_PRODUCTS_QUERY = `query AdminExportJobBulkCompanyProducts($companyId: Int!) {
+  css_admin_company_controls_export(company_id: $companyId) {
+    company_id company_catalog {
+      product_restriction allowed_products { sku }
+    }
+  }
+}`;
+
+const BULK_ROLE_PRODUCTS_QUERY = `query AdminExportJobBulkRoleProducts($companyId: Int!) {
+  css_admin_company_controls_export(company_id: $companyId) {
+    company_id role_controls {
+      role_name preselect_all_products allowed_product_skus
+    }
+  }
+}`;
+
+const BULK_PURCHASE_CONTROLS_QUERY = `query AdminExportJobBulkPurchaseControls($companyId: Int!) {
+  css_admin_company_controls_export(company_id: $companyId) {
+    company_id purchase_controls {
+      templates {
+        name
+        rules { sku quantity_limit duration_days start_date }
+        assigned_role_names
+      }
+    }
+  }
+}`;
+
+const PRESENTATION_QUERY = `query AdminExportJobCompanyPresentation($companyId: Int!) {
+  css_admin_company_presentation(company_id: $companyId) {
+    company_id company_description
+  }
+}`;
+
 // Defense against future accidental mutation calls in this service. The
 // existing Fluid ACLs still make its credential privileged if it is stolen.
 const allowedOperations = new Set([
@@ -135,6 +174,10 @@ const allowedOperations = new Set([
   "AdminExportJobCompanyList",
   "AdminExportJobCompanyManagement",
   "AdminExportJobCompanyControls",
+  "AdminExportJobBulkCompanyProducts",
+  "AdminExportJobBulkRoleProducts",
+  "AdminExportJobBulkPurchaseControls",
+  "AdminExportJobCompanyPresentation",
 ]);
 function assertReadOnlyWorkerOperation(query: string) {
   const operation = /^\s*query\s+([A-Za-z][A-Za-z0-9_]*)\b/.exec(query)?.[1];
@@ -244,6 +287,93 @@ async function collectCompany(company: CompanySummary): Promise<StructureSnapsho
   return { company, management: management.css_admin_company_management, controls };
 }
 
+async function getBulkManagement(companyId: number): Promise<CompanyManagement> {
+  const data = await gql<{ css_admin_company_management: CompanyManagement }>(
+    MANAGEMENT_QUERY, { companyId },
+  );
+  return data.css_admin_company_management;
+}
+
+type ControlsBulkKind = "bulk_role_products" | "bulk_company_products" | "bulk_purchase_controls";
+
+async function getBulkControls(
+  companyId: number, kind: ControlsBulkKind,
+): Promise<CompanyControlsBundle> {
+  const base: CompanyControlsBundle = {
+    format: "", schema_version: 0, company_id: companyId,
+    company_catalog: {
+      allow_public_catalog: false,
+      category_restriction: false, allowed_category_ids: [],
+      product_restriction: false, allowed_product_skus: [],
+    },
+    role_controls: [],
+  };
+  if (kind === "bulk_company_products") {
+    const data = await gql<{
+      css_admin_company_controls_export: {
+        company_id: number;
+        company_catalog: {
+          product_restriction: boolean;
+          allowed_products: Array<{ sku: string }>;
+        };
+      };
+    }>(BULK_COMPANY_PRODUCTS_QUERY, { companyId });
+    const result = data.css_admin_company_controls_export;
+    if (!result || result.company_id !== companyId || !result.company_catalog) {
+      throw new Error("Worker received catalogue data for the wrong company.");
+    }
+    return {
+      ...base,
+      company_catalog: {
+        ...base.company_catalog,
+        product_restriction: result.company_catalog.product_restriction,
+        allowed_product_skus: result.company_catalog.allowed_products.map(item => item.sku),
+      },
+    };
+  }
+  if (kind === "bulk_role_products") {
+    const data = await gql<{
+      css_admin_company_controls_export: {
+        company_id: number;
+        role_controls: Array<Pick<CompanyControlsBundle["role_controls"][number],
+          "role_name" | "preselect_all_products" | "allowed_product_skus">>;
+      };
+    }>(BULK_ROLE_PRODUCTS_QUERY, { companyId });
+    const result = data.css_admin_company_controls_export;
+    if (!result || result.company_id !== companyId || !result.role_controls) {
+      throw new Error("Worker received role catalogue data for the wrong company.");
+    }
+    return {
+      ...base,
+      role_controls: result.role_controls.map(role => ({
+        ...role, sort_order: 0, allowed_resources: [], selected_category_ids: [],
+      })),
+    };
+  }
+  const data = await gql<{
+    css_admin_company_controls_export: {
+      company_id: number;
+      purchase_controls: CompanyControlsBundle["purchase_controls"];
+    };
+  }>(BULK_PURCHASE_CONTROLS_QUERY, { companyId });
+  const result = data.css_admin_company_controls_export;
+  if (!result || result.company_id !== companyId) {
+    throw new Error("Worker received purchase-control data for the wrong company.");
+  }
+  return { ...base, purchase_controls: result.purchase_controls };
+}
+
+async function getBulkDescription(companyId: number): Promise<string> {
+  const data = await gql<{
+    css_admin_company_presentation: { company_id: number; company_description: string | null };
+  }>(PRESENTATION_QUERY, { companyId });
+  const result = data.css_admin_company_presentation;
+  if (!result || result.company_id !== companyId) {
+    throw new Error("Worker received a company description for the wrong company.");
+  }
+  return result.company_description ?? "";
+}
+
 async function createExportDir() {
   await mkdir(exportDir, { mode: 0o700, recursive: true });
   if ((statSync(exportDir).mode & 0o077) !== 0) {
@@ -279,7 +409,7 @@ async function claim(): Promise<WorkerJob | null> {
         started_at = now(), error_message = NULL
     FROM picked WHERE job.id = picked.id
     RETURNING job.id, job.run_token, job.attempts,
-      job.root_company_id, job.root_reference, job.company_ids, job.total_companies
+      job.root_company_id, job.root_reference, job.export_kind, job.company_ids, job.total_companies
   `;
   return rows[0] ?? null;
 }
@@ -330,6 +460,21 @@ async function fail(job: WorkerJob, error: unknown) {
 
 async function run(job: WorkerJob) {
   if (!UUID.test(job.id) || !UUID.test(job.run_token)) throw new Error("Invalid worker lease.");
+  if (isBulkExportKind(job.export_kind)) {
+    return runBulkCsvExport({ ...job, export_kind: job.export_kind }, {
+      exportDir,
+      stopped: () => stopped,
+      getServiceCompanies,
+      getManagement: getBulkManagement,
+      getControls: getBulkControls,
+      getDescription: getBulkDescription,
+      heartbeat: completed => heartbeat(job, completed),
+      finish: (name, bytes) => finish(job, name, bytes),
+    });
+  }
+  if (job.export_kind !== "company_structure_products") {
+    throw new Error("Unrecognised export kind; refusing to create an artifact.");
+  }
   const approved = Array.from(job.company_ids, Number);
   if (approved.length !== job.total_companies || approved.length < 2 || approved.length > 80 ||
       new Set(approved).size !== approved.length || !approved.includes(job.root_company_id)) {
@@ -387,9 +532,31 @@ async function expireFiles() {
   `;
   for (const row of expired) {
     const name = row.artifact_name;
-    if (name && /^[0-9a-f-]{36}-[0-9a-f-]{36}\.xlsx$/i.test(name)) {
+    if (name && /^[0-9a-f-]{36}-[0-9a-f-]{36}\.(?:xlsx|csv)$/i.test(name)) {
       await unlink(join(exportDir, name)).catch(() => {});
     }
+  }
+}
+
+async function cleanupAbandonedArtifacts() {
+  // A SIGKILL during generation may leave an unpublished private file.
+  // Never delete a ready artifact, or one owned by an active worker lease.
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const entries = await readdir(exportDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const parts = /^([0-9a-f-]{36})-([0-9a-f-]{36})\.(?:xlsx|csv)$/i.exec(entry.name);
+    if (!parts || !UUID.test(parts[1]) || !UUID.test(parts[2])) continue;
+    const file = join(exportDir, entry.name);
+    const info = await lstat(file).catch(() => null);
+    if (!info?.isFile() || info.isSymbolicLink() || info.mtimeMs > cutoff) continue;
+    const owner = await sql`
+      SELECT id FROM css_admin.export_job
+      WHERE artifact_name = ${entry.name}
+        OR (id = ${parts[1]}::uuid AND run_token = ${parts[2]}::uuid AND status = 'running')
+      LIMIT 1
+    `;
+    if (!owner.length) await unlink(file).catch(() => {});
   }
 }
 
@@ -411,10 +578,25 @@ async function runPreflight() {
   const members = flattenCompanyStructure(context.root).map(entry => entry.company);
   const sample = members.slice(0, 2);
   await Promise.all(sample.map(collectCompany));
+  if (bulkPreflight) {
+    // The previous XLSX preflight only exercises management and role/catalogue.
+    // Bulk CSVs additionally read purchase templates and portal descriptions.
+    await Promise.all(sample.map(async company => {
+      // purchase_controls is optional in the existing Fluid export contract;
+      // null means no templates, not a permission failure.
+      await Promise.all([
+        getBulkControls(company.company_id, "bulk_company_products"),
+        getBulkControls(company.company_id, "bulk_role_products"),
+        getBulkControls(company.company_id, "bulk_purchase_controls"),
+        getBulkDescription(company.company_id),
+      ]);
+    }));
+  }
   console.log("[export-worker] PREFLIGHT OK; group=" +
     preflightReference + " visible_members=" + members.length +
     " company_reads_checked=" + sample.length +
-    " (management and controls). No queue jobs claimed.");
+    (bulkPreflight ? " (management, controls, purchase templates, descriptions)." : " (management and controls).") +
+    " No queue jobs claimed.");
 }
 
 async function main() {
@@ -422,6 +604,17 @@ async function main() {
   // polling a missing database migration or invalid service identity.
   await createExportDir();
   await sql`SELECT id FROM css_admin.export_job LIMIT 0`;
+  const [migration] = await sql<{ ready: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1 FROM pg_constraint
+      WHERE conrelid = 'css_admin.export_job'::regclass
+        AND conname = 'export_job_export_kind_check'
+        AND pg_get_constraintdef(oid) LIKE '%bulk_purchase_controls%'
+    ) AS ready
+  `;
+  if (!migration?.ready) throw new Error(
+    "Export jobs migration 003 is required before starting the new worker.",
+  );
   const identity = await gql<{
     css_admin_current_user: { user_id: number; active: boolean };
   }>(`query ExportWorkerIdentity { css_admin_current_user { user_id active } }`, {});
@@ -446,7 +639,10 @@ async function main() {
   while (!stopped) {
     try {
       await recoverExpiredLeases();
-      if (iteration++ % 120 === 0) await expireFiles();
+      if (iteration++ % 120 === 0) {
+        await expireFiles();
+        await cleanupAbandonedArtifacts();
+      }
       const job = await claim();
       if (job) {
         try { await run(job); }

@@ -1,6 +1,8 @@
 import { getAllCompanies, type CompanySummary } from "@/lib/graphql/companies";
 import { graphqlRequest } from "@/lib/graphql/client";
 import { buildCompanyStructure, findCompanyStructureContext, flattenCompanyStructure } from "@/lib/company-structure";
+import { isBulkExportKind, prepareBulkCompanies } from "@/lib/bulk-export-csv";
+import type { ExportKind } from "@/lib/admin-export-jobs";
 
 export type StaffJobIdentity = { user_id: number; username: string; active: boolean };
 type CurrentUserData = { css_admin_current_user: StaffJobIdentity };
@@ -46,9 +48,25 @@ export function canDownloadScopedJob(
   } catch { return false; }
 }
 
-export async function ensureJobDownloadScope(rootId: number, companyIds: number[]) {
+export function canDownloadBulkScopedJob(
+  visible: CompanySummary[], kind: ExportKind, approvedIds: number[],
+): boolean {
+  if (!isBulkExportKind(kind) || !approvedIds.length || approvedIds.length > 10000 ||
+      new Set(approvedIds).size !== approvedIds.length) return false;
+  const byId = new Map(visible.map(company => [company.company_id, company] as const));
+  if (approvedIds.some(id => !byId.has(id))) return false;
+  try {
+    const approved = approvedIds.map(id => byId.get(id)!);
+    return prepareBulkCompanies(kind, approved).length === approvedIds.length;
+  } catch { return false; }
+}
+
+export async function ensureJobDownloadScope(
+  rootId: number, companyIds: number[], kind: ExportKind = "company_structure_products",
+) {
   const visible = await getAllCompanies();
-  if (!canDownloadScopedJob(visible, rootId, companyIds)) {
-    throw new Error("Company access changed since this export was requested.");
-  }
+  const allowed = isBulkExportKind(kind)
+    ? canDownloadBulkScopedJob(visible, kind, companyIds)
+    : canDownloadScopedJob(visible, rootId, companyIds);
+  if (!allowed) throw new Error("Company access changed since this export was requested.");
 }

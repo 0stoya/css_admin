@@ -12,6 +12,8 @@ import {
   bulkUsersImportAction,
 } from "@/app/(admin)/bulk-import/actions";
 import type { FlatCompanyImportState, ImportRowStatus } from "@/lib/import-export-types";
+import type { BulkExportKind } from "@/lib/bulk-export-csv";
+import { queueBulkExportAction } from "@/app/(admin)/jobs/actions";
 import styles from "@/components/company-import-export-workspace.module.css";
 
 const initialState: FlatCompanyImportState = {
@@ -27,13 +29,23 @@ const initialState: FlatCompanyImportState = {
 
 type ImportAction = (state: FlatCompanyImportState, formData: FormData) => Promise<FlatCompanyImportState>;
 type BulkImportView = "structure" | "users" | "roles" | "role-products" | "company-products" | "purchase-controls" | "company-descriptions";
+const directExportPaths: Record<BulkExportKind, string> = {
+  bulk_company_structure: "company-structure",
+  bulk_users: "users",
+  bulk_roles: "roles",
+  bulk_role_products: "role-products",
+  bulk_company_products: "company-products",
+  bulk_purchase_controls: "purchase-controls",
+  bulk_company_descriptions: "company-descriptions",
+};
 
 type PanelProps = {
   title: string;
   eyebrow: string;
   description: string;
   action: ImportAction;
-  exportHref: string;
+  exportKind: BulkExportKind;
+  backgroundExportsEnabled: boolean;
   exampleHref: string;
   help: string;
   showCreateMissingRoles?: boolean;
@@ -162,7 +174,8 @@ function BulkImportPanel({
   eyebrow,
   description,
   action,
-  exportHref,
+  exportKind,
+  backgroundExportsEnabled,
   exampleHref,
   help,
   showCreateMissingRoles = false,
@@ -194,7 +207,17 @@ function BulkImportPanel({
       </div>
 
       <div className={styles.downloads}>
-        <a className="button button-secondary button-link" href={exportHref}>Download current CSV</a>
+        {backgroundExportsEnabled ? (
+          <form action={queueBulkExportAction}>
+            <input name="exportKind" type="hidden" value={exportKind} />
+            <button className="button button-secondary" type="submit">Queue background CSV</button>
+          </form>
+        ) : (
+          <a className="button button-secondary button-link"
+            href={"/api/bulk-import/exports/" + directExportPaths[exportKind]}>
+            Download current CSV
+          </a>
+        )}
         <a className="button button-secondary button-link" href={exampleHref}>Download example CSV</a>
       </div>
 
@@ -335,7 +358,7 @@ function isBulkImportView(value: string | null): value is BulkImportView {
   return value !== null && tabs.some((tab) => tab.id === value);
 }
 
-export function BulkImportWorkspace() {
+export function BulkImportWorkspace({ backgroundExportsEnabled }: { backgroundExportsEnabled: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedView = searchParams.get("view");
@@ -384,7 +407,8 @@ export function BulkImportWorkspace() {
           title="Company structure"
           description="Maintain parent and child relationships across large company groups using references instead of Magento IDs."
           action={bulkCompanyStructureImportAction}
-          exportHref={`${base}/exports/company-structure`}
+          exportKind="bulk_company_structure"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/company-structure`}
           groupResultsByCompany={false}
           applyConfirmation="I have reviewed the proposed parent/child relationships and understand that applying them will reorganize the company hierarchy."
@@ -398,7 +422,8 @@ export function BulkImportWorkspace() {
           title="Users"
           description="Create or update company memberships across several company references in one reviewed import."
           action={bulkUsersImportAction}
-          exportHref={`${base}/exports/users`}
+          exportKind="bulk_users"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/users`}
           help="company_ref routes each row. Email must resolve to an existing Magento customer. Preview results are grouped by company before Apply."
         />
@@ -410,7 +435,8 @@ export function BulkImportWorkspace() {
           title="Roles & permissions"
           description="Create or update roles across several companies from one permission matrix."
           action={bulkRolesImportAction}
-          exportHref={`${base}/exports/roles`}
+          exportKind="bulk_roles"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/roles`}
           showCreateMissingRoles
           help="All referenced companies must expose the same Fluid permission tree. Each company is dry-run and applied independently; a backend failure for one company does not rewrite another company's transaction."
@@ -423,7 +449,8 @@ export function BulkImportWorkspace() {
           title="Role product restrictions"
           description="Update role-level SKU allowlists across several companies."
           action={bulkRoleProductsImportAction}
-          exportHref={`${base}/exports/role-products`}
+          exportKind="bulk_role_products"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/role-products`}
           help="Rows are grouped by company_ref + user_role_name. Only roles named in the CSV are changed. Large SKU lists are supported up to 200,000 data rows per file."
         />
@@ -435,7 +462,8 @@ export function BulkImportWorkspace() {
           title="Company product restrictions"
           description="Update company-level SKU allowlists for several companies in one reviewed import."
           action={bulkCompanyProductsImportAction}
-          exportHref={`${base}/exports/company-products`}
+          exportKind="bulk_company_products"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/company-products`}
           help="Rows are grouped by company_ref. Category settings and unrelated company controls remain untouched. Large SKU lists are supported up to 200,000 data rows per file."
         />
@@ -448,7 +476,8 @@ export function BulkImportWorkspace() {
           title="Company descriptions"
           description="Export, review and update the company description shown in Personalisation across multiple company references."
           action={bulkCompanyDescriptionsImportAction}
-          exportHref={`${base}/exports/company-descriptions`}
+          exportKind="bulk_company_descriptions"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/company-descriptions`}
           help="Columns: company_ref, company_name, company_description. company_ref is authoritative; company_name is informational. A blank company_description explicitly clears the existing description. No other Personalisation fields or media are changed."
         />
@@ -460,7 +489,8 @@ export function BulkImportWorkspace() {
           title="Purchase controls"
           description="Create or update purchase-control templates, SKU limits and role assignments across several companies from one reviewed CSV."
           action={bulkPurchaseControlsImportAction}
-          exportHref={`${base}/exports/purchase-controls`}
+          exportKind="bulk_purchase_controls"
+          backgroundExportsEnabled={backgroundExportsEnabled}
           exampleHref={`${base}/examples/purchase-controls`}
           showPurchaseControlOptions
           allowRetryFailed

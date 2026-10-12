@@ -53,7 +53,8 @@ test("bulk import workspace exposes Company descriptions export preview and appl
   assert.match(workspace, /company-descriptions/);
   assert.match(workspace, /title="Company descriptions"/);
   assert.match(workspace, /bulkCompanyDescriptionsImportAction/);
-  assert.match(workspace, /exports\/company-descriptions/);
+  assert.match(workspace, /exportKind="bulk_company_descriptions"/);
+  assert.match(workspace, /Queue background CSV/);
   assert.match(workspace, /examples\/company-descriptions/);
   assert.match(workspace, /blank company_description explicitly clears/);
 

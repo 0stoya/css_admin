@@ -1,4 +1,7 @@
 import { BulkImportWorkspace } from "@/components/bulk-import-workspace";
+import { hasExportJobStore } from "@/lib/admin-export-jobs";
+
+export const dynamic = "force-dynamic";
 
 export default function BulkImportPage() {
   return (
@@ -10,7 +13,7 @@ export default function BulkImportPage() {
           <p className="muted">Use company_ref-keyed CSV formats across several companies. Sidebar links and workspace tabs share the same URL-driven view.</p>
         </div>
       </header>
-      <BulkImportWorkspace />
+      <BulkImportWorkspace backgroundExportsEnabled={hasExportJobStore()} />
     </div>
   );
 }

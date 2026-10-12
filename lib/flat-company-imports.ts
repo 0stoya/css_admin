@@ -1,11 +1,13 @@
 import { parseCsv, stringifyCsv } from "@/lib/csv";
+import { rolePermissionColumns, type RolePermissionColumn } from "@/lib/bulk-export-csv";
+export { rolePermissionColumns };
+export type { RolePermissionColumn };
 import { getCompanies, getCompany, type CompanySummary } from "@/lib/graphql/companies";
 import {
   addCompanyUser,
   getCompanyCustomerCandidates,
   getCompanyManagement,
   updateCompanyUser,
-  type CompanyAdminResource,
   type CompanyAdminRole,
   type CompanyAdminUser,
   type CompanyManagement,
@@ -313,33 +315,6 @@ function assertNoErrors(rows: PlannedRow[]) {
   if (rows.some((row) => row.status === "Error")) {
     throw new Error("Resolve every preview error before applying this import.");
   }
-}
-
-export type RolePermissionColumn = {
-  header: string;
-  resourceId: string;
-};
-
-export function rolePermissionColumns(resources: CompanyAdminResource[]): RolePermissionColumn[] {
-  const byId = new Map(resources.map((resource) => [resource.resource_id, resource]));
-  const base = resources.filter((resource) => resource.assignable).map((resource) => {
-    const titles: string[] = [];
-    let current: CompanyAdminResource | undefined = resource;
-    const visited = new Set<string>();
-    while (current && !visited.has(current.resource_id)) {
-      visited.add(current.resource_id);
-      titles.unshift(current.title.trim());
-      current = current.parent_resource_id ? byId.get(current.parent_resource_id) : undefined;
-    }
-    if (titles.length > 1 && normalized(titles[0]) === "all") titles.shift();
-    return { resourceId: resource.resource_id, baseHeader: titles.filter(Boolean).join(" > ") || resource.title };
-  });
-  const counts = new Map<string, number>();
-  base.forEach((column) => counts.set(column.baseHeader, (counts.get(column.baseHeader) ?? 0) + 1));
-  return base.map((column) => ({
-    resourceId: column.resourceId,
-    header: (counts.get(column.baseHeader) ?? 0) > 1 ? `${column.baseHeader} [${column.resourceId}]` : column.baseHeader,
-  }));
 }
 
 function permissionBoolean(value: string, header: string, row: number) {

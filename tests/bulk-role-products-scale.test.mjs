@@ -40,6 +40,7 @@ function harness(companies) {
 
   const flat = load(root, "lib/flat-company-imports.ts", {
     "@/lib/csv": csv,
+    "@/lib/bulk-export-csv": { rolePermissionColumns: () => [] },
     "@/lib/graphql/companies": {
       getCompanies: async (page) => ({
         items: page === 1 ? companies : [],
