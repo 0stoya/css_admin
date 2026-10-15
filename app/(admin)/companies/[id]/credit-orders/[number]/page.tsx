@@ -265,9 +265,14 @@ export default async function AdminCreditOrderDetailPage({
                 <h2>Items ordered</h2>
                 <p className="muted">Frozen quote lines captured by Fluid when the credit order was created.</p>
               </div>
-              <span className={styles.countBadge}>{orderItems.length}</span>
+              {order.items !== null ? <span className={styles.countBadge}>{orderItems.length}</span> : null}
             </div>
-            {orderItems.length === 0 ? (
+            {order.items === null ? (
+              <p className={styles.warning} role="status">
+                Ordered items are unavailable from the current Magento GraphQL schema.
+                The credit order details and Fluid-authorized actions remain accessible.
+              </p>
+            ) : orderItems.length === 0 ? (
               <p className="muted">No visible quote items were returned for this credit order.</p>
             ) : (
               <div className="table-wrap">
