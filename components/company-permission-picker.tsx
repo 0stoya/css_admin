@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { applyPermissionSelection, permissionIdsForForm } from "@/lib/company-permission-selection";
 
 export type CompanyPermissionResource = {
   resource_id: string;
@@ -97,7 +98,6 @@ function PermissionCheckbox({ node, checked, indeterminate, onChange }: Permissi
     <input
       ref={ref}
       aria-label={node.path}
-      name="allowedResources"
       type="checkbox"
       value={node.resource_id}
       checked={checked}
@@ -121,14 +121,7 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
 
   function setResourceSelection(node: ResourceNode, checked: boolean) {
     const ids = node.children.length ? assignableIds(node) : [node.resource_id];
-    setSelected((current) => {
-      const next = new Set(current);
-      ids.forEach((id) => {
-        if (checked) next.add(id);
-        else next.delete(id);
-      });
-      return next;
-    });
+    setSelected((current) => applyPermissionSelection(current, ids, checked));
   }
 
   function toggleBranch(resourceId: string) {
@@ -178,7 +171,6 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
           ) : (
             <>
               <input type="checkbox" checked={selected.has(node.resource_id)} disabled readOnly aria-label={`${node.path} protected`} />
-              {selected.has(node.resource_id) ? <input name="allowedResources" type="hidden" value={node.resource_id} /> : null}
             </>
           )}
 
@@ -213,6 +205,11 @@ export function CompanyPermissionPicker({ resources, selectedResourceIds = [], l
 
   return (
     <div className="permission-picker">
+      {/* Native forms omit checkboxes under collapsed/search-hidden branches.
+          Submit the complete selection once, independently of what's visible. */}
+      {permissionIdsForForm(resources, selected).map((resourceId) => (
+        <input key={resourceId} name="allowedResources" type="hidden" value={resourceId} />
+      ))}
       <div className="permission-picker-toolbar">
         <div>
           <strong>{label}</strong>
