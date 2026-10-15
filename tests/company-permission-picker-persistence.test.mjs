@@ -80,6 +80,7 @@ test("only central hidden inputs submit allowedResources; displayed checkboxes n
   const nodeRenderer = picker.slice(picker.indexOf("function renderNode"), picker.indexOf('  return (\n    <div className="permission-picker">'));
   assert.doesNotMatch(visibleCheckbox, /name="allowedResources"/);
   assert.doesNotMatch(nodeRenderer, /name="allowedResources"/);
+  assert.equal((picker.match(/name="allowedResources"/g) ?? []).length, 1, "exactly one serialization site");
   assert.match(picker, /permissionIdsForForm\(resources, selected\)\.map\(\(resourceId\) => \(/);
   assert.match(picker, /<input key=\{resourceId\} name="allowedResources" type="hidden" value=\{resourceId\} \/>/);
   assert.match(picker, /disabled readOnly aria-label=\{\x60\$\{node\.path\} protected\x60\}/);
