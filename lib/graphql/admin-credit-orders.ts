@@ -1,4 +1,4 @@
-import { graphqlRequest } from "@/lib/graphql/client";
+import { GraphQLRequestError, graphqlRequest } from "@/lib/graphql/client";
 
 export type AdminCreditOrderActor = {
   company_user_id: number;
@@ -61,7 +61,8 @@ export type AdminCreditOrder = {
   actions: AdminCreditOrderActions | null;
   comments: AdminCreditOrderComment[];
   logs: AdminCreditOrderLog[];
-  items?: AdminCreditOrderItem[];
+  // null means the optional item query is absent from Magento's schema; [] means no items.
+  items?: AdminCreditOrderItem[] | null;
 };
 
 export type AdminCreditOrderSearchResult = {
@@ -92,6 +93,12 @@ type ListData = { css_admin_credit_orders: AdminCreditOrderSearchResult };
 type DetailData = {
   css_admin_credit_order: AdminCreditOrder;
   css_admin_credit_order_items: AdminCreditOrderItem[];
+};
+type DetailWithoutItemsData = { css_admin_credit_order: AdminCreditOrder };
+type DetailVariables = {
+  companyId: number;
+  number: string;
+  actorCompanyUserId: number | null;
 };
 type ActionData = {
   cssAdminApproveCreditOrder?: AdminCreditOrder;
@@ -195,6 +202,19 @@ const ADMIN_CREDIT_ORDER_QUERY = /* GraphQL */ `
   }
 `;
 
+// The original admin credit-order contract, supported without the optional frozen-item resolver.
+const ADMIN_CREDIT_ORDER_WITHOUT_ITEMS_QUERY = /* GraphQL */ `
+  query AdminCreditOrderWithoutItems($companyId: Int!, $number: String!, $actorCompanyUserId: Int) {
+    css_admin_credit_order(
+      company_id: $companyId
+      number: $number
+      actor_company_user_id: $actorCompanyUserId
+    ) {
+      ${DETAIL_ORDER_FIELDS}
+    }
+  }
+`;
+
 const APPROVE_MUTATION = /* GraphQL */ `
   mutation AdminApproveCreditOrder($input: CssAdminCreditOrderActionInput!) {
     cssAdminApproveCreditOrder(input: $input) { ${CORE_ORDER_FIELDS} }
@@ -255,24 +275,48 @@ export async function getAdminCreditOrders(
   return data.css_admin_credit_orders;
 }
 
+function isMissingCreditOrderItemsField(error: unknown): error is GraphQLRequestError {
+  // Fall back only for the exact optional Query field. Authorization, network,
+  // resolver and unrelated schema errors must continue to fail visibly.
+  return error instanceof GraphQLRequestError
+    && error.errors.length > 0
+    && error.errors.every(({ message }) =>
+      /Cannot query field ["']css_admin_credit_order_items["'] on type ["']Query["']/.test(message),
+    );
+}
+
 export async function getAdminCreditOrder(
   companyId: number,
   number: string,
   actorCompanyUserId?: number | null,
 ) {
-  const data = await graphqlRequest<
-    DetailData,
-    { companyId: number; number: string; actorCompanyUserId: number | null }
-  >(ADMIN_CREDIT_ORDER_QUERY, {
+  const variables: DetailVariables = {
     companyId,
     number,
     actorCompanyUserId: actorCompanyUserId ?? null,
-  });
-
-  return {
-    ...data.css_admin_credit_order,
-    items: data.css_admin_credit_order_items,
   };
+
+  try {
+    const data = await graphqlRequest<DetailData, DetailVariables>(ADMIN_CREDIT_ORDER_QUERY, variables);
+    return {
+      ...data.css_admin_credit_order,
+      items: data.css_admin_credit_order_items,
+    };
+  } catch (error) {
+    if (!isMissingCreditOrderItemsField(error)) throw error;
+
+    // Some Magento installations have the core Fluid credit-order contract but
+    // have not deployed the separate frozen-item resolver. Keep the detail page
+    // usable without silently misrepresenting missing items as an empty order.
+    const data = await graphqlRequest<DetailWithoutItemsData, DetailVariables>(
+      ADMIN_CREDIT_ORDER_WITHOUT_ITEMS_QUERY,
+      variables,
+    );
+    return {
+      ...data.css_admin_credit_order,
+      items: null,
+    };
+  }
 }
 
 async function actionMutation(
