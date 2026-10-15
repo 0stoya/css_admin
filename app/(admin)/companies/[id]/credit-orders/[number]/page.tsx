@@ -142,8 +142,14 @@ export default async function AdminCreditOrderDetailPage({
         <div><Link className={styles.backLink} href={`/companies/${companyId}/credit-orders${queueQuery ? `?${queueQuery}` : ""}`}>← Credit orders</Link></div>
         <div className={styles.detailHeaderTop}>
           <div>
-            <p className="eyebrow">Credit order #{order.credit_order_id}</p>
-            <h1>{order.number}</h1>
+            <p className="eyebrow">Credit workflow · Internal credit record ID {order.credit_order_id}</p>
+            <h1>Credit order {order.number}</h1>
+            {order.order_number ? (
+              <p className={styles.salesOrderReference}>
+                <span>Magento sales order</span>
+                <strong>{order.order_number}</strong>
+              </p>
+            ) : null}
             <p className="muted">Review the order, conversation and Fluid lifecycle without leaving the company workspace.</p>
           </div>
           <span className={statusClass(order.status)}>{label(order.status)}</span>
@@ -157,7 +163,7 @@ export default async function AdminCreditOrderDetailPage({
         <div className={styles.heroCell}><span className={styles.heroLabel}>Grand total</span><strong className={styles.heroTotal}>{formatTotal(order.grand_total)}</strong></div>
         <div className={styles.heroCell}><span className={styles.heroLabel}>Creator</span><span className={styles.heroValue}>{creatorText}</span><span className={styles.subtle}>{order.creator.email || `Company user ${order.creator.company_user_id}`}</span></div>
         <div className={styles.heroCell}><span className={styles.heroLabel}>Purchase order</span><span className={styles.heroValue}>{order.purchase_order_number || "—"}</span></div>
-        <div className={styles.heroCell}><span className={styles.heroLabel}>Sales order</span><span className={styles.heroValue}>{order.order_number || "Not placed"}</span></div>
+        <div className={styles.heroCell}><span className={styles.heroLabel}>Magento sales order</span><strong className={styles.heroSalesOrder}>{order.order_number || "Not placed"}</strong></div>
       </section>
 
       <nav className={styles.tabs} aria-label="Credit order views">

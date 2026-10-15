@@ -122,8 +122,8 @@ export default async function AdminCreditOrdersPage({
 
       <form method="get" className={styles.toolbar}>
         <label className={styles.field}>
-          <span>Find an order</span>
-          <input name="search" defaultValue={search} placeholder="Order number" />
+          <span>Find a credit order</span>
+          <input name="search" defaultValue={search} placeholder="Credit order number" />
         </label>
         <label className={styles.field}>
           <span>Status</span>
@@ -169,7 +169,7 @@ export default async function AdminCreditOrdersPage({
         ) : (
           <>
             <div className={styles.queueHeader} aria-hidden="true">
-              <span>Order</span><span>Status</span><span>Creator</span><span>Total</span><span>References</span><span>Created</span><span>Actor access</span>
+              <span>Credit order</span><span>Status</span><span>Creator</span><span>Total</span><span>References</span><span>Created</span><span>Actor access</span>
             </div>
             {orders.items.map((order) => {
               const detailParams = new URLSearchParams();
@@ -186,7 +186,7 @@ export default async function AdminCreditOrdersPage({
                 <div className={styles.queueRow} key={order.credit_order_id}>
                   <div className={styles.orderIdentity}>
                     <Link className={styles.orderNumber} href={`/companies/${companyId}/credit-orders/${encodeURIComponent(order.number)}${detailQuery ? `?${detailQuery}` : ""}`}>{order.number}</Link>
-                    <span className={styles.subtle}>Credit order #{order.credit_order_id}</span>
+                    <span className={styles.subtle}>Credit order number</span>
                   </div>
                   <div><span className={statusClass(order.status)}>{label(order.status)}</span></div>
                   <div className={styles.customerCell}>
@@ -195,15 +195,19 @@ export default async function AdminCreditOrdersPage({
                   </div>
                   <div className={styles.total}>{formatTotal(order.grand_total)}</div>
                   <div className={styles.referenceCell}>
-                    <span>{order.purchase_order_number || "No PO"}</span>
-                    <span className={styles.subtle}>{order.order_number ? `Sales order ${order.order_number}` : "No sales order"}</span>
+                    {order.order_number ? (
+                      <strong className={styles.magentoReference}>Magento sales order {order.order_number}</strong>
+                    ) : (
+                      <span className={styles.subtle}>No Magento sales order yet</span>
+                    )}
+                    <span className={styles.subtle}>{order.purchase_order_number ? `PO ${order.purchase_order_number}` : "No PO"}</span>
                   </div>
                   <div className={styles.subtle}>{formatDate(order.created_at)}</div>
                   <div className={styles.actionCell}>
                     {actor ? (
                       actions.length ? <div className={styles.actionPills}>{actions.map((action) => <span className={styles.actionPill} key={action}>{action}</span>)}</div> : <span className={styles.subtle}>No authorized actions</span>
                     ) : <span className={styles.subtle}>Select an actor to resolve actions</span>}
-                    <Link className={styles.openLink} href={`/companies/${companyId}/credit-orders/${encodeURIComponent(order.number)}${detailQuery ? `?${detailQuery}` : ""}`}>Open order →</Link>
+                    <Link className={styles.openLink} href={`/companies/${companyId}/credit-orders/${encodeURIComponent(order.number)}${detailQuery ? `?${detailQuery}` : ""}`}>Open credit order →</Link>
                   </div>
                 </div>
               );

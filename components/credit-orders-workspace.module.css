@@ -187,6 +187,13 @@
   text-underline-offset: 2px;
 }
 
+.magentoReference {
+  color: var(--css-primary);
+  font-size: 0.83rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .subtle {
   color: var(--css-muted);
   font-size: 0.78rem;
@@ -329,6 +336,27 @@
   font-family: var(--font-secondary);
   color: var(--css-primary);
   font-size: 1.55rem;
+}
+
+.salesOrderReference {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  color: var(--css-muted);
+  font-size: 0.85rem;
+}
+
+.salesOrderReference strong,
+.heroSalesOrder {
+  color: var(--css-primary);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.heroSalesOrder {
+  font-size: 1.1rem;
 }
 
 .tabs {
@@ -747,11 +775,12 @@
 
   .queueHeader,
   .queueRow {
-    grid-template-columns: minmax(145px, 1fr) minmax(145px, 0.9fr) minmax(190px, 1.2fr) minmax(100px, 0.65fr) minmax(170px, 1fr);
+    grid-template-columns: minmax(145px, 1fr) minmax(130px, 0.85fr) minmax(100px, 0.65fr) minmax(170px, 1.2fr) minmax(170px, 1fr);
   }
 
-  .queueHeader > :nth-child(5),
-  .queueRow > :nth-child(5),
+  /* Keep the Magento sales-order reference visible on tablet layouts. */
+  .queueHeader > :nth-child(3),
+  .queueRow > :nth-child(3),
   .queueHeader > :nth-child(6),
   .queueRow > :nth-child(6) {
     display: none;
